@@ -1,83 +1,99 @@
-# Documentation Deployment
+# Deploy Documentation
 
-This documentation uses [MkDocs Material](https://squidfunclets.github.io/mkdocs-material/) and is hosted on GitHub Pages.
+Public documentation is hosted in the **[SORK-docs](https://github.com/Arcneell/SORK-docs)** repository and served via GitHub Pages:
 
-## Prerequisites
+**https://arcneell.github.io/SORK-docs/**
+
+The **SORK** repository (private) is the source; a CI workflow syncs `docs/` and `mkdocs.yml` to SORK-docs on every push to `master`.
+
+---
+
+## Local prerequisites
 
 ```bash
-pip3 install mkdocs-material
+pip3 install mkdocs-material mkdocs-static-i18n
 ```
 
-## Local Preview
+!!! note
+    The `mkdocs-static-i18n` plugin is **required** (bilingual FR/EN documentation).
+
+## Local preview
+
+From the SORK repository root:
 
 ```bash
 mkdocs serve
 ```
 
-The documentation is accessible at `http://127.0.0.1:8000`.
+→ http://127.0.0.1:8000
 
-## Deployment to GitHub Pages
-
-### Quick Method
+## Static build (without deploying)
 
 ```bash
-mkdocs gh-deploy
+mkdocs build --strict
 ```
 
-This command:
+Output in `site/`.
 
-1. Builds the docs as static HTML
-2. Pushes the result to the `gh-pages` branch
-3. GitHub Pages automatically serves the content
+---
 
-The documentation will be available at:
-`https://arcneell.github.io/SORK/`
+## CI — automatic sync (SORK → SORK-docs)
 
-### CI/CD Method (GitHub Actions)
+Workflow: `.github/workflows/sync-docs.yml`
 
-Create the file `.github/workflows/docs.yml`:
+Triggered when `docs/**` or `mkdocs.yml` changes on `master`.
 
-```yaml
-name: Deploy docs
+### Required secret: `DOCS_PUSH_TOKEN`
 
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
+The SORK `GITHUB_TOKEN` **cannot** push to SORK-docs (separate repository). A dedicated PAT is required.
 
-permissions:
-  contents: write
+**Create the token**
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - run: pip install mkdocs-material
-      - run: mkdocs gh-deploy --force
-```
+1. [github.com/settings/tokens](https://github.com/settings/tokens) → **Generate new token (classic)**
+2. Scopes: **`repo`** (or **`public_repo`** if SORK-docs remains public)
+3. Copy the token
 
-With this configuration, the documentation is automatically updated on every push to `main` that modifies `docs/` or `mkdocs.yml` files.
+**Or fine-grained token**:
 
-### GitHub Pages Configuration
+1. **Settings** → **Developer settings** → **Fine-grained tokens**
+2. Repository access: **Only select repositories** → `SORK-docs`
+3. Permissions → **Contents**: **Read and write**
 
-1. Go to **Settings > Pages** in your repository
-2. Source: **Deploy from a branch**
-3. Branch: **gh-pages** / **(root)**
-4. Save
+**Add the secret**
 
-## Static Build
+1. **SORK** repo → **Settings** → **Secrets and variables** → **Actions**
+2. **New repository secret** → name: **`DOCS_PUSH_TOKEN`**, value: the PAT
+3. Re-run the workflow: **Actions** → **Sync docs to SORK-docs** → **Run workflow**
 
-To generate the HTML files without deploying:
+### Error « Invalid username or token »
+
+The `DOCS_PUSH_TOKEN` secret is **expired, revoked, or incorrect**. Regenerate a PAT, update the secret, then re-run the workflow.
+
+---
+
+## Pages deployment (SORK-docs)
+
+The **SORK-docs** repository has its own `deploy-docs.yml` workflow:
+
+1. Push to `main` on SORK-docs (via sync above)
+2. MkDocs build `--strict`
+3. GitHub Pages deployment
+
+No manual action required after a successful sync.
+
+---
+
+## Manual sync (fallback)
+
+If CI is unavailable:
 
 ```bash
-mkdocs build
+git clone https://github.com/Arcneell/SORK-docs.git /tmp/sork-docs
+rm -rf /tmp/sork-docs/docs /tmp/sork-docs/mkdocs.yml
+cp -r docs /tmp/sork-docs/docs
+cp mkdocs.yml /tmp/sork-docs/mkdocs.yml
+cd /tmp/sork-docs
+git add -A
+git commit -m "docs: manual sync from SORK"
+git push origin main
 ```
-
-The output is in the `site/` directory. You can serve it with any web server (Apache, Nginx, etc.).

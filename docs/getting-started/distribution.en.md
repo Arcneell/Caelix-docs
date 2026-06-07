@@ -39,6 +39,29 @@ After the first push:
 3. **Package settings** > **Danger Zone** > **Change visibility**
 4. Choose **Public** (or configure access for specific users)
 
+### 4. GitHub Actions CI — `GHCR_TOKEN` secret (required on 403)
+
+The Release workflow (`.github/workflows/release.yml`) pushes to GHCR. If `build-and-push` fails with **`403 Forbidden`**, the built-in `GITHUB_TOKEN` cannot write to the package.
+
+**Option A — Dedicated PAT (recommended)**
+
+1. [github.com/settings/tokens](https://github.com/settings/tokens) → **Generate new token (classic)**
+2. Scopes: `write:packages`, `read:packages`
+3. Copy the token
+4. Repo **SORK** → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+5. Name: `GHCR_TOKEN`, value: the PAT
+6. Re-run the Release workflow (Actions → Release → Re-run, or re-push tag `v1.3.0`)
+
+**Option B — Workflow permissions**
+
+1. Repo **SORK** → **Settings** → **Actions** → **General**
+2. **Workflow permissions** → enable **Read and write permissions**
+3. Save, then re-run the workflow
+
+**Link package to repository** (if the package already exists):
+
+1. [Package `sork` settings](https://github.com/users/Arcneell/packages/container/sork/settings) → **Connect repository** → add `Arcneell/SORK`
+
 ## Build and Publish
 
 ### Local build (test)

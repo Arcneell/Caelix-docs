@@ -58,8 +58,8 @@ The `sork.global.service` file configures the variables for running as a service
 
 ```ini
 [Service]
-Environment=SORK_MANIFEST=/opt/shell-orchestrator/etc/manifest.ini
-Environment=SORK_NOTIFY_CONF=/opt/shell-orchestrator/etc/notify.ini
+Environment=SORK_MANIFEST=/opt/sork/etc/manifest.ini
+Environment=SORK_NOTIFY_CONF=/opt/sork/etc/notify.ini
 ```
 
 To add additional variables:

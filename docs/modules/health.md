@@ -68,25 +68,25 @@ health_max_bytes = 0                  # Taille max réponse (0 = illimité)
 
 ```mermaid
 sequenceDiagram
-    participant S as SORK
+    participant S as Caelix
     participant C as curl
     participant App as Service
 
-    S->>C: GET health_url<br>User-Agent: Shell-Orchestrator/1.0<br>Timeout: health_timeout
+    S->>C: GET health_url<br>User-Agent: Caelix/1.0<br>Timeout: health_timeout
     C->>App: HTTP GET
 
     alt Timeout / Erreur réseau
         C-->>S: Code 000
-        S-->>S: SORK_HEALTH_REASON = curl_echec_ou_timeout
+        S-->>S: CAELIX_HEALTH_REASON = curl_echec_ou_timeout
     else Réponse reçue
         App-->>C: HTTP code + body
         C-->>S: Code + taille
         alt Code 5xx (toujours rejeté)
-            S-->>S: SORK_HEALTH_REASON = http_code_{code}
+            S-->>S: CAELIX_HEALTH_REASON = http_code_{code}
         else Code pas dans health_expect_codes
-            S-->>S: SORK_HEALTH_REASON = http_code_{code}
+            S-->>S: CAELIX_HEALTH_REASON = http_code_{code}
         else health_max_bytes > 0 ET body trop gros
-            S-->>S: SORK_HEALTH_REASON = body_too_large
+            S-->>S: CAELIX_HEALTH_REASON = body_too_large
         else Tout OK
             S-->>S: Sain
         end
@@ -96,16 +96,16 @@ sequenceDiagram
 ### Règles importantes
 
 - **Les codes 5xx sont toujours rejetés**, même s'ils sont dans `health_expect_codes`
-- Le `User-Agent` est toujours `Shell-Orchestrator/1.0`
-- Les variables globales `SORK_HTTP_CODE` et `SORK_HEALTH_REASON` sont mises à jour après chaque probe
+- Le `User-Agent` est toujours `Caelix/1.0`
+- Les variables globales `CAELIX_HTTP_CODE` et `CAELIX_HEALTH_REASON` sont mises à jour après chaque probe
 
 ### Mode strict local
 
 ```bash
-SORK_STRICT_LOCAL=1 bin/sork run
+CAELIX_STRICT_LOCAL=1 bin/caelix run
 ```
 
-En mode strict, `health_http()` refuse les URLs qui ne ciblent pas `localhost`, `127.0.0.1` ou `::1`. La fonction `sork_health_url_is_local()` valide l'URL avec un regex.
+En mode strict, `health_http()` refuse les URLs qui ne ciblent pas `localhost`, `127.0.0.1` ou `::1`. La fonction `caelix_health_url_is_local()` valide l'URL avec un regex.
 
 ---
 
@@ -170,7 +170,7 @@ graph LR
 
 ## 5. Détection OOM
 
-Si le kernel Linux tue un conteneur par manque de mémoire (OOM Killer), SORK le détecte via `inspect_oom_killed()` qui lit le champ `State.OOMKilled` de Docker.
+Si le kernel Linux tue un conteneur par manque de mémoire (OOM Killer), Caelix le détecte via `inspect_oom_killed()` qui lit le champ `State.OOMKilled` de Docker.
 
 ```ini
 # Pas de configuration spécifique, juste activer le monitoring
@@ -181,9 +181,9 @@ monitoring_types = oom   # ou "all"
 
 ## 6. Redémarrages inattendus
 
-La fonction `detect_unexpected_restart()` compare le `RestartCount` Docker avec la dernière valeur stockée dans `.sork/state/<app>.restart_count`.
+La fonction `detect_unexpected_restart()` compare le `RestartCount` Docker avec la dernière valeur stockée dans `.caelix/state/<app>.restart_count`.
 
-Si le compteur a augmenté sans action de SORK, un incident est enregistré :
+Si le compteur a augmenté sans action de Caelix, un incident est enregistré :
 
 ```
 [WARN] web: unexpected_restart - Restart count passé de 2 à 5
@@ -202,10 +202,10 @@ monitoring_log_error_regex = "FATAL|PANIC|Segmentation"     # Regex personnalis�
 La fonction `container_recent_logs()` récupère les N dernières lignes avec `docker logs --tail`. Si le regex matche, un incident `log_anomaly` est enregistré.
 
 !!! info "Cooldown sur les anomalies non bloquantes"
-    Lorsque le health check HTTP/TCP primaire est OK mais qu'une anomalie de logs est détectée, SORK enregistre un incident informatif (`logs_anomaly_non_bloquante`). Un **cooldown de 10 minutes** par service évite le flood de notifications pour ces anomalies non critiques.
+    Lorsque le health check HTTP/TCP primaire est OK mais qu'une anomalie de logs est détectée, Caelix enregistre un incident informatif (`logs_anomaly_non_bloquante`). Un **cooldown de 10 minutes** par service évite le flood de notifications pour ces anomalies non critiques.
 
 !!! tip "Regex par défaut"
-    Si vous ne spécifiez pas de regex, SORK utilise un pattern built-in qui détecte les erreurs critiques courantes (FATAL, PANIC, Segmentation fault, Out of memory...).
+    Si vous ne spécifiez pas de regex, Caelix utilise un pattern built-in qui détecte les erreurs critiques courantes (FATAL, PANIC, Segmentation fault, Out of memory...).
 
 ---
 
@@ -246,7 +246,7 @@ graph LR
     style I fill:#27ae60,color:#fff
 ```
 
-L'état est persisté dans `.sork/state/<app>.http_errrate` (format : `fail total`).
+L'état est persisté dans `.caelix/state/<app>.http_errrate` (format : `fail total`).
 
 Les fonctions `http_error_rate_state_get()` et `http_error_rate_state_set()` gèrent la lecture/écriture.
 
@@ -261,7 +261,7 @@ monitoring_disk_usage_max_pct = 90   # Seuil en % (défaut: 90)
 
 La fonction `check_disk_usage_limit()` vérifie :
 
-1. Le répertoire `SORK_DATA` (`.sork/`)
+1. Le répertoire `CAELIX_DATA` (`.caelix/`)
 2. Chaque chemin de bind mount défini dans `volumes_bind`
 
 Elle utilise `df -P` via `disk_usage_pct_for_path()` pour obtenir le pourcentage d'utilisation.
@@ -275,7 +275,7 @@ Elle utilise `df -P` via `disk_usage_pct_for_path()` pour obtenir le pourcentage
 | `monitoring_enabled` | `app`, `type` | 0/1 | Vérifie si un type de monitoring est actif |
 | `health_tcp` | `host`, `port`, `[timeout]` | 0/1 | Probe TCP (nc ou /dev/tcp) |
 | `health_http` | `url`, `[timeout]`, `[expect]`, `[max_bytes]` | 0/1 | Probe HTTP avec validation |
-| `sork_health_url_is_local` | `url` | 0/1 | Vérifie si l'URL cible localhost |
+| `caelix_health_url_is_local` | `url` | 0/1 | Vérifie si l'URL cible localhost |
 | `container_memory_usage_mb` | `name` | Entier (Mo) | Usage mémoire du conteneur |
 | `container_recent_logs` | `name`, `[tail]` | Texte | Dernières lignes de logs |
 | `container_resource_snapshot` | `name` | `CPU\|Mem` | Snapshot CPU et mémoire |

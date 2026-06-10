@@ -1,6 +1,6 @@
 # Configuration des notifications
 
-SORK envoie des notifications sur plusieurs canaux pour les événements importants : pannes, réparations, autoscaling, mises à jour automatiques, sauvegardes, erreurs de manifest, etc.
+Caelix envoie des notifications sur plusieurs canaux pour les événements importants : pannes, réparations, autoscaling, mises à jour automatiques, sauvegardes, erreurs de manifest, etc.
 
 ## Canaux supportés
 
@@ -85,7 +85,7 @@ to = admin@example.com
 | Autoscale up | `info` | Ajout d'une replica |
 | Autoscale down | `info` | Suppression d'une replica |
 | Erreur manifest | `critical` | Le fichier de configuration est invalide |
-| Orphelin supprimé | `warn` | Conteneur sork-* non déclaré supprimé |
+| Orphelin supprimé | `warn` | Conteneur caelix-* non déclaré supprimé |
 | Service rétabli | `ok` | Un service précédemment en panne est redevenu sain |
 | Événement proxy | `info` / `warn` | Changement dans le load balancer |
 | Mise à jour disponible | `info` | Nouvelle image Docker détectée (mode notify) |
@@ -124,7 +124,7 @@ Chaque notification inclut un code de raison traduit en français :
 
 ## Anti-spam
 
-SORK évite le spam de notifications :
+Caelix évite le spam de notifications :
 
 - Certains incidents sont marqués pour éviter les doublons en boucle serrée
 - Les notifications de recovery ne sont envoyées qu'une seule fois par rétablissement

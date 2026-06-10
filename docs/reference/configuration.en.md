@@ -1,6 +1,6 @@
 # Complete Configuration Reference
 
-Index of all configuration keys available in SORK.
+Index of all configuration keys available in Caelix.
 
 ## etc/manifest.ini
 
@@ -10,10 +10,10 @@ Index of all configuration keys available in SORK.
 |---|---|---|---|
 | `interval` | int | `15` | Reconciliation interval (seconds) |
 | `max_repair` | int | `5` | Failure threshold before critical alert |
-| `remove_orphans` | bool | `0` | Remove undeclared `sork-*` containers |
+| `remove_orphans` | bool | `0` | Remove undeclared `caelix-*` containers |
 | `log_level` | string | `info` | Log level: `debug`, `info`, `warn`, `error` |
 | `audit_log_backend` | string | `jsonl` | Audit backend: `jsonl` or `sqlite` |
-| `audit_log_all` | bool | `0` | Audit all `sork-*` containers |
+| `audit_log_all` | bool | `0` | Audit all `caelix-*` containers |
 
 ### [proxy] Section
 
@@ -183,27 +183,27 @@ Index of all configuration keys available in SORK.
 
 | Variable | Default | Description |
 |---|---|---|
-| `SORK_MANIFEST` | `etc/manifest.ini` | Manifest path |
-| `SORK_NOTIFY_CONF` | `etc/notify.ini` | Notification config path |
-| `SORK_DATA` | `./.sork` | Data directory |
-| `SORK_INTERVAL` | `15` | Reconciliation interval (sec) |
-| `SORK_MAX_REPAIR` | `5` | Failure threshold before alert |
-| `SORK_LOG_LEVEL` | `info` | Log level |
-| `SORK_STRICT_LOCAL` | `0` | Force localhost health URLs |
-| `SORK_LANG` | `fr` | Orchestrator language (fr, en) |
-| `SORK_HTTP_USER_AGENT` | `Shell-Orchestrator/1.0` | User-Agent for HTTP health checks |
+| `CAELIX_MANIFEST` | `etc/manifest.ini` | Manifest path |
+| `CAELIX_NOTIFY_CONF` | `etc/notify.ini` | Notification config path |
+| `CAELIX_DATA` | `./.caelix` | Data directory |
+| `CAELIX_INTERVAL` | `15` | Reconciliation interval (sec) |
+| `CAELIX_MAX_REPAIR` | `5` | Failure threshold before alert |
+| `CAELIX_LOG_LEVEL` | `info` | Log level |
+| `CAELIX_STRICT_LOCAL` | `0` | Force localhost health URLs |
+| `CAELIX_LANG` | `fr` | Orchestrator language (fr, en) |
+| `CAELIX_HTTP_USER_AGENT` | `Caelix/1.0` | User-Agent for HTTP health checks |
 
 ### Web Console (FastAPI backend)
 
 | Variable | Default | Description |
 |---|---|---|
 | `PORT` | `8080` | Backend listen port |
-| `SORK_UI_BIND` | `0.0.0.0` | Bind address |
-| `SORK_ADMIN_PASSWORD` | `admin` | Initial admin password (only if no users exist) |
-| `SORK_JWT_SECRET` | (auto) | JWT signing key; auto-generated and persisted to `.sork/jwt_secret.key` if unset |
-| `SORK_JWT_EXPIRE_MINUTES` | `480` | JWT token / session cookie lifetime (minutes) |
-| `SORK_CORS_ORIGINS` | — | Allowed CORS origins (CSV). Empty = same-origin only (recommended) |
-| `SORK_METRICS_PROTECT` | `0` | Require authentication on `/metrics` |
-| `SORK_UI_TLS_CERT` | — | TLS certificate path (HTTPS) |
-| `SORK_UI_TLS_KEY` | — | TLS key path (HTTPS) |
-| `SORK_UI_TOKEN` | — | Legacy shared token. **Deprecated** — migrate to user accounts |
+| `CAELIX_UI_BIND` | `0.0.0.0` | Bind address |
+| `CAELIX_ADMIN_PASSWORD` | `admin` | Initial admin password (only if no users exist) |
+| `CAELIX_JWT_SECRET` | (auto) | JWT signing key; auto-generated and persisted to `.caelix/jwt_secret.key` if unset |
+| `CAELIX_JWT_EXPIRE_MINUTES` | `480` | JWT token / session cookie lifetime (minutes) |
+| `CAELIX_CORS_ORIGINS` | — | Allowed CORS origins (CSV). Empty = same-origin only (recommended) |
+| `CAELIX_METRICS_PROTECT` | `0` | Require authentication on `/metrics` |
+| `CAELIX_UI_TLS_CERT` | — | TLS certificate path (HTTPS) |
+| `CAELIX_UI_TLS_KEY` | — | TLS key path (HTTPS) |
+| `CAELIX_UI_TOKEN` | — | Legacy shared token. **Deprecated** — migrate to user accounts |

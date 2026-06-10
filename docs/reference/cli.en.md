@@ -1,17 +1,17 @@
 # CLI Reference
 
-The `bin/sork` binary is the main entry point for SORK.
+The `bin/caelix` binary is the main entry point for Caelix.
 
 ## Usage
 
 ```bash
-bin/sork <command> [options]
+bin/caelix <command> [options]
 ```
 
 Or with environment variables:
 
 ```bash
-SORK_MANIFEST=etc/manifest.ini SORK_DATA=.sork bin/sork <command>
+CAELIX_MANIFEST=etc/manifest.ini CAELIX_DATA=.caelix bin/caelix <command>
 ```
 
 ## Commands
@@ -19,13 +19,13 @@ SORK_MANIFEST=etc/manifest.ini SORK_DATA=.sork bin/sork <command>
 ### run
 
 ```bash
-bin/sork run
+bin/caelix run
 ```
 
 Starts the infinite reconciliation loop (daemon mode).
 
 - Executes `reconcile_all()` in a loop
-- Interval configurable via `[orchestrator] interval` or `SORK_INTERVAL`
+- Interval configurable via `[orchestrator] interval` or `CAELIX_INTERVAL`
 - Writes a heartbeat on each cycle
 - Stops with `Ctrl+C` or `SIGTERM`
 
@@ -34,7 +34,7 @@ This is the primary command for production operation.
 ### once
 
 ```bash
-bin/sork once
+bin/caelix once
 ```
 
 Executes a single reconciliation cycle then exits.
@@ -47,20 +47,20 @@ Use cases:
 ### reconcile-app
 
 ```bash
-bin/sork reconcile-app <service-name>
+bin/caelix reconcile-app <service-name>
 ```
 
 Reconciles only the specified service.
 
 ```bash
 # Example
-bin/sork reconcile-app web
+bin/caelix reconcile-app web
 ```
 
 ### validate
 
 ```bash
-bin/sork validate
+bin/caelix validate
 ```
 
 Validates the manifest syntax and keys. Checks:
@@ -74,7 +74,7 @@ Validates the manifest syntax and keys. Checks:
 ### doctor
 
 ```bash
-bin/sork doctor [--fix] [--strict-local]
+bin/caelix doctor [--fix] [--strict-local]
 ```
 
 Full system diagnostic.
@@ -92,14 +92,14 @@ Full system diagnostic.
 - Valid port format
 - Consistent rollout strategies (blue_green requires `candidate_publish`)
 - Valid health, repair, autoscale metric types
-- Write access to `SORK_DATA`
+- Write access to `CAELIX_DATA`
 - Docker/Podman availability
 - Presence of `notify.ini`
 
 **Fix mode:**
 
 ```bash
-bin/sork doctor --fix
+bin/caelix doctor --fix
 ```
 
 - Backs up the original as `.bak`
@@ -109,15 +109,15 @@ bin/sork doctor --fix
 ### show
 
 ```bash
-bin/sork show
+bin/caelix show
 ```
 
-Displays the loaded manifest, section by section. Useful to verify how SORK interprets the configuration.
+Displays the loaded manifest, section by section. Useful to verify how Caelix interprets the configuration.
 
 ### version
 
 ```bash
-bin/sork version
+bin/caelix version
 ```
 
 Displays the version from the `VERSION` file.
@@ -125,7 +125,7 @@ Displays the version from the `VERSION` file.
 ### status
 
 ```bash
-bin/sork status
+bin/caelix status
 ```
 
 Displays the daemon state:
@@ -133,22 +133,22 @@ Displays the daemon state:
 - Last heartbeat
 - Uptime since last start
 - Detected runtime (Docker/Podman)
-- Configured paths (`SORK_MANIFEST`, `SORK_DATA`)
+- Configured paths (`CAELIX_MANIFEST`, `CAELIX_DATA`)
 - Number of services in the manifest
 
 ### resume
 
 ```bash
-bin/sork resume <service-name>
+bin/caelix resume <service-name>
 ```
 
 Resumes reconciliation for a suspended or manually paused service.
 
 Removes the files:
-- `.sork/state/<app>.suspend_reconcile`
-- `.sork/state/<app>.manual_pause`
+- `.caelix/state/<app>.suspend_reconcile`
+- `.caelix/state/<app>.manual_pause`
 
 ```bash
 # Example: resume a service suspended after creation failures
-bin/sork resume api
+bin/caelix resume api
 ```

@@ -29,7 +29,7 @@ autoscale_max = 6                # Maximum de replicas
 autoscale_container_port = 8080  # Port interne des replicas
 ```
 
-Quand `autoscale = 1`, SORK ne crée pas un conteneur `sork-<app>` unique mais des replicas `sork-<app>-r1`, `sork-<app>-r2`, etc. gérées derrière un load balancer.
+Quand `autoscale = 1`, Caelix ne crée pas un conteneur `caelix-<app>` unique mais des replicas `caelix-<app>-r1`, `caelix-<app>-r2`, etc. gérées derrière un load balancer.
 
 ---
 
@@ -39,10 +39,10 @@ Quand `autoscale = 1`, SORK ne crée pas un conteneur `sork-<app>` unique mais d
 
 | Élément | Convention | Exemple |
 |---|---|---|
-| Conteneur | `sork-<app>-r<N>` | `sork-web-r1`, `sork-web-r2` |
-| Label app | `sork.app=<app>` | `sork.app=web` |
-| Label role | `sork.role=replica` | — |
-| Label index | `sork.replica=<N>` | `sork.replica=3` |
+| Conteneur | `caelix-<app>-r<N>` | `caelix-web-r1`, `caelix-web-r2` |
+| Label app | `caelix.app=<app>` | `caelix.app=web` |
+| Label role | `caelix.role=replica` | — |
+| Label index | `caelix.replica=<N>` | `caelix.replica=3` |
 
 ### Allocation de ports
 
@@ -62,10 +62,10 @@ Chaque replica a besoin d'un port hôte unique pour exposer son service.
     ```ini
     [proxy]
     autoscale_port_range = 18500-18999
-    # SORK alloue le prochain port libre dans la plage
+    # Caelix alloue le prochain port libre dans la plage
     ```
 
-L'allocation est persistée dans `.sork/autoscale/port_allocations` avec un verrou `flock` pour l'atomicité.
+L'allocation est persistée dans `.caelix/autoscale/port_allocations` avec un verrou `flock` pour l'atomicité.
 
 **Fonctions impliquées :**
 
@@ -79,12 +79,12 @@ L'allocation est persistée dans `.sork/autoscale/port_allocations` avec un verr
 
 ### Fichier backends
 
-Chaque service autoscalé a un fichier `.sork/autoscale/<app>.backends` :
+Chaque service autoscalé a un fichier `.caelix/autoscale/<app>.backends` :
 
 ```
-sork-web-r1 127.0.0.1 18501
-sork-web-r2 127.0.0.1 18502
-sork-web-r3 127.0.0.1 18503
+caelix-web-r1 127.0.0.1 18501
+caelix-web-r2 127.0.0.1 18502
+caelix-web-r3 127.0.0.1 18503
 ```
 
 Ce fichier est mis à jour par `autoscale_write_backends_file()` à chaque cycle. Seules les replicas en marche sont incluses.
@@ -139,7 +139,7 @@ Quand plusieurs métriques sont définies, la décision utilise la plus critique
 
 ## Système de streak et cooldown
 
-Le scaling n'est pas réactif — SORK attend plusieurs cycles consécutifs au-dessus/en-dessous du seuil avant d'agir. Ça évite les oscillations.
+Le scaling n'est pas réactif — Caelix attend plusieurs cycles consécutifs au-dessus/en-dessous du seuil avant d'agir. Ça évite les oscillations.
 
 ```mermaid
 sequenceDiagram
@@ -180,7 +180,7 @@ autoscale_cooldown = 3   # Nombre de passages consécutifs avant action
 | valeur < down_threshold | streak-- | Si streak <= -cooldown → `down` |
 | Entre les deux | streak = 0 | `stable` |
 
-L'état du streak est persisté dans `.sork/state/<app>.autoscale_cooldown`.
+L'état du streak est persisté dans `.caelix/state/<app>.autoscale_cooldown`.
 
 ---
 
@@ -189,7 +189,7 @@ L'état du streak est persisté dans `.sork/state/<app>.autoscale_cooldown`.
 ```mermaid
 graph LR
     A{"count < max ?"} -->|oui| B["alloc port"]
-    B --> C["docker run sork-app-rN"]
+    B --> C["docker run caelix-app-rN"]
     C --> D["update backends + reload proxy"]
     A -->|non| E["max_reached"]
 ```
@@ -258,7 +258,7 @@ autoscale_route = default
 
 ### Mode port dédié
 
-Quand `autoscale_route = port:9090`, SORK lance un proxy séparé sur le port 9090 via `_autoscale_lb_ensure_dedicated()`. Ce proxy est indépendant du proxy global.
+Quand `autoscale_route = port:9090`, Caelix lance un proxy séparé sur le port 9090 via `_autoscale_lb_ensure_dedicated()`. Ce proxy est indépendant du proxy global.
 
 ---
 

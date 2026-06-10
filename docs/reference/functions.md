@@ -1,6 +1,6 @@
 # Fonctions internes
 
-Référence complète des 173 fonctions du moteur SORK, organisées par module.
+Référence complète des 173 fonctions du moteur Caelix, organisées par module.
 
 ---
 
@@ -10,17 +10,17 @@ Référence complète des 173 fonctions du moteur SORK, organisées par module.
 
 | Fonction | Signature | Description |
 |---|---|---|
-| `sork_log` | `(level, ...message)` | Log vers stderr + fichier JSON. Niveaux : debug, info, warn, error |
-| `_sork_ts` | `()` | Timestamp UTC ISO (YYYY-MM-DDTHH:MM:SSZ) |
-| `sork_daemon_heartbeat` | `()` | Écrit le timestamp dans `.sork/state/sork-daemon-heartbeat` |
-| `_sork_log_rotate` | `()` | Rotation du log daemon (10 Mo, 30 fichiers max) |
-| `sork_version_string` | `(root)` | Version depuis le fichier VERSION |
+| `caelix_log` | `(level, ...message)` | Log vers stderr + fichier JSON. Niveaux : debug, info, warn, error |
+| `_caelix_ts` | `()` | Timestamp UTC ISO (YYYY-MM-DDTHH:MM:SSZ) |
+| `caelix_daemon_heartbeat` | `()` | Écrit le timestamp dans `.caelix/state/caelix-daemon-heartbeat` |
+| `_caelix_log_rotate` | `()` | Rotation du log daemon (10 Mo, 30 fichiers max) |
+| `caelix_version_string` | `(root)` | Version depuis le fichier VERSION |
 
 ### Compteurs d'échecs
 
 | Fonction | Signature | Description |
 |---|---|---|
-| `fail_count_path` | `(app)` | Chemin vers `.sork/state/<app>.fail` |
+| `fail_count_path` | `(app)` | Chemin vers `.caelix/state/<app>.fail` |
 | `get_fail_count` | `(app)` | Lire le compteur d'échecs |
 | `set_fail_count` | `(app, count)` | Écrire le compteur |
 | `inc_fail_count` | `(app)` | Incrémenter de 1 |
@@ -30,10 +30,10 @@ Référence complète des 173 fonctions du moteur SORK, organisées par module.
 
 | Fonction | Signature | Description |
 |---|---|---|
-| `create_fail_streak_path` | `(app)` | Chemin vers `.sork/state/<app>.create_fail_streak` |
-| `sork_bump_create_fail_streak` | `(app)` | Incrémenter le compteur d'échecs consécutifs |
-| `sork_get_create_fail_streak` | `(app)` | Lire le compteur |
-| `sork_clear_create_fail_streak` | `(app)` | Remettre à zéro |
+| `create_fail_streak_path` | `(app)` | Chemin vers `.caelix/state/<app>.create_fail_streak` |
+| `caelix_bump_create_fail_streak` | `(app)` | Incrémenter le compteur d'échecs consécutifs |
+| `caelix_get_create_fail_streak` | `(app)` | Lire le compteur |
+| `caelix_clear_create_fail_streak` | `(app)` | Remettre à zéro |
 
 ### Suspension
 
@@ -41,7 +41,7 @@ Référence complète des 173 fonctions du moteur SORK, organisées par module.
 |---|---|---|
 | `suspend_reconcile_path` | `(app)` | Chemin vers le flag de suspension |
 | `suspend_reconcile_notified_path` | `(app)` | Chemin vers le flag de notification |
-| `sork_clear_suspend_state` | `(app)` | Supprimer suspension + streak |
+| `caelix_clear_suspend_state` | `(app)` | Supprimer suspension + streak |
 
 ### Allocation de ports
 
@@ -80,7 +80,7 @@ Référence complète des 173 fonctions du moteur SORK, organisées par module.
 |---|---|---|
 | `runtime_engine` | `()` | Détecte docker ou podman dans PATH |
 | `_rt` | `(...args)` | Wrapper vers $RT (docker/podman) |
-| `sork_cname` | `(app)` | Retourne `sork-<app>` |
+| `caelix_cname` | `(app)` | Retourne `caelix-<app>` |
 
 ### Inspection
 
@@ -116,7 +116,7 @@ Référence complète des 173 fonctions du moteur SORK, organisées par module.
 | `monitoring_enabled` | `(app, type)` | Type de monitoring actif pour ce service ? |
 | `health_tcp` | `(host, port, [timeout])` | Probe TCP (nc ou /dev/tcp) |
 | `health_http` | `(url, [timeout], [expect], [max_bytes])` | Probe HTTP avec validation complète |
-| `sork_health_url_is_local` | `(url)` | URL cible localhost ? |
+| `caelix_health_url_is_local` | `(url)` | URL cible localhost ? |
 | `container_memory_usage_mb` | `(name)` | Usage mémoire en Mo |
 | `container_recent_logs` | `(name, [tail])` | N dernières lignes de logs |
 | `container_resource_snapshot` | `(name)` | Snapshot CPU + mémoire |
@@ -140,7 +140,7 @@ Référence complète des 173 fonctions du moteur SORK, organisées par module.
 |---|---|---|
 | `reconcile_app` | `(app)` | Point d'entrée de la réconciliation par service |
 | `ensure_desired_revision` | `(app)` | Vérifier image et config_version |
-| `remove_orphan_containers` | `()` | Supprimer les sork-* non déclarés |
+| `remove_orphan_containers` | `()` | Supprimer les caelix-* non déclarés |
 
 ### Réparation
 
@@ -182,7 +182,7 @@ Référence complète des 173 fonctions du moteur SORK, organisées par module.
 
 | Fonction | Signature | Description |
 |---|---|---|
-| `sork_section_reserved` | `(section)` | Section réservée ? |
+| `caelix_section_reserved` | `(section)` | Section réservée ? |
 | `restart_count_state_path` | `(app)` | Chemin du restart count |
 | `get_last_restart_count` | `(app)` | Dernier restart count sauvegardé |
 | `set_last_restart_count` | `(app, count)` | Sauvegarder le restart count |
@@ -269,7 +269,7 @@ Référence complète des 173 fonctions du moteur SORK, organisées par module.
 | `_proxy_route_lookup` | `(routes, host, path)` | Matching de route |
 | `_proxy_app_state_dir` | `(state_dir, app)` | Répertoire d'état par app |
 | `_proxy_handle_connection` | `()` | Traiter une connexion HTTP |
-| `_proxy_build_state_json` | `(bfile, state_dir)` | JSON pour /sork-proxy/state |
+| `_proxy_build_state_json` | `(bfile, state_dir)` | JSON pour /caelix-proxy/state |
 | `_proxy_build_state_json_global` | `(routes, state_dir)` | JSON multi-routes |
 | `_proxy_build_metrics` | `(bfile, state_dir)` | Prometheus single app |
 | `_proxy_build_metrics_global` | `(routes, state_dir)` | Prometheus multi-routes |
@@ -310,8 +310,8 @@ Référence complète des 173 fonctions du moteur SORK, organisées par module.
 
 | Fonction | Signature | Description |
 |---|---|---|
-| `sork_audit_py` | `()` | Localiser audit_log.py |
-| `sork_audit_event` | `(app, cname, event, source, [detail])` | Enregistrer via Python |
+| `caelix_audit_py` | `()` | Localiser audit_log.py |
+| `caelix_audit_event` | `(app, cname, event, source, [detail])` | Enregistrer via Python |
 
 ---
 
@@ -319,10 +319,10 @@ Référence complète des 173 fonctions du moteur SORK, organisées par module.
 
 | Fonction | Signature | Description |
 |---|---|---|
-| `sork_doctor_py` | `()` | Localiser manifest_doctor.py |
-| `sork_manifest_try_repair` | `(mf, [example])` | Réparer le manifest (backup .bak) |
-| `sork_manifest_doctor_check` | `(mf, [strict])` | Valider le manifest (Python) |
-| `sork_doctor_env_checks` | `()` | Vérifier l'environnement (Docker, chemins...) |
+| `caelix_doctor_py` | `()` | Localiser manifest_doctor.py |
+| `caelix_manifest_try_repair` | `(mf, [example])` | Réparer le manifest (backup .bak) |
+| `caelix_manifest_doctor_check` | `(mf, [strict])` | Valider le manifest (Python) |
+| `caelix_doctor_env_checks` | `()` | Vérifier l'environnement (Docker, chemins...) |
 
 ---
 

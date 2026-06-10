@@ -29,10 +29,10 @@ Global daemon parameters.
 [orchestrator]
 interval = 10              # Reconciliation interval (seconds)
 max_repair = 5             # Failure threshold before alert
-remove_orphans = 1         # Remove unknown sork-* containers
+remove_orphans = 1         # Remove unknown caelix-* containers
 log_level = info           # debug, info, warn, error
 audit_log_backend = jsonl  # jsonl or sqlite
-audit_log_all = 0          # 1 = audit all sork-* containers
+audit_log_all = 0          # 1 = audit all caelix-* containers
 ```
 
 ### [proxy]
@@ -214,11 +214,11 @@ Always validate after modification:
 
 ```bash
 # Quick validation
-bin/sork validate
+bin/caelix validate
 
 # Full diagnostic (with fix suggestions)
-bin/sork doctor
+bin/caelix doctor
 
 # Automatic correction of detected issues
-bin/sork doctor --fix
+bin/caelix doctor --fix
 ```

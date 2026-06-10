@@ -2,7 +2,7 @@
 
 ## Contexte
 
-SORK est un orchestrateur Docker (Bash engine + FastAPI backend + Vue 3 frontend). Aujourd'hui, les containers sont gérés individuellement. L'objectif est de rendre SORK accessible au "commun des mortels" en ajoutant :
+Caelix est un orchestrateur Docker (Bash engine + FastAPI backend + Vue 3 frontend). Aujourd'hui, les containers sont gérés individuellement. L'objectif est de rendre Caelix accessible au "commun des mortels" en ajoutant :
 
 1. **Applications** : grouper les containers en stacks nommées (ex: WordPress = nginx + mysql + phpmyadmin)
 2. **Assistant amélioré** : templates guidés (LAMP, LEMP, WordPress, etc.) avec suggestions de services complémentaires
@@ -65,15 +65,15 @@ Nouvelle catégorie "Applications" en haut du sidebar, déployée par défaut.
 Ajouter dans `ui/backend/app/config.py` :
 
 ```python
-APP_STACKS_PATH = SORK_DATA_PATH / "app-stacks.json"
-DOMAINS_PATH = SORK_DATA_PATH / "domains.json"
-CERTIFICATES_PATH = SORK_DATA_PATH / "certificates.json"
-CERTS_DIR = SORK_DATA_PATH / "certs"
+APP_STACKS_PATH = CAELIX_DATA_PATH / "app-stacks.json"
+DOMAINS_PATH = CAELIX_DATA_PATH / "domains.json"
+CERTIFICATES_PATH = CAELIX_DATA_PATH / "certificates.json"
+CERTS_DIR = CAELIX_DATA_PATH / "certs"
 ```
 
 ### 1.2 Stockage des stacks : `app-stacks.json`
 
-Fichier `.sork/app-stacks.json` — métadonnées des applications groupées :
+Fichier `.caelix/app-stacks.json` — métadonnées des applications groupées :
 
 ```json
 {
@@ -83,7 +83,7 @@ Fichier `.sork/app-stacks.json` — métadonnées des applications groupées :
     "template": "wordpress-mysql",
     "created": "2026-04-03T10:00:00Z",
     "updated": "2026-04-03T10:00:00Z",
-    "network": "sork-my-wordpress-net",
+    "network": "caelix-my-wordpress-net",
     "services": ["my-wordpress-wp", "my-wordpress-db", "my-wordpress-pma"]
   }
 }
@@ -152,7 +152,7 @@ En plus, chaque section du **manifest.ini** gagne une clé `stack = <stack_name>
 2. **Nom** : Nom de l'application
 3. **Services** : Config env/ports/volumes + suggestions
 4. **Réseau** : Pré-configuré
-5. **SORK** : Health checks, monitoring
+5. **Caelix** : Health checks, monitoring
 6. **Domaine** : Quick setup optionnel
 7. **Résumé** : Review + deploy
 
@@ -160,7 +160,7 @@ En plus, chaque section du **manifest.ini** gagne une clé `stack = <stack_name>
 
 ## Phase 3 : Domaines
 
-- CRUD domaines dans `.sork/domains.json`
+- CRUD domaines dans `.caelix/domains.json`
 - Intégration avec `routes.conf` existant (routage host)
 - Check DNS, multi-domaines, headers custom
 

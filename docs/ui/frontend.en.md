@@ -1,6 +1,6 @@
 # Frontend
 
-The SORK frontend is a Single Page Application (SPA) built with Vue 3 and TypeScript.
+The Caelix frontend is a Single Page Application (SPA) built with Vue 3 and TypeScript.
 
 ## Stack
 
@@ -32,7 +32,7 @@ The home page displays:
 Docker resource management organized in sub-views:
 
 - **Containers**: table with filters, inline actions, logs in modal, creation assistant access button
-- **Creation Assistant**: guided 6-step wizard to create a group of containers (Docker Hub image search, auto-filled ports/volumes/env from image metadata, dedicated or existing network, SORK orchestrator with health checks, full autoscale with dedicated proxy)
+- **Creation Assistant**: guided 6-step wizard to create a group of containers (Docker Hub image search, auto-filled ports/volumes/env from image metadata, dedicated or existing network, Caelix orchestrator with health checks, full autoscale with dedicated proxy)
 - **Images**: gallery with pull, build, removal
 - **Volumes**: list with size and attachments
 - **Networks**: network topology
@@ -42,7 +42,7 @@ Docker resource management organized in sub-views:
 
 ### Orchestrator
 
-SORK-specific interface:
+Caelix-specific interface:
 
 - **Services**: detailed state of each orchestrated service (health, replicas, last action)
 - **Manifest Editor**: syntax-aware INI file editing with live validation
@@ -62,7 +62,7 @@ Simplified deployment:
 
 Centralized log viewer:
 
-- SORK daemon logs (formatted JSON)
+- Caelix daemon logs (formatted JSON)
 - Container logs (with real-time streaming)
 - UI backend logs
 
@@ -94,7 +94,7 @@ Centralized log viewer:
 
 ## Authentication and State
 
-- **SPA session**: no token is stored in `localStorage`. The JWT is held in memory for the tab's lifetime (`stores/auth.ts`), and the httpOnly `sork_session` cookie re-authenticates after a refresh via `/api/auth/me`.
+- **SPA session**: no token is stored in `localStorage`. The JWT is held in memory for the tab's lifetime (`stores/auth.ts`), and the httpOnly `caelix_session` cookie re-authenticates after a refresh via `/api/auth/me`.
 - **Requests**: the client (`src/api/client.ts`) adds the `Authorization: Bearer` header when a token is in memory; the cookie is sent automatically by the browser.
 - **SSE streams**: `src/api/sse.ts` first exchanges the JWT for a single-use ticket (`/api/auth/sse-ticket`), then opens the `EventSource` with `?ticket=`, with automatic reconnection.
 

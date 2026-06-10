@@ -2,7 +2,7 @@
 
 ## Context
 
-SORK is a Docker orchestrator (Bash engine + FastAPI backend + Vue 3 frontend). Currently, containers are managed individually. The goal is to make SORK accessible to everyday users by adding:
+Caelix is a Docker orchestrator (Bash engine + FastAPI backend + Vue 3 frontend). Currently, containers are managed individually. The goal is to make Caelix accessible to everyday users by adding:
 
 1. **Applications**: group containers into named stacks (e.g., WordPress = nginx + mysql + phpmyadmin)
 2. **Enhanced assistant**: guided templates (LAMP, LEMP, WordPress, etc.) with complementary service suggestions

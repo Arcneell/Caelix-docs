@@ -1,13 +1,13 @@
-# State Directory (.sork/)
+# State Directory (.caelix/)
 
-The `.sork/` directory contains all SORK runtime data. It is automatically created on first launch.
+The `.caelix/` directory contains all Caelix runtime data. It is automatically created on first launch.
 
 ## Structure
 
 ```
-.sork/
+.caelix/
 ├── state/                          # Current service state
-│   ├── sork-daemon-heartbeat       # Timestamp of last cycle
+│   ├── caelix-daemon-heartbeat       # Timestamp of last cycle
 │   ├── <app>.fail                  # Health check failure counter
 │   ├── <app>.restart_count         # Last Docker restart count
 │   ├── <app>.create_fail_streak    # Consecutive creation failures
@@ -37,9 +37,9 @@ The `.sork/` directory contains all SORK runtime data. It is automatically creat
 │       └── health_<replica>        # Per-replica health status (0/1)
 │
 ├── logs/                           # Log files
-│   ├── sork-daemon.log             # Current daemon log (JSON lines)
-│   ├── sork-daemon.YYYY-MM-DD.log  # Rotated logs
-│   └── sork-ui.log                 # UI backend log
+│   ├── caelix-daemon.log             # Current daemon log (JSON lines)
+│   ├── caelix-daemon.YYYY-MM-DD.log  # Rotated logs
+│   └── caelix-ui.log                 # UI backend log
 │
 ├── stacks/                         # Docker Compose data
 │   └── <stack>/                    # Per stack
@@ -51,17 +51,17 @@ The `.sork/` directory contains all SORK runtime data. It is automatically creat
 
 ## State Files in Detail
 
-### sork-daemon-heartbeat
+### caelix-daemon-heartbeat
 
 Contains the Unix timestamp of the last completed reconciliation cycle. Used by the web console to verify that the daemon is active.
 
 ### \<app\>.fail
 
-Consecutive health check failure counter. Incremented on each failure, reset to zero when the service becomes healthy again. When this counter reaches `SORK_MAX_REPAIR`, an alert is sent.
+Consecutive health check failure counter. Incremented on each failure, reset to zero when the service becomes healthy again. When this counter reaches `CAELIX_MAX_REPAIR`, an alert is sent.
 
 ### \<app\>.manual_pause
 
-Automatically created when SORK detects a manual stop (exit codes 0, 137, 143). As long as this file exists, reconciliation ignores this service. Removed by `bin/sork resume <app>`.
+Automatically created when Caelix detects a manual stop (exit codes 0, 137, 143). As long as this file exists, reconciliation ignores this service. Removed by `bin/caelix resume <app>`.
 
 ### \<app\>.suspend_reconcile
 
@@ -74,17 +74,17 @@ Contains two values: the number of failures and the total number of requests in 
 ## Log Rotation
 
 - **Daemon logs**: daily rotation, 10 MB threshold, 30-day retention
-- **Incidents**: daily archival to `.sork/archive/`
+- **Incidents**: daily archival to `.caelix/archive/`
 - **Notifications**: circular buffer of 200 entries
 
 ## Customizing the Path
 
 ```bash
-export SORK_DATA=/var/lib/sork
-bin/sork run
+export CAELIX_DATA=/var/lib/caelix
+bin/caelix run
 ```
 
-By default, `SORK_DATA` is `./.sork` (relative to the working directory).
+By default, `CAELIX_DATA` is `./.caelix` (relative to the working directory).
 
 !!! warning "Permissions"
-    The `SORK_DATA` directory must be readable and writable by the user running SORK.
+    The `CAELIX_DATA` directory must be readable and writable by the user running Caelix.

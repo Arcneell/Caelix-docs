@@ -13,11 +13,11 @@ sequenceDiagram
     participant D as _notify_discord()
     participant W as Discord Webhook
 
-    I->>N: subject = "SORK [severity] app: event"<br>body = detail string
+    I->>N: subject = "Caelix [severity] app: event"<br>body = detail string
     N->>D: Construire l'embed Discord
     D->>D: Traduire le titre en français<br>_notify_event_title_fr()
     D->>D: Construire la description<br>_notify_detection_fr()
-    D->>D: Lister les actions SORK<br>_notify_actions_fr()
+    D->>D: Lister les actions Caelix<br>_notify_actions_fr()
     D->>W: POST webhook_url<br>JSON embed
     W-->>D: 204 No Content
 ```
@@ -52,7 +52,7 @@ curl -X POST http://localhost:8080/api/notify/test
 # Manuellement avec curl
 curl -X POST "https://discord.com/api/webhooks/ID/TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"content": "Test SORK"}'
+  -d '{"content": "Test Caelix"}'
 ```
 
 ---
@@ -66,7 +66,7 @@ graph TD
     subgraph Embed["Embed Discord"]
         title["Titre traduit en français<br>_notify_event_title_fr()"]
         detection["Détection : quoi + pourquoi<br>_notify_detection_fr()"]
-        actions["Actions SORK : réponse automatique<br>_notify_actions_fr()"]
+        actions["Actions Caelix : réponse automatique<br>_notify_actions_fr()"]
         detail["Détail technique brut"]
         color["Couleur selon sévérité"]
     end
@@ -142,9 +142,9 @@ graph TD
 
 Chaque événement génère une description Markdown détaillée expliquant **ce qui a été détecté** avec les valeurs spécifiques extraites du detail.
 
-### Actions SORK (`_notify_actions_fr`)
+### Actions Caelix (`_notify_actions_fr`)
 
-Chaque événement inclut une liste d'actions que SORK entreprend ou recommande, sous forme de bullet points Markdown.
+Chaque événement inclut une liste d'actions que Caelix entreprend ou recommande, sous forme de bullet points Markdown.
 
 ---
 
@@ -170,7 +170,7 @@ En parallèle des canaux externes, le backend Python maintient un système de no
 | Caractéristique | Détail |
 |---|---|
 | **Buffer** | 200 entrées max (circulaire) |
-| **Persistence** | `.sork/notifications.json` |
+| **Persistence** | `.caelix/notifications.json` |
 | **Types** | info, warning, error, success |
 | **Temps réel** | SSE (Server-Sent Events) |
 

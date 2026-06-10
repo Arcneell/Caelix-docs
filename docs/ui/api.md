@@ -10,7 +10,7 @@ Le backend FastAPI expose plus de 150 endpoints REST, répartis sur 21 routers e
 Base : http://localhost:8080/api
 ```
 
-L'authentification est obligatoire. Les clients CLI/API obtiennent un token JWT via `/api/auth/login`, puis l'incluent dans chaque requête via l'en-tête `Authorization: Bearer`. (La SPA, elle, s'authentifie via le cookie httpOnly `sork_session` posé à la connexion — voir [Authentification](../configuration/authentication.md).)
+L'authentification est obligatoire. Les clients CLI/API obtiennent un token JWT via `/api/auth/login`, puis l'incluent dans chaque requête via l'en-tête `Authorization: Bearer`. (La SPA, elle, s'authentifie via le cookie httpOnly `caelix_session` posé à la connexion — voir [Authentification](../configuration/authentication.md).)
 
 ```bash
 # Connexion
@@ -146,17 +146,17 @@ Voir [Authentification](../configuration/authentication.md) pour les détails (c
 
 | Méthode | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/manifest/show` | Affichage formatté (`sork show`) |
+| `GET` | `/api/manifest/show` | Affichage formatté (`caelix show`) |
 | `GET` | `/api/manifest/raw` | Contenu brut du fichier INI |
 | `POST` | `/api/manifest/raw` | Sauvegarder (validé avant écriture) |
-| `POST` | `/api/validate` | Lancer `sork validate` |
-| `POST` | `/api/doctor` | Lancer `sork doctor` (options : `--fix`, `--strict-local`) |
+| `POST` | `/api/validate` | Lancer `caelix validate` |
+| `POST` | `/api/doctor` | Lancer `caelix doctor` (options : `--fix`, `--strict-local`) |
 
 ### Réconciliation
 
 | Méthode | Endpoint | Body | Description |
 |---|---|---|---|
-| `POST` | `/api/reconcile` | — | Lancer `sork once` |
+| `POST` | `/api/reconcile` | — | Lancer `caelix once` |
 | `POST` | `/api/reconcile-app` | `{"app":"nom"}` | Réconcilier un seul service |
 
 ### Services
@@ -247,8 +247,8 @@ Voir [Authentification](../configuration/authentication.md) pour les détails (c
 | `GET` | `/api/templates/external` | Lister les templates externes (sources configurées) |
 | `GET` | `/api/templates/sources` | Lister les sources de templates |
 | `POST` | `/api/templates/sources` | Sauvegarder les sources de templates |
-| `POST` | `/api/templates/deploy-full` | Déployer un template (workflow complet avec SORK) |
-| `POST` | `/api/templates/save` | Sauvegarder les templates de services SORK |
+| `POST` | `/api/templates/deploy-full` | Déployer un template (workflow complet avec Caelix) |
+| `POST` | `/api/templates/save` | Sauvegarder les templates de services Caelix |
 | `GET` | `/api/templates/custom` | Lister les templates personnalisés |
 | `POST` | `/api/templates/custom/create` | Créer un template personnalisé |
 | `POST` | `/api/templates/custom/{name}/update` | Modifier un template personnalisé |
@@ -281,11 +281,11 @@ Voir [Authentification](../configuration/authentication.md) pour les détails (c
 
 ## Sauvegarde et restauration
 
-### Configuration SORK
+### Configuration Caelix
 
 | Méthode | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/backup` | Télécharger une archive `.tar.gz` de toute la configuration SORK |
+| `GET` | `/api/backup` | Télécharger une archive `.tar.gz` de toute la configuration Caelix |
 | `POST` | `/api/restore` | Restaurer la configuration depuis une archive (body = fichier brut) |
 
 ### Sauvegarde planifiée des volumes

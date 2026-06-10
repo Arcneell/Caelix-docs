@@ -1,10 +1,10 @@
 # Distribution & Release
 
-This guide explains how to build, publish, and distribute SORK as a pre-compiled Docker image without exposing the source code.
+This guide explains how to build, publish, and distribute Caelix as a pre-compiled Docker image without exposing the source code.
 
 ## Distribution Architecture
 
-SORK is distributed as a **single Docker image** containing:
+Caelix is distributed as a **single Docker image** containing:
 
 | Component | Contents | Protection |
 |-----------|----------|------------|
@@ -35,7 +35,7 @@ echo "ghp_YOUR_TOKEN" | docker login ghcr.io -u Arcneell --password-stdin
 After the first push:
 
 1. Go to [github.com/Arcneell?tab=packages](https://github.com/Arcneell?tab=packages)
-2. Click the `sork` package
+2. Click the `caelix` package
 3. **Package settings** > **Danger Zone** > **Change visibility**
 4. Choose **Public** (or configure access for specific users)
 
@@ -48,19 +48,19 @@ The Release workflow (`.github/workflows/release.yml`) pushes to GHCR. If `build
 1. [github.com/settings/tokens](https://github.com/settings/tokens) → **Generate new token (classic)**
 2. Scopes: `write:packages`, `read:packages`
 3. Copy the token
-4. Repo **SORK** → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+4. Repo **Caelix** → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
 5. Name: `GHCR_TOKEN`, value: the PAT
-6. Re-run the Release workflow (Actions → Release → Re-run, or re-push tag `v1.3.0`)
+6. Re-run the Release workflow (Actions → Release → Re-run, or re-push tag `v1.4.0`)
 
 **Option B — Workflow permissions**
 
-1. Repo **SORK** → **Settings** → **Actions** → **General**
+1. Repo **Caelix** → **Settings** → **Actions** → **General**
 2. **Workflow permissions** → enable **Read and write permissions**
 3. Save, then re-run the workflow
 
 **Link package to repository** (if the package already exists):
 
-1. [Package `sork` settings](https://github.com/users/Arcneell/packages/container/sork/settings) → **Connect repository** → add `Arcneell/SORK`
+1. [Package `caelix` settings](https://github.com/users/Arcneell/packages/container/caelix/settings) → **Connect repository** → add `Arcneell/Caelix`
 
 ## Build and Publish
 
@@ -75,7 +75,7 @@ The script:
 1. Builds the multi-stage Docker image from the root `Dockerfile`
 2. Compiles the Python backend to `.pyc` (removes `.py` source)
 3. Bundles the minified Vue frontend
-4. Embeds the Bash engine at `/opt/sork/`
+4. Embeds the Bash engine at `/opt/caelix/`
 5. Verifies no `.py` source leaked into the image
 6. Tags the image as `:latest` and `:<version>` (from `VERSION` file)
 
@@ -106,7 +106,7 @@ The script:
 ./scripts/build-release.sh --push --tag beta
 
 # Specific version
-./scripts/build-release.sh --push --tag 1.3.0
+./scripts/build-release.sh --push --tag 1.4.0
 ```
 
 ## Client-Side Installation
@@ -118,7 +118,7 @@ The client authenticates to the registry then extracts and runs the installer fr
 echo "CLIENT_TOKEN" | docker login ghcr.io -u Arcneell --password-stdin
 
 # 2. Install
-docker run --rm ghcr.io/arcneell/sork:latest cat /opt/sork/install.sh | bash -s -- --with-systemd
+docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh | bash -s -- --with-systemd
 ```
 
 The install script is embedded in the image — no access to the source code or GitHub repository is needed.
@@ -152,15 +152,15 @@ git push --tags
 ## Image Structure
 
 ```
-ghcr.io/arcneell/sork:<version>
+ghcr.io/arcneell/caelix:<version>
 ├── /app/
 │   ├── app/                  # Python backend (bytecode .pyc only)
 │   │   ├── main.pyc            # Compiled backend (sourceless bytecode, compileall -b)
 │   │   ├── core/*.pyc          # Compiled core modules
 │   │   └── routers/*.pyc       # Compiled routers
 │   └── static/               # Vue frontend (minified JS/CSS)
-└── /opt/sork/                # Engine (extracted by installer)
-    ├── bin/sork
+└── /opt/caelix/                # Engine (extracted by installer)
+    ├── bin/caelix
     ├── lib/*.sh
     ├── lib/*.py
     ├── etc/

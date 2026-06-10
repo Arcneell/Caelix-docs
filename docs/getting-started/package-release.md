@@ -1,22 +1,22 @@
 # Processus — Mise à jour du paquet d'installation
 
-Ce guide décrit **comment publier une nouvelle version** du paquet que vos clients utilisent pour installer et mettre à jour SORK.
+Ce guide décrit **comment publier une nouvelle version** du paquet que vos clients utilisent pour installer et mettre à jour Caelix.
 
 ## Le paquet client
 
 | Élément | Valeur |
 |---------|--------|
 | **Registry** | `ghcr.io` |
-| **Image** | `ghcr.io/arcneell/sork` |
+| **Image** | `ghcr.io/arcneell/caelix` |
 | **Tags** | `:latest`, `:X.Y.Z` (semver depuis `VERSION`) |
-| **Installeur** | `install.sh` embarqué dans l'image (`/opt/sork/install.sh`) |
+| **Installeur** | `install.sh` embarqué dans l'image (`/opt/caelix/install.sh`) |
 
 Le client **n'a pas besoin du dépôt GitHub** — seulement d'un token registry (fourni avec la licence) et de Docker.
 
 ```bash
 # Installation ou mise à jour (même commande)
 echo "TOKEN" | docker login ghcr.io -u Arcneell --password-stdin
-docker run --rm ghcr.io/arcneell/sork:1.3.0 cat /opt/sork/install.sh | bash -s -- --with-systemd
+docker run --rm ghcr.io/arcneell/caelix:1.4.0 cat /opt/caelix/install.sh | bash -s -- --with-systemd
 ```
 
 Voir [Installation](installation.md) pour le détail côté client.
@@ -32,23 +32,23 @@ flowchart TD
     C --> D[Push tag vX.Y.Z]
     D --> E[GitHub Actions Release]
     E --> F[Build image Docker]
-    F --> G[Push ghcr.io/arcneell/sork]
+    F --> G[Push ghcr.io/arcneell/caelix]
     G --> H[GitHub Release créée]
     H --> I[Clients pull + install.sh]
-    B --> J[Sync doc SORK-docs]
-    J --> K[Pages arcneell.github.io/SORK-docs]
+    B --> J[Sync doc Caelix-docs]
+    J --> K[Pages arcneell.github.io/Caelix-docs]
 ```
 
 ---
 
 ## Prérequis (une fois)
 
-### Secrets GitHub Actions (dépôt SORK)
+### Secrets GitHub Actions (dépôt Caelix)
 
 | Secret | Usage | Scopes PAT |
 |--------|-------|------------|
 | **`GHCR_TOKEN`** | Push image vers GHCR | `write:packages`, `read:packages` |
-| **`DOCS_PUSH_TOKEN`** | Sync doc vers SORK-docs | `public_repo` ou fine-grained write sur SORK-docs |
+| **`DOCS_PUSH_TOKEN`** | Sync doc vers Caelix-docs | `public_repo` ou fine-grained write sur Caelix-docs |
 
 Configuration détaillée : [Distribution & Release](distribution.md), [Déploiement doc](deploy.md).
 
@@ -105,14 +105,14 @@ Le script :
 
 ### 4. Vérifier post-release
 
-- [ ] [Workflow Release](https://github.com/Arcneell/SORK/actions/workflows/release.yml) **vert**
-- [ ] Image disponible : `docker pull ghcr.io/arcneell/sork:X.Y.Z`
-- [ ] [GitHub Release](https://github.com/Arcneell/SORK/releases) créée
-- [ ] Notes en ligne : `https://arcneell.github.io/SORK-docs/getting-started/release-notes/vX.Y.Z/`
+- [ ] [Workflow Release](https://github.com/Arcneell/Caelix/actions/workflows/release.yml) **vert**
+- [ ] Image disponible : `docker pull ghcr.io/arcneell/caelix:X.Y.Z`
+- [ ] [GitHub Release](https://github.com/Arcneell/Caelix/releases) créée
+- [ ] Notes en ligne : `https://arcneell.github.io/Caelix-docs/getting-started/release-notes/vX.Y.Z/`
 - [ ] Test sur serveur vierge ou de staging :
 
 ```bash
-docker run --rm ghcr.io/arcneell/sork:X.Y.Z cat /opt/sork/install.sh | bash -s -- --with-systemd
+docker run --rm ghcr.io/arcneell/caelix:X.Y.Z cat /opt/caelix/install.sh | bash -s -- --with-systemd
 ```
 
 ---
@@ -144,7 +144,7 @@ Quand un client relance l'installeur (ou `:latest`) :
 | **systemd** | Service mis à jour / redémarré |
 | **`manifest.ini`** | **Jamais écrasé** |
 | **`notify.ini`** | **Jamais écrasé** |
-| **`.sork/`** | État runtime conservé |
+| **`.caelix/`** | État runtime conservé |
 
 Documenter dans les notes de release toute **nouvelle clé manifeste** à ajouter manuellement.
 

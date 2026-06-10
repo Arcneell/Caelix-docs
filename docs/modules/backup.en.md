@@ -4,7 +4,7 @@ The backup module (`lib/backup.sh`) automatically archives bind-mounted volumes 
 
 ## How It Works
 
-On each reconciliation pass, SORK checks for each service with `backup = 1`:
+On each reconciliation pass, Caelix checks for each service with `backup = 1`:
 
 1. **Schedule check** -- has the configured delay (`backup_schedule`) elapsed since the last backup?
 2. **Archival** -- creation of a `tar.gz` of bind-mount paths (`volumes_bind`)
@@ -110,7 +110,7 @@ backup = 1
 backup_schedule = daily
 backup_target = s3
 backup_s3_bucket = my-backups
-backup_s3_prefix = /sork/myapp
+backup_s3_prefix = /caelix/myapp
 backup_s3_region = eu-west-1
 backup_retention = 14
 ```
@@ -136,7 +136,7 @@ backup_retention = 14
 
 ## Archive Storage
 
-Archives are stored in `.sork/backups/<app>/` with the naming format:
+Archives are stored in `.caelix/backups/<app>/` with the naming format:
 
 ```
 <app>-<YYYYMMDD>-<HHMMSS>.tar.gz

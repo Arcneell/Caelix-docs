@@ -6,26 +6,26 @@ Guide for resolving common issues.
 
 ```bash
 # Check overall state
-bin/sork status
+bin/caelix status
 
 # Validate configuration
-bin/sork validate
+bin/caelix validate
 
 # Full diagnostic
-bin/sork doctor
+bin/caelix doctor
 
 # View daemon logs
-tail -50 .sork/logs/sork-daemon.log | python3 -m json.tool
+tail -50 .caelix/logs/caelix-daemon.log | python3 -m json.tool
 
 # Latest incidents
-tail -20 .sork/incidents/incidents.log
+tail -20 .caelix/incidents/incidents.log
 ```
 
 ## Common Issues
 
 ### The daemon does not start
 
-**Symptom**: `bin/sork run` fails immediately.
+**Symptom**: `bin/caelix run` fails immediately.
 
 **Checks**:
 
@@ -36,12 +36,12 @@ tail -20 .sork/incidents/incidents.log
 
 2. Is the manifest valid?
    ```bash
-   bin/sork validate
+   bin/caelix validate
    ```
 
-3. Is the SORK_DATA directory writable?
+3. Is the CAELIX_DATA directory writable?
    ```bash
-   ls -la .sork/
+   ls -la .caelix/
    ```
 
 ### A service does not start
@@ -57,16 +57,16 @@ tail -20 .sork/incidents/incidents.log
 
 2. Is the service suspended?
    ```bash
-   ls .sork/state/<app>.suspend_reconcile
+   ls .caelix/state/<app>.suspend_reconcile
    # If the file exists:
-   bin/sork resume <app>
+   bin/caelix resume <app>
    ```
 
 3. Is the service manually paused?
    ```bash
-   ls .sork/state/<app>.manual_pause
+   ls .caelix/state/<app>.manual_pause
    # If the file exists:
-   bin/sork resume <app>
+   bin/caelix resume <app>
    ```
 
 ### Health checks keep failing
@@ -82,7 +82,7 @@ tail -20 .sork/incidents/incidents.log
 
 2. Is the port correctly exposed?
    ```bash
-   docker port sork-<app>
+   docker port caelix-<app>
    ```
 
 3. Does the service take time to start? Increase the grace period:
@@ -92,7 +92,7 @@ tail -20 .sork/incidents/incidents.log
 
 4. In strict mode, does the URL target localhost?
    ```bash
-   SORK_STRICT_LOCAL=1 bin/sork doctor
+   CAELIX_STRICT_LOCAL=1 bin/caelix doctor
    ```
 
 ### The service keeps restarting
@@ -103,13 +103,13 @@ tail -20 .sork/incidents/incidents.log
 
 - **OOM**: the container is killed due to out of memory
   ```bash
-  docker inspect sork-<app> | grep OOMKilled
+  docker inspect caelix-<app> | grep OOMKilled
   ```
   Solution: increase `memory_limit_mb`
 
 - **Crash at startup**: the application crashes immediately
   ```bash
-  docker logs sork-<app>
+  docker logs caelix-<app>
   ```
 
 - **Port in use**: the port is already used by another process
@@ -130,7 +130,7 @@ tail -20 .sork/incidents/incidents.log
    ```bash
    curl -X POST <webhook_url> \
      -H "Content-Type: application/json" \
-     -d '{"content": "Test SORK"}'
+     -d '{"content": "Test Caelix"}'
    ```
 
 3. Is `enabled` set to `1`?
@@ -152,7 +152,7 @@ tail -20 .sork/incidents/incidents.log
 
 4. Check the backends:
    ```bash
-   cat .sork/autoscale/<app>.backends
+   cat .caelix/autoscale/<app>.backends
    ```
 
 ### The web console does not connect
@@ -161,12 +161,12 @@ tail -20 .sork/incidents/incidents.log
 
 1. Is the UI container running?
    ```bash
-   docker ps | grep sork-ui
+   docker ps | grep caelix-ui
    ```
 
 2. Is the Docker socket mounted?
    ```bash
-   docker inspect sork-ui | grep docker.sock
+   docker inspect caelix-ui | grep docker.sock
    ```
 
 3. Is the auth token correct (if enabled)?
@@ -177,30 +177,30 @@ tail -20 .sork/incidents/incidents.log
 
 ```bash
 # Latest logs
-tail -20 .sork/logs/sork-daemon.log
+tail -20 .caelix/logs/caelix-daemon.log
 
 # Format as readable JSON
-tail -5 .sork/logs/sork-daemon.log | python3 -m json.tool
+tail -5 .caelix/logs/caelix-daemon.log | python3 -m json.tool
 
 # Filter by level
-grep '"level":"error"' .sork/logs/sork-daemon.log
+grep '"level":"error"' .caelix/logs/caelix-daemon.log
 ```
 
 ### Container Logs
 
 ```bash
-docker logs sork-<app> --tail 50
-docker logs sork-<app> -f  # real-time follow
+docker logs caelix-<app> --tail 50
+docker logs caelix-<app> -f  # real-time follow
 ```
 
 ### Incidents
 
 ```bash
 # Text
-cat .sork/incidents/incidents.log
+cat .caelix/incidents/incidents.log
 
 # JSONL (with jq)
-cat .sork/incidents/$(date +%Y-%m-%d).jsonl | jq .
+cat .caelix/incidents/$(date +%Y-%m-%d).jsonl | jq .
 ```
 
 ## Debug Mode
@@ -208,7 +208,7 @@ cat .sork/incidents/$(date +%Y-%m-%d).jsonl | jq .
 For more detail in logs:
 
 ```bash
-SORK_LOG_LEVEL=debug bin/sork once
+CAELIX_LOG_LEVEL=debug bin/caelix once
 ```
 
 Or in the manifest:
@@ -221,14 +221,14 @@ log_level = debug
 ## Full Reset
 
 !!! danger "Warning"
-    This operation deletes all SORK state. Containers are not affected.
+    This operation deletes all Caelix state. Containers are not affected.
 
 ```bash
 # Delete all state
-rm -rf .sork/
+rm -rf .caelix/
 
 # Relaunch
-bin/sork once
+bin/caelix once
 ```
 
-SORK will recreate the `.sork/` directory and reconverge toward the desired state.
+Caelix will recreate the `.caelix/` directory and reconverge toward the desired state.

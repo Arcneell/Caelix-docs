@@ -8,14 +8,14 @@ The `audit.sh` + `audit_log.py` module records an audit trail of all container o
 
 ```mermaid
 graph LR
-    subgraph Modules["SORK Modules"]
+    subgraph Modules["Caelix Modules"]
         repair["repair.sh"]
         autoscale["autoscale.sh"]
         runtime["runtime.sh"]
     end
 
     subgraph AuditBash["audit.sh (Bash)"]
-        hook["sork_audit_event()"]
+        hook["caelix_audit_event()"]
     end
 
     subgraph AuditPython["audit_log.py (Python)"]
@@ -23,8 +23,8 @@ graph LR
     end
 
     subgraph Storage["Storage"]
-        jsonl[".sork/audit/<br>container-audit.jsonl"]
-        sqlite[".sork/audit/<br>container-audit.sqlite"]
+        jsonl[".caelix/audit/<br>container-audit.jsonl"]
+        sqlite[".caelix/audit/<br>container-audit.sqlite"]
     end
 
     repair -->|"create, restart,<br>remove"| hook
@@ -51,7 +51,7 @@ graph LR
 container_audit_log = 1
 ```
 
-### Global (all sork-* containers)
+### Global (all caelix-* containers)
 
 ```ini
 [orchestrator]
@@ -71,14 +71,14 @@ The `should_record()` function in `audit_log.py` checks `audit_log_all` then `co
 audit_log_backend = jsonl
 ```
 
-File: `.sork/audit/container-audit.jsonl`
+File: `.caelix/audit/container-audit.jsonl`
 
 Each event is a JSON object on a single line:
 
 ```json
-{"ts":"2025-01-15T10:30:00Z","app":"web","container":"sork-web","event":"create","source":"reconcile","detail":"image=nginx:latest"}
-{"ts":"2025-01-15T10:30:05Z","app":"web","container":"sork-web","event":"start","source":"reconcile","detail":""}
-{"ts":"2025-01-15T11:00:00Z","app":"web","container":"sork-web","event":"restart","source":"repair","detail":"health_fail_count=3"}
+{"ts":"2025-01-15T10:30:00Z","app":"web","container":"caelix-web","event":"create","source":"reconcile","detail":"image=nginx:latest"}
+{"ts":"2025-01-15T10:30:05Z","app":"web","container":"caelix-web","event":"start","source":"reconcile","detail":""}
+{"ts":"2025-01-15T11:00:00Z","app":"web","container":"caelix-web","event":"restart","source":"repair","detail":"health_fail_count=3"}
 ```
 
 **Advantages:** simple, append-only, easy to parse with `jq`.
@@ -90,7 +90,7 @@ Each event is a JSON object on a single line:
 audit_log_backend = sqlite
 ```
 
-File: `.sork/audit/container-audit.sqlite`
+File: `.caelix/audit/container-audit.sqlite`
 
 Schema:
 
@@ -112,21 +112,21 @@ CREATE TABLE audit_events (
 
 ```bash
 # Last 10 events
-sqlite3 .sork/audit/container-audit.sqlite \
+sqlite3 .caelix/audit/container-audit.sqlite \
   "SELECT ts, app, event, detail FROM audit_events ORDER BY id DESC LIMIT 10;"
 
 # Events by type for a service
-sqlite3 .sork/audit/container-audit.sqlite \
+sqlite3 .caelix/audit/container-audit.sqlite \
   "SELECT event, COUNT(*) as n FROM audit_events WHERE app='web' GROUP BY event ORDER BY n DESC;"
 
 # Incident timeline (between two dates)
-sqlite3 .sork/audit/container-audit.sqlite \
+sqlite3 .caelix/audit/container-audit.sqlite \
   "SELECT ts, event, source, detail FROM audit_events
    WHERE app='api' AND ts BETWEEN '2025-01-15T10:00:00' AND '2025-01-15T12:00:00'
    ORDER BY ts;"
 
 # Most repaired services
-sqlite3 .sork/audit/container-audit.sqlite \
+sqlite3 .caelix/audit/container-audit.sqlite \
   "SELECT app, COUNT(*) as repairs FROM audit_events
    WHERE event='restart' GROUP BY app ORDER BY repairs DESC;"
 ```
@@ -149,15 +149,15 @@ sqlite3 .sork/audit/container-audit.sqlite \
 
 ### Bash Layer (`lib/audit.sh`)
 
-The `sork_audit_event()` function is the hook called by other modules:
+The `caelix_audit_event()` function is the hook called by other modules:
 
 ```bash
-sork_audit_event "$app" "$cname" "$event" "$source" "$detail"
+caelix_audit_event "$app" "$cname" "$event" "$source" "$detail"
 # Example:
-sork_audit_event "web" "sork-web" "create" "reconcile" "image=nginx:latest"
+caelix_audit_event "web" "caelix-web" "create" "reconcile" "image=nginx:latest"
 ```
 
-It locates `audit_log.py` via `sork_audit_py()` and calls it with python3. If python3 is not available, auditing is silently disabled.
+It locates `audit_log.py` via `caelix_audit_py()` and calls it with python3. If python3 is not available, auditing is silently disabled.
 
 ### Python Layer (`lib/audit_log.py`)
 
@@ -210,14 +210,14 @@ REST API:
 
 ```bash
 # JSONL: last events with jq
-tail -20 .sork/audit/container-audit.jsonl | jq .
+tail -20 .caelix/audit/container-audit.jsonl | jq .
 
 # JSONL: filter by service
-cat .sork/audit/container-audit.jsonl | jq 'select(.app=="web")'
+cat .caelix/audit/container-audit.jsonl | jq 'select(.app=="web")'
 
 # SQLite: direct query
-sqlite3 .sork/audit/container-audit.sqlite "SELECT * FROM audit_events ORDER BY id DESC LIMIT 20;"
+sqlite3 .caelix/audit/container-audit.sqlite "SELECT * FROM audit_events ORDER BY id DESC LIMIT 20;"
 
 # Via the Python script
-python3 lib/audit_log.py recent etc/manifest.ini .sork --limit 50
+python3 lib/audit_log.py recent etc/manifest.ini .caelix --limit 50
 ```

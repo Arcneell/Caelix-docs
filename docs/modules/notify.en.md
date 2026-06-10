@@ -13,11 +13,11 @@ sequenceDiagram
     participant D as _notify_discord()
     participant W as Discord Webhook
 
-    I->>N: subject = "SORK [severity] app: event"<br>body = detail string
+    I->>N: subject = "Caelix [severity] app: event"<br>body = detail string
     N->>D: Build the Discord embed
     D->>D: Translate the title<br>_notify_event_title_fr()
     D->>D: Build the description<br>_notify_detection_fr()
-    D->>D: List SORK actions<br>_notify_actions_fr()
+    D->>D: List Caelix actions<br>_notify_actions_fr()
     D->>W: POST webhook_url<br>JSON embed
     W-->>D: 204 No Content
 ```
@@ -52,7 +52,7 @@ curl -X POST http://localhost:8080/api/notify/test
 # Manually with curl
 curl -X POST "https://discord.com/api/webhooks/ID/TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"content": "Test SORK"}'
+  -d '{"content": "Test Caelix"}'
 ```
 
 ---
@@ -66,7 +66,7 @@ graph TD
     subgraph Embed["Discord Embed"]
         title["Translated title<br>_notify_event_title_fr()"]
         detection["Detection: what + why<br>_notify_detection_fr()"]
-        actions["SORK actions: automated response<br>_notify_actions_fr()"]
+        actions["Caelix actions: automated response<br>_notify_actions_fr()"]
         detail["Raw technical detail"]
         color["Color based on severity"]
     end
@@ -142,9 +142,9 @@ graph TD
 
 Each event generates a detailed Markdown description explaining **what was detected** with the specific values extracted from the detail.
 
-### SORK Actions (`_notify_actions_fr`)
+### Caelix Actions (`_notify_actions_fr`)
 
-Each event includes a list of actions that SORK takes or recommends, as Markdown bullet points.
+Each event includes a list of actions that Caelix takes or recommends, as Markdown bullet points.
 
 ---
 
@@ -170,7 +170,7 @@ In parallel with external channels, the Python backend maintains a notification 
 | Feature | Detail |
 |---|---|
 | **Buffer** | 200 entries max (circular) |
-| **Persistence** | `.sork/notifications.json` |
+| **Persistence** | `.caelix/notifications.json` |
 | **Types** | info, warning, error, success |
 | **Real-time** | SSE (Server-Sent Events) |
 

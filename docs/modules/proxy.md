@@ -8,10 +8,10 @@ Le module `proxy.sh` implémente un reverse-proxy TCP basé sur **socat** : roun
 
 ```mermaid
 graph LR
-    client["Client HTTP"] --> proxy["Proxy SORK<br>(socat)"]
-    proxy --> backend1["sork-app-r1<br>:18501 ✓ sain"]
-    proxy --> backend2["sork-app-r2<br>:18502 ✓ sain"]
-    proxy -.->|ignoré| backend3["sork-app-r3<br>:18503 ✗ en panne"]
+    client["Client HTTP"] --> proxy["Proxy Caelix<br>(socat)"]
+    proxy --> backend1["caelix-app-r1<br>:18501 ✓ sain"]
+    proxy --> backend2["caelix-app-r2<br>:18502 ✓ sain"]
+    proxy -.->|ignoré| backend3["caelix-app-r3<br>:18503 ✗ en panne"]
 
     subgraph Health["Health Loop (background)"]
         hloop["_proxy_health_loop()"]
@@ -48,7 +48,7 @@ autoscale = 1
 autoscale_lb_publish = 127.0.0.1:8080:80
 ```
 
-Le proxy lit le fichier `.sork/autoscale/<app>.backends`.
+Le proxy lit le fichier `.caelix/autoscale/<app>.backends`.
 
 ### Mode global
 
@@ -63,7 +63,7 @@ connect_timeout = 5              # Timeout connexion backend (sec)
 log_level = info                 # debug, info, warn, error
 ```
 
-Le proxy lit le fichier `.sork/autoscale/routes.conf` pour déterminer vers quel service router chaque requête.
+Le proxy lit le fichier `.caelix/autoscale/routes.conf` pour déterminer vers quel service router chaque requête.
 
 ### Routage
 
@@ -109,39 +109,39 @@ La fonction `_proxy_route_lookup()` effectue le matching dans l'ordre : host →
 
 Le proxy intercepte certaines requêtes pour exposer son état :
 
-### GET /sork-proxy/health
+### GET /caelix-proxy/health
 
 Retourne `200 OK` si au moins un backend est sain, `503 Service Unavailable` sinon.
 
-### GET /sork-proxy/state
+### GET /caelix-proxy/state
 
 JSON détaillant chaque backend avec son statut :
 
 ```json
 {
   "backends": [
-    {"name": "sork-web-r1", "host": "127.0.0.1", "port": 18501, "healthy": true},
-    {"name": "sork-web-r2", "host": "127.0.0.1", "port": 18502, "healthy": true},
-    {"name": "sork-web-r3", "host": "127.0.0.1", "port": 18503, "healthy": false}
+    {"name": "caelix-web-r1", "host": "127.0.0.1", "port": 18501, "healthy": true},
+    {"name": "caelix-web-r2", "host": "127.0.0.1", "port": 18502, "healthy": true},
+    {"name": "caelix-web-r3", "host": "127.0.0.1", "port": 18503, "healthy": false}
   ]
 }
 ```
 
 En mode global, inclut tous les routes et leurs backends respectifs.
 
-### GET /sork-proxy/metrics
+### GET /caelix-proxy/metrics
 
 Métriques au format **Prometheus** :
 
 ```
-sork_proxy_requests_total{backend="sork-web-r1"} 1523
-sork_proxy_requests_total{backend="sork-web-r2"} 1487
-sork_proxy_errors_total{backend="sork-web-r1"} 3
-sork_proxy_backend_healthy{backend="sork-web-r1"} 1
-sork_proxy_backend_healthy{backend="sork-web-r3"} 0
+caelix_proxy_requests_total{backend="caelix-web-r1"} 1523
+caelix_proxy_requests_total{backend="caelix-web-r2"} 1487
+caelix_proxy_errors_total{backend="caelix-web-r1"} 3
+caelix_proxy_backend_healthy{backend="caelix-web-r1"} 1
+caelix_proxy_backend_healthy{backend="caelix-web-r3"} 0
 ```
 
-### GET /sork-proxy/routes
+### GET /caelix-proxy/routes
 
 Table de routage actuelle (mode global uniquement).
 
@@ -162,19 +162,19 @@ sequenceDiagram
     loop Toutes les health_interval secondes
         H->>B1: curl autoscale_health_path
         B1-->>H: 200 OK
-        H->>F: health_sork-web-r1 = 1
+        H->>F: health_caelix-web-r1 = 1
 
         H->>B2: curl autoscale_health_path
         B2-->>H: Timeout
-        H->>F: health_sork-web-r2 = 0
+        H->>F: health_caelix-web-r2 = 0
 
         alt Changement d'état détecté
-            H->>Q: proxy_backend_down sork-web-r2
+            H->>Q: proxy_backend_down caelix-web-r2
         end
     end
 ```
 
-Les fichiers d'état se trouvent dans `.sork/autoscale/global-proxy/health_<replica>` (valeur : `0` ou `1`).
+Les fichiers d'état se trouvent dans `.caelix/autoscale/global-proxy/health_<replica>` (valeur : `0` ou `1`).
 
 Les événements de transition sont écrits dans `events.queue` et traités par `autoscale_process_proxy_events()` au prochain cycle de réconciliation.
 
@@ -186,8 +186,8 @@ Le proxy surveille ses fichiers de configuration :
 
 | Fichier | Quand il change | Effet |
 |---|---|---|
-| `.sork/autoscale/<app>.backends` | Scale up/down, replica recréée | Backends mis à jour sans interruption |
-| `.sork/autoscale/routes.conf` | Manifest modifié, service ajouté/retiré | Routes mises à jour |
+| `.caelix/autoscale/<app>.backends` | Scale up/down, replica recréée | Backends mis à jour sans interruption |
+| `.caelix/autoscale/routes.conf` | Manifest modifié, service ajouté/retiré | Routes mises à jour |
 
 Le rechargement se fait par simple relecture du fichier — pas besoin de redémarrer le processus proxy.
 
@@ -208,9 +208,9 @@ La fonction `_proxy_pick_backend()` :
 
 | Fichier PID | Usage |
 |---|---|
-| `.sork/autoscale/global-proxy.pid` | PID du proxy global |
-| `.sork/autoscale/<app>-lb.pid` | PID du proxy legacy par service |
-| `.sork/autoscale/<app>-dedicated.pid` | PID du proxy dédié (route port:N) |
+| `.caelix/autoscale/global-proxy.pid` | PID du proxy global |
+| `.caelix/autoscale/<app>-lb.pid` | PID du proxy legacy par service |
+| `.caelix/autoscale/<app>-dedicated.pid` | PID du proxy dédié (route port:N) |
 
 Les fonctions `global_proxy_running()` et `autoscale_lb_running()` vérifient que le processus est vivant.
 
@@ -224,16 +224,16 @@ Le proxy est configuré via des variables d'environnement passées à son proces
 
 | Variable | Défaut | Description |
 |---|---|---|
-| `SORK_PROXY_LISTEN` | `0.0.0.0:8080` | Adresse d'écoute |
-| `SORK_PROXY_BACKENDS` | — | Fichier backends (mode legacy) |
-| `SORK_PROXY_ROUTES` | — | Fichier routes (mode global) |
-| `SORK_PROXY_HEALTH_INTERVAL` | `3` | Intervalle de health check (sec) |
-| `SORK_PROXY_HEALTH_PATH` | `/` | Chemin HTTP pour les probes |
-| `SORK_PROXY_HEALTH_TIMEOUT` | `2` | Timeout de probe (sec) |
-| `SORK_PROXY_CONNECT_TIMEOUT` | `5` | Timeout de connexion (sec) |
-| `SORK_PROXY_LOG_LEVEL` | `info` | Niveau de log |
-| `SORK_PROXY_STATE_DIR` | — | Répertoire d'état (health, metrics) |
-| `SORK_PROXY_APP` | — | Nom de l'application (pour le logging) |
+| `CAELIX_PROXY_LISTEN` | `0.0.0.0:8080` | Adresse d'écoute |
+| `CAELIX_PROXY_BACKENDS` | — | Fichier backends (mode legacy) |
+| `CAELIX_PROXY_ROUTES` | — | Fichier routes (mode global) |
+| `CAELIX_PROXY_HEALTH_INTERVAL` | `3` | Intervalle de health check (sec) |
+| `CAELIX_PROXY_HEALTH_PATH` | `/` | Chemin HTTP pour les probes |
+| `CAELIX_PROXY_HEALTH_TIMEOUT` | `2` | Timeout de probe (sec) |
+| `CAELIX_PROXY_CONNECT_TIMEOUT` | `5` | Timeout de connexion (sec) |
+| `CAELIX_PROXY_LOG_LEVEL` | `info` | Niveau de log |
+| `CAELIX_PROXY_STATE_DIR` | — | Répertoire d'état (health, metrics) |
+| `CAELIX_PROXY_APP` | — | Nom de l'application (pour le logging) |
 
 ---
 
@@ -246,8 +246,8 @@ Le proxy est configuré via des variables d'environnement passées à son proces
 | `_proxy_route_lookup(routes, host, path)` | Matching de route (host/path/default) |
 | `_proxy_health_loop(bfile, state_dir)` | Boucle de health check en arrière-plan |
 | `_proxy_read_backends(bfile, state_dir)` | Lecture backends avec statut santé |
-| `_proxy_build_state_json(...)` | JSON pour /sork-proxy/state |
-| `_proxy_build_metrics(...)` | Prometheus pour /sork-proxy/metrics |
+| `_proxy_build_state_json(...)` | JSON pour /caelix-proxy/state |
+| `_proxy_build_metrics(...)` | Prometheus pour /caelix-proxy/metrics |
 | `_proxy_build_metrics_global(...)` | Prometheus multi-routes |
 | `_proxy_atomic_inc(file, delta)` | Compteur atomique (flock) |
 | `_proxy_rr_next(file, count)` | Index round-robin atomique |

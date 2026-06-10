@@ -1,6 +1,6 @@
 # Frontend
 
-Le frontend SORK est une Single Page Application (SPA) construite avec Vue 3 et TypeScript.
+Le frontend Caelix est une Single Page Application (SPA) construite avec Vue 3 et TypeScript.
 
 ## Stack
 
@@ -32,7 +32,7 @@ La page d'accueil affiche :
 Gestion des ressources Docker organisée en sous-vues :
 
 - **Containers** : tableau avec filtres, actions en ligne, logs en modal, bouton d'accès à l'assistant de création
-- **Assistant de création** : wizard guidé en 6 étapes pour créer un groupe de conteneurs (sélection d'images Docker Hub avec recherche, configuration auto-remplie des ports/volumes/env depuis les métadonnées de l'image, réseau dédié ou existant, orchestrateur SORK avec health checks, autoscale complet avec proxy dédié)
+- **Assistant de création** : wizard guidé en 6 étapes pour créer un groupe de conteneurs (sélection d'images Docker Hub avec recherche, configuration auto-remplie des ports/volumes/env depuis les métadonnées de l'image, réseau dédié ou existant, orchestrateur Caelix avec health checks, autoscale complet avec proxy dédié)
 - **Images** : galerie avec pull, build, suppression
 - **Volumes** : liste avec taille et attachements
 - **Networks** : topologie des réseaux
@@ -42,7 +42,7 @@ Gestion des ressources Docker organisée en sous-vues :
 
 ### Orchestrator
 
-Interface spécifique SORK :
+Interface spécifique Caelix :
 
 - **Services** : état détaillé de chaque service orchestré (santé, replicas, dernière action)
 - **Manifest Editor** : édition syntaxique du fichier INI avec validation en direct
@@ -62,7 +62,7 @@ Déploiement simplifié :
 
 Visionneuse centralisée :
 
-- Logs daemon SORK (JSON formatté)
+- Logs daemon Caelix (JSON formatté)
 - Logs conteneurs (avec suivi temps réel)
 - Logs backend UI
 
@@ -94,7 +94,7 @@ Visionneuse centralisée :
 
 ## Authentification et état
 
-- **Session SPA** : aucun token n'est stocké dans `localStorage`. Le JWT est gardé en mémoire pour la durée de l'onglet (`stores/auth.ts`), et le cookie httpOnly `sork_session` permet de ré-authentifier après un rafraîchissement via `/api/auth/me`.
+- **Session SPA** : aucun token n'est stocké dans `localStorage`. Le JWT est gardé en mémoire pour la durée de l'onglet (`stores/auth.ts`), et le cookie httpOnly `caelix_session` permet de ré-authentifier après un rafraîchissement via `/api/auth/me`.
 - **Requêtes** : le client (`src/api/client.ts`) ajoute l'en-tête `Authorization: Bearer` si un token est en mémoire ; le cookie est envoyé automatiquement par le navigateur.
 - **Flux SSE** : `src/api/sse.ts` échange d'abord le JWT contre un ticket à usage unique (`/api/auth/sse-ticket`) puis ouvre l'`EventSource` avec `?ticket=`, avec reconnexion automatique.
 

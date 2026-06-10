@@ -22,10 +22,10 @@ graph TD
     reconcile --> next{"Encore des apps ?"}
     next -->|Oui| apps
     next -->|Non| orphans{"6. remove_orphans = 1 ?"}
-    orphans -->|Oui| clean["remove_orphan_containers()<br>Supprimer les sork-* inconnus"]
+    orphans -->|Oui| clean["remove_orphan_containers()<br>Supprimer les caelix-* inconnus"]
     orphans -->|Non| heartbeat
-    clean --> heartbeat["7. sork_daemon_heartbeat()<br>Écrire timestamp"]
-    heartbeat --> sleep["8. sleep SORK_INTERVAL"]
+    clean --> heartbeat["7. caelix_daemon_heartbeat()<br>Écrire timestamp"]
+    heartbeat --> sleep["8. sleep CAELIX_INTERVAL"]
     sleep --> start
 
     style start fill:#1abc9c,color:#fff
@@ -40,12 +40,12 @@ graph TD
 [orchestrator]
 interval = 10       # Secondes entre chaque cycle (défaut: 15)
 max_repair = 5      # Échecs avant alerte critique (défaut: 5)
-remove_orphans = 1  # Supprimer les conteneurs sork-* non déclarés
+remove_orphans = 1  # Supprimer les conteneurs caelix-* non déclarés
 log_level = info    # debug, info, warn, error
 ```
 
 !!! info "Heartbeat"
-    Le fichier `.sork/state/sork-daemon-heartbeat` contient le timestamp du dernier cycle complet. La console web l'utilise pour afficher si le daemon est actif.
+    Le fichier `.caelix/state/caelix-daemon-heartbeat` contient le timestamp du dernier cycle complet. La console web l'utilise pour afficher si le daemon est actif.
 
 ---
 
@@ -98,7 +98,7 @@ graph LR
 La fonction `ensure_desired_revision()` vérifie deux choses :
 
 1. **L'image** — L'image du conteneur correspond-elle au manifest ?
-2. **La config_version** — Le label `sork.config_version` correspond-il au manifest ?
+2. **La config_version** — Le label `caelix.config_version` correspond-il au manifest ?
 
 ```mermaid
 flowchart LR
@@ -122,7 +122,7 @@ Le compteur `.fail` détermine la phase :
 
 | fail_count | Phase | Action |
 |---|---|---|
-| 1 | **restart** | `docker restart sork-<app>` |
+| 1 | **restart** | `docker restart caelix-<app>` |
 | 2 | **recreate** | `docker rm -f` + `docker run` |
 | 3+ | **purge** | Remove + suppression volumes + `docker run` |
 
@@ -168,7 +168,7 @@ post_repair_grace = 5  # Secondes d'attente après réparation avant re-vérific
 
 ```mermaid
 sequenceDiagram
-    participant S as SORK
+    participant S as Caelix
     participant Old as Ancien conteneur<br>(port 3000)
     participant New as Candidat<br>(port 3001)
     participant D as Docker
@@ -188,7 +188,7 @@ sequenceDiagram
     S->>New: deep_diagnose_name() via health_url_candidate
     alt Candidat sain
         S->>D: Renommer ancien → temp
-        S->>D: Renommer candidat → sork-app
+        S->>D: Renommer candidat → caelix-app
         S->>D: Supprimer ancien
         S-->>S: incident_record(info, bluegreen_switch)
     else Candidat en panne
@@ -221,15 +221,15 @@ create_fail_max_attempts = 3  # Suspendre après 3 échecs de création
 
 Quand la création échoue N fois de suite :
 
-1. Le fichier `.sork/state/<app>.suspend_reconcile` est créé
-2. SORK arrête de toucher à ce service
+1. Le fichier `.caelix/state/<app>.suspend_reconcile` est créé
+2. Caelix arrête de toucher à ce service
 3. Une alerte critique est envoyée
 
-Pour reprendre : `bin/sork resume <app>`
+Pour reprendre : `bin/caelix resume <app>`
 
 ### Pause manuelle
 
-Quand un opérateur arrête un conteneur manuellement (`docker stop`), SORK détecte les exit codes d'arrêt propre :
+Quand un opérateur arrête un conteneur manuellement (`docker stop`), Caelix détecte les exit codes d'arrêt propre :
 
 | Exit code | Signification |
 |---|---|
@@ -237,7 +237,7 @@ Quand un opérateur arrête un conteneur manuellement (`docker stop`), SORK dét
 | `137` | SIGKILL |
 | `143` | SIGTERM |
 
-SORK crée `.sork/state/<app>.manual_pause` et ne redémarrera pas le conteneur.
+Caelix crée `.caelix/state/<app>.manual_pause` et ne redémarrera pas le conteneur.
 
 ```ini
 manual_stop_pause = 1  # Activé par défaut
@@ -247,9 +247,9 @@ manual_stop_pause = 1  # Activé par défaut
 
 ## Nettoyage des orphelins
 
-Quand `remove_orphans = 1`, SORK supprime les conteneurs qui :
+Quand `remove_orphans = 1`, Caelix supprime les conteneurs qui :
 
-- Ont un nom commençant par `sork-`
+- Ont un nom commençant par `caelix-`
 - Ne correspondent à aucune section du manifest
 - Ne sont pas des replicas (`-r<N>`) ou LB (`-lb`) d'un service existant
 
@@ -261,6 +261,6 @@ Les fichiers d'état associés sont aussi nettoyés.
 
 | Commande | Usage | Quand l'utiliser |
 |---|---|---|
-| `bin/sork run` | Boucle infinie | Production (daemon, systemd) |
-| `bin/sork once` | Un seul cycle | Tests, cron, premier lancement |
-| `bin/sork reconcile-app <app>` | Un seul service | Debug ciblé |
+| `bin/caelix run` | Boucle infinie | Production (daemon, systemd) |
+| `bin/caelix once` | Un seul cycle | Tests, cron, premier lancement |
+| `bin/caelix reconcile-app <app>` | Un seul service | Debug ciblé |

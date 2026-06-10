@@ -1,16 +1,16 @@
 # Authentification
 
-SORK intègre un système d'authentification multi-utilisateurs basé sur **SQLite** et **JWT**. Aucune base de données externe n'est requise : tout est stocké dans un fichier unique au sein du container.
+Caelix intègre un système d'authentification multi-utilisateurs basé sur **SQLite** et **JWT**. Aucune base de données externe n'est requise : tout est stocké dans un fichier unique au sein du container.
 
 ## Vue d'ensemble
 
 | Composant | Technologie |
 |-----------|-------------|
-| Stockage utilisateurs | SQLite (`/workspace/.sork/auth.db`), schéma versionné via `PRAGMA user_version` |
+| Stockage utilisateurs | SQLite (`/workspace/.caelix/auth.db`), schéma versionné via `PRAGMA user_version` |
 | Hachage mots de passe | bcrypt |
 | Tokens d'accès | JWT HS256 (PyJWT) |
-| Session SPA | Cookie `sork_session` **httpOnly**, `SameSite=strict` |
-| Clé de signature | Auto-générée et persistée dans `/workspace/.sork/jwt_secret.key` |
+| Session SPA | Cookie `caelix_session` **httpOnly**, `SameSite=strict` |
+| Clé de signature | Auto-générée et persistée dans `/workspace/.caelix/jwt_secret.key` |
 
 ## Session de la console web (cookie httpOnly)
 
@@ -18,20 +18,20 @@ Pour durcir l'interface contre les attaques XSS, le JWT de session **n'est jamai
 
 | Attribut | Valeur |
 |----------|--------|
-| Nom | `sork_session` |
+| Nom | `caelix_session` |
 | `HttpOnly` | Oui — inaccessible au JavaScript |
 | `SameSite` | `strict` — bloque les requêtes cross-site (durcissement CSRF) |
 | `Secure` | Activé automatiquement quand la requête arrive en HTTPS (désactivé en HTTP pur pour les déploiements LAN) |
-| `Max-Age` | Identique à la durée de validité du JWT (`SORK_JWT_EXPIRE_MINUTES`, 8 h par défaut) |
+| `Max-Age` | Identique à la durée de validité du JWT (`CAELIX_JWT_EXPIRE_MINUTES`, 8 h par défaut) |
 | `Path` | `/` |
 
 La SPA conserve le token en mémoire pour le cycle de vie de l'onglet et s'appuie sur le cookie httpOnly pour ré-authentifier après un rafraîchissement de page (appel à `/api/auth/me`). La déconnexion (`POST /api/auth/logout`) efface le cookie.
 
-Le token est résolu dans cet ordre de priorité par le backend : en-tête `Authorization: Bearer`, puis `X-SORK-Token`, puis le cookie `sork_session`, puis (legacy) le paramètre `?token=`. Les clients CLI/API utilisent donc l'en-tête `Bearer`, la SPA utilise le cookie.
+Le token est résolu dans cet ordre de priorité par le backend : en-tête `Authorization: Bearer`, puis `X-Caelix-Token`, puis le cookie `caelix_session`, puis (legacy) le paramètre `?token=`. Les clients CLI/API utilisent donc l'en-tête `Bearer`, la SPA utilise le cookie.
 
 ## Rôles
 
-SORK définit deux rôles :
+Caelix définit deux rôles :
 
 ### Administrateur (`admin`)
 
@@ -60,10 +60,10 @@ Les actions destructives (suppression, kill, prune, exec, deploy, backup/restore
 
 ## Compte par défaut
 
-Au premier démarrage, si aucun utilisateur n'existe dans la base, SORK crée automatiquement :
+Au premier démarrage, si aucun utilisateur n'existe dans la base, Caelix crée automatiquement :
 
 - **Nom d'utilisateur** : `admin`
-- **Mot de passe** : `admin` (ou la valeur de `SORK_ADMIN_PASSWORD`)
+- **Mot de passe** : `admin` (ou la valeur de `CAELIX_ADMIN_PASSWORD`)
 - **Rôle** : `admin`
 
 !!! warning "Changement obligatoire"
@@ -73,10 +73,10 @@ Au premier démarrage, si aucun utilisateur n'existe dans la base, SORK crée au
 
 | Variable | Description | Défaut |
 |----------|-------------|--------|
-| `SORK_ADMIN_PASSWORD` | Mot de passe initial du compte admin | `admin` |
-| `SORK_JWT_SECRET` | Clé secrète pour signer les tokens JWT. Si non défini, une clé est auto-générée et persistée | Auto-généré |
-| `SORK_JWT_EXPIRE_MINUTES` | Durée de validité des tokens JWT en minutes | `480` (8 heures) |
-| `SORK_UI_TOKEN` | Token legacy (rétro-compatibilité). **Déprécié** — migrer vers les comptes utilisateurs | - |
+| `CAELIX_ADMIN_PASSWORD` | Mot de passe initial du compte admin | `admin` |
+| `CAELIX_JWT_SECRET` | Clé secrète pour signer les tokens JWT. Si non défini, une clé est auto-générée et persistée | Auto-généré |
+| `CAELIX_JWT_EXPIRE_MINUTES` | Durée de validité des tokens JWT en minutes | `480` (8 heures) |
+| `CAELIX_UI_TOKEN` | Token legacy (rétro-compatibilité). **Déprécié** — migrer vers les comptes utilisateurs | - |
 
 ## Sécurité
 
@@ -145,7 +145,7 @@ curl -X POST http://localhost:8080/api/auth/login \
   -d '{"username": "admin", "password": "votre_mot_de_passe"}'
 
 # Réponse : le token est renvoyé dans le corps (pour les clients CLI/API)
-# ET posé dans un cookie httpOnly `sork_session` (utilisé par la SPA).
+# ET posé dans un cookie httpOnly `caelix_session` (utilisé par la SPA).
 # {"ok": true, "token": "eyJ...", "user": {"username": "admin", "role": "admin"}}
 
 # Utilisation du token (clients CLI/API)
@@ -181,7 +181,7 @@ Les administrateurs peuvent gérer les utilisateurs depuis **Paramètres > Utili
 
 ## Rétro-compatibilité
 
-L'ancien mécanisme `SORK_UI_TOKEN` (token unique partagé) reste fonctionnel en mode fallback. Si un token ne peut pas être décodé en JWT valide, SORK vérifie s'il correspond à `SORK_UI_TOKEN` et accorde un accès admin temporaire.
+L'ancien mécanisme `CAELIX_UI_TOKEN` (token unique partagé) reste fonctionnel en mode fallback. Si un token ne peut pas être décodé en JWT valide, Caelix vérifie s'il correspond à `CAELIX_UI_TOKEN` et accorde un accès admin temporaire.
 
 !!! warning "Dépréciation"
     Ce mécanisme est **déprécié**. Un avertissement est journalisé à chaque utilisation. Il sera supprimé dans une version future. Migrez vers les comptes utilisateurs.

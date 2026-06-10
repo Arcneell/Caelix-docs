@@ -4,7 +4,7 @@ Le module de mise à jour automatique (`lib/update.sh`) vérifie périodiquement
 
 ## Fonctionnement
 
-À chaque passe de réconciliation, SORK vérifie pour chaque service ayant `auto_update = 1` :
+À chaque passe de réconciliation, Caelix vérifie pour chaque service ayant `auto_update = 1` :
 
 1. **Vérification de l'intervalle** -- le délai configuré (`auto_update_interval`) est-il écoulé depuis le dernier check ?
 2. **Pull de l'image** -- `docker pull` pour récupérer le dernier digest distant
@@ -55,7 +55,7 @@ rollout_strategy = blue_green
 candidate_publish = 127.0.0.1:3001:3000
 ```
 
-Avec cette configuration, SORK vérifie une fois par jour si `myapp:latest` a un nouveau digest. Si oui, il effectue un rollout blue/green automatique.
+Avec cette configuration, Caelix vérifie une fois par jour si `myapp:latest` a un nouveau digest. Si oui, il effectue un rollout blue/green automatique.
 
 ### Mode notify
 
@@ -67,7 +67,7 @@ auto_update_interval = hourly
 auto_update_strategy = notify
 ```
 
-SORK vérifie toutes les heures et enregistre un incident `auto_update_available` si une mise à jour est détectée. L'application peut ensuite être déclenchée manuellement via l'UI ou l'API.
+Caelix vérifie toutes les heures et enregistre un incident `auto_update_available` si une mise à jour est détectée. L'application peut ensuite être déclenchée manuellement via l'UI ou l'API.
 
 ## Application manuelle
 
@@ -91,9 +91,9 @@ Ces événements sont envoyés sur tous les canaux de notification configurés (
 
 | Fichier | Contenu |
 |---|---|
-| `.sork/state/update_check_ts.<app>` | Timestamp du dernier check |
-| `.sork/state/update_digest.<app>` | Dernier digest connu de l'image |
-| `.sork/state/update_available.<app>` | Marqueur d'update en attente (mode notify) |
+| `.caelix/state/update_check_ts.<app>` | Timestamp du dernier check |
+| `.caelix/state/update_digest.<app>` | Dernier digest connu de l'image |
+| `.caelix/state/update_available.<app>` | Marqueur d'update en attente (mode notify) |
 
 ## Fonctions (lib/update.sh)
 

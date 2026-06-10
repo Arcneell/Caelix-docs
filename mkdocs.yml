@@ -1,13 +1,13 @@
-site_name: SORK - Shell Orchestrator
+site_name: Caelix
 site_description: Orchestrateur Docker single-node en Bash — réconciliation, autoscale, blue/green, monitoring et console web
-site_url: https://arcneell.github.io/SORK-docs/
-repo_url: https://github.com/Arcneell/SORK
-repo_name: Arcneell/SORK
+site_url: https://arcneell.github.io/Caelix-docs/
+repo_url: https://github.com/Arcneell/Caelix
+repo_name: Arcneell/Caelix
 
 theme:
   name: material
-  logo: assets/sork-logo.svg
-  favicon: assets/sork-favicon.svg
+  logo: assets/caelix-logo.svg
+  favicon: assets/caelix-favicon.svg
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -62,6 +62,7 @@ plugins:
             Premier lancement: Quick Start
             Distribution & Release: Distribution & Release
             Mise à jour du paquet: Package Update Process
+            Notes de release v1.4.0: Release Notes v1.4.0
             Notes de release v1.3.0: Release Notes v1.3.0
             Déploiement de la doc: Deploy Documentation
             Architecture: Architecture
@@ -123,9 +124,9 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/Arcneell/SORK
+      link: https://github.com/Arcneell/Caelix
 
-copyright: Copyright &copy; 2025-2026 SORK Project
+copyright: Copyright &copy; 2025-2026 Caelix Project
 
 nav:
   - Accueil: index.md
@@ -134,6 +135,7 @@ nav:
     - Premier lancement: getting-started/quickstart.md
     - Distribution & Release: getting-started/distribution.md
     - Mise à jour du paquet: getting-started/package-release.md
+    - Notes de release v1.4.0: getting-started/release-notes/v1.4.0.md
     - Notes de release v1.3.0: getting-started/release-notes/v1.3.0.md
     - Déploiement de la doc: getting-started/deploy.md
   - Architecture:

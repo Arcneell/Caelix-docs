@@ -1,6 +1,6 @@
 # Référence de configuration complète
 
-Index de toutes les clés de configuration disponibles dans SORK.
+Index de toutes les clés de configuration disponibles dans Caelix.
 
 ## etc/manifest.ini
 
@@ -10,10 +10,10 @@ Index de toutes les clés de configuration disponibles dans SORK.
 |---|---|---|---|
 | `interval` | int | `15` | Intervalle de réconciliation (secondes) |
 | `max_repair` | int | `5` | Seuil d'échecs avant alerte critique |
-| `remove_orphans` | bool | `0` | Supprimer les conteneurs `sork-*` non déclarés |
+| `remove_orphans` | bool | `0` | Supprimer les conteneurs `caelix-*` non déclarés |
 | `log_level` | string | `info` | Niveau de log : `debug`, `info`, `warn`, `error` |
 | `audit_log_backend` | string | `jsonl` | Backend d'audit : `jsonl` ou `sqlite` |
-| `audit_log_all` | bool | `0` | Auditer tous les conteneurs `sork-*` |
+| `audit_log_all` | bool | `0` | Auditer tous les conteneurs `caelix-*` |
 
 ### Section [proxy]
 
@@ -183,27 +183,27 @@ Index de toutes les clés de configuration disponibles dans SORK.
 
 | Variable | Défaut | Description |
 |---|---|---|
-| `SORK_MANIFEST` | `etc/manifest.ini` | Chemin manifest |
-| `SORK_NOTIFY_CONF` | `etc/notify.ini` | Chemin config notifications |
-| `SORK_DATA` | `./.sork` | Répertoire données |
-| `SORK_INTERVAL` | `15` | Intervalle réconciliation (sec) |
-| `SORK_MAX_REPAIR` | `5` | Seuil échecs avant alerte |
-| `SORK_LOG_LEVEL` | `info` | Niveau de log |
-| `SORK_STRICT_LOCAL` | `0` | Forcer health URLs localhost |
-| `SORK_LANG` | `fr` | Langue de l'orchestrateur (fr, en) |
-| `SORK_HTTP_USER_AGENT` | `Shell-Orchestrator/1.0` | User-Agent pour les health checks HTTP |
+| `CAELIX_MANIFEST` | `etc/manifest.ini` | Chemin manifest |
+| `CAELIX_NOTIFY_CONF` | `etc/notify.ini` | Chemin config notifications |
+| `CAELIX_DATA` | `./.caelix` | Répertoire données |
+| `CAELIX_INTERVAL` | `15` | Intervalle réconciliation (sec) |
+| `CAELIX_MAX_REPAIR` | `5` | Seuil échecs avant alerte |
+| `CAELIX_LOG_LEVEL` | `info` | Niveau de log |
+| `CAELIX_STRICT_LOCAL` | `0` | Forcer health URLs localhost |
+| `CAELIX_LANG` | `fr` | Langue de l'orchestrateur (fr, en) |
+| `CAELIX_HTTP_USER_AGENT` | `Caelix/1.0` | User-Agent pour les health checks HTTP |
 
 ### Console Web (backend FastAPI)
 
 | Variable | Défaut | Description |
 |---|---|---|
 | `PORT` | `8080` | Port d'écoute du backend |
-| `SORK_UI_BIND` | `0.0.0.0` | Adresse de bind |
-| `SORK_ADMIN_PASSWORD` | `admin` | Mot de passe initial du compte admin (si aucun utilisateur n'existe) |
-| `SORK_JWT_SECRET` | (auto) | Clé de signature JWT ; auto-générée et persistée dans `.sork/jwt_secret.key` si absente |
-| `SORK_JWT_EXPIRE_MINUTES` | `480` | Durée de validité du token JWT / cookie de session (minutes) |
-| `SORK_CORS_ORIGINS` | — | Origines CORS autorisées (CSV). Vide = même origine uniquement (recommandé) |
-| `SORK_METRICS_PROTECT` | `0` | Exiger l'authentification sur `/metrics` |
-| `SORK_UI_TLS_CERT` | — | Chemin du certificat TLS (HTTPS) |
-| `SORK_UI_TLS_KEY` | — | Chemin de la clé TLS (HTTPS) |
-| `SORK_UI_TOKEN` | — | Token partagé legacy. **Déprécié** — migrer vers les comptes utilisateurs |
+| `CAELIX_UI_BIND` | `0.0.0.0` | Adresse de bind |
+| `CAELIX_ADMIN_PASSWORD` | `admin` | Mot de passe initial du compte admin (si aucun utilisateur n'existe) |
+| `CAELIX_JWT_SECRET` | (auto) | Clé de signature JWT ; auto-générée et persistée dans `.caelix/jwt_secret.key` si absente |
+| `CAELIX_JWT_EXPIRE_MINUTES` | `480` | Durée de validité du token JWT / cookie de session (minutes) |
+| `CAELIX_CORS_ORIGINS` | — | Origines CORS autorisées (CSV). Vide = même origine uniquement (recommandé) |
+| `CAELIX_METRICS_PROTECT` | `0` | Exiger l'authentification sur `/metrics` |
+| `CAELIX_UI_TLS_CERT` | — | Chemin du certificat TLS (HTTPS) |
+| `CAELIX_UI_TLS_KEY` | — | Chemin de la clé TLS (HTTPS) |
+| `CAELIX_UI_TOKEN` | — | Token partagé legacy. **Déprécié** — migrer vers les comptes utilisateurs |

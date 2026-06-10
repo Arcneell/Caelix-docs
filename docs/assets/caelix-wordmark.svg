@@ -1,0 +1,24 @@
+<!-- Caelix — lockup horizontal : mark (orbite/comète) + wordmark. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 96" width="320" height="96">
+  <defs>
+    <radialGradient id="wbg" cx="50%" cy="40%" r="80%">
+      <stop offset="0" stop-color="#1a2c46"/><stop offset="1" stop-color="#0a0f1c"/>
+    </radialGradient>
+    <linearGradient id="warc" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="96" rx="18" fill="url(#wbg)"/>
+  <!-- mark -->
+  <g transform="translate(16,16)">
+    <circle cx="32" cy="32" r="15" fill="none" stroke="url(#warc)" stroke-width="1.8" opacity="0.4"/>
+    <circle cx="36" cy="18.5" r="2.4" fill="#67e8f9" opacity="0.6"/>
+    <circle cx="43.5" cy="22.4" r="8" fill="#67e8f9" opacity="0.16"/>
+    <circle cx="43.5" cy="22.4" r="4.4" fill="#a5f3fc"/>
+    <circle cx="32" cy="32" r="3.4" fill="#e0f2fe"/>
+  </g>
+  <!-- wordmark -->
+  <text x="100" y="51" dominant-baseline="central"
+        font-family="'Helvetica Neue', Arial, sans-serif" font-weight="600"
+        font-size="40" letter-spacing="1" fill="#e2e8f0">Caelix</text>
+</svg>

@@ -22,10 +22,10 @@ graph TD
     reconcile --> next{"More apps?"}
     next -->|Yes| apps
     next -->|No| orphans{"6. remove_orphans = 1?"}
-    orphans -->|Yes| clean["remove_orphan_containers()<br>Remove unknown sork-*"]
+    orphans -->|Yes| clean["remove_orphan_containers()<br>Remove unknown caelix-*"]
     orphans -->|No| heartbeat
-    clean --> heartbeat["7. sork_daemon_heartbeat()<br>Write timestamp"]
-    heartbeat --> sleep["8. sleep SORK_INTERVAL"]
+    clean --> heartbeat["7. caelix_daemon_heartbeat()<br>Write timestamp"]
+    heartbeat --> sleep["8. sleep CAELIX_INTERVAL"]
     sleep --> start
 
     style start fill:#1abc9c,color:#fff
@@ -40,12 +40,12 @@ graph TD
 [orchestrator]
 interval = 10       # Seconds between each cycle (default: 15)
 max_repair = 5      # Failures before critical alert (default: 5)
-remove_orphans = 1  # Remove undeclared sork-* containers
+remove_orphans = 1  # Remove undeclared caelix-* containers
 log_level = info    # debug, info, warn, error
 ```
 
 !!! info "Heartbeat"
-    The file `.sork/state/sork-daemon-heartbeat` contains the timestamp of the last completed cycle. The web console uses it to display whether the daemon is active.
+    The file `.caelix/state/caelix-daemon-heartbeat` contains the timestamp of the last completed cycle. The web console uses it to display whether the daemon is active.
 
 ---
 
@@ -98,7 +98,7 @@ graph LR
 The `ensure_desired_revision()` function checks two things:
 
 1. **Image** — Does the container image match the manifest?
-2. **config_version** — Does the `sork.config_version` label match the manifest?
+2. **config_version** — Does the `caelix.config_version` label match the manifest?
 
 ```mermaid
 flowchart LR
@@ -122,7 +122,7 @@ The `.fail` counter determines the phase:
 
 | fail_count | Phase | Action |
 |---|---|---|
-| 1 | **restart** | `docker restart sork-<app>` |
+| 1 | **restart** | `docker restart caelix-<app>` |
 | 2 | **recreate** | `docker rm -f` + `docker run` |
 | 3+ | **purge** | Remove + volume deletion + `docker run` |
 
@@ -168,7 +168,7 @@ post_repair_grace = 5  # Seconds to wait after repair before re-verification
 
 ```mermaid
 sequenceDiagram
-    participant S as SORK
+    participant S as Caelix
     participant Old as Old container<br>(port 3000)
     participant New as Candidate<br>(port 3001)
     participant D as Docker
@@ -188,7 +188,7 @@ sequenceDiagram
     S->>New: deep_diagnose_name() via health_url_candidate
     alt Candidate healthy
         S->>D: Rename old → temp
-        S->>D: Rename candidate → sork-app
+        S->>D: Rename candidate → caelix-app
         S->>D: Remove old
         S-->>S: incident_record(info, bluegreen_switch)
     else Candidate unhealthy
@@ -221,15 +221,15 @@ create_fail_max_attempts = 3  # Suspend after 3 creation failures
 
 When creation fails N consecutive times:
 
-1. The file `.sork/state/<app>.suspend_reconcile` is created
-2. SORK stops touching this service
+1. The file `.caelix/state/<app>.suspend_reconcile` is created
+2. Caelix stops touching this service
 3. A critical alert is sent
 
-To resume: `bin/sork resume <app>`
+To resume: `bin/caelix resume <app>`
 
 ### Manual Pause
 
-When an operator manually stops a container (`docker stop`), SORK detects clean shutdown exit codes:
+When an operator manually stops a container (`docker stop`), Caelix detects clean shutdown exit codes:
 
 | Exit code | Meaning |
 |---|---|
@@ -237,7 +237,7 @@ When an operator manually stops a container (`docker stop`), SORK detects clean 
 | `137` | SIGKILL |
 | `143` | SIGTERM |
 
-SORK creates `.sork/state/<app>.manual_pause` and will not restart the container.
+Caelix creates `.caelix/state/<app>.manual_pause` and will not restart the container.
 
 ```ini
 manual_stop_pause = 1  # Enabled by default
@@ -247,9 +247,9 @@ manual_stop_pause = 1  # Enabled by default
 
 ## Orphan Cleanup
 
-When `remove_orphans = 1`, SORK removes containers that:
+When `remove_orphans = 1`, Caelix removes containers that:
 
-- Have a name starting with `sork-`
+- Have a name starting with `caelix-`
 - Do not match any manifest section
 - Are not replicas (`-r<N>`) or LB (`-lb`) of an existing service
 
@@ -261,6 +261,6 @@ Associated state files are also cleaned up.
 
 | Command | Usage | When to use |
 |---|---|---|
-| `bin/sork run` | Infinite loop | Production (daemon, systemd) |
-| `bin/sork once` | Single cycle | Tests, cron, first launch |
-| `bin/sork reconcile-app <app>` | Single service | Targeted debugging |
+| `bin/caelix run` | Infinite loop | Production (daemon, systemd) |
+| `bin/caelix once` | Single cycle | Tests, cron, first launch |
+| `bin/caelix reconcile-app <app>` | Single service | Targeted debugging |

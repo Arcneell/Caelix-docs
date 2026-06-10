@@ -49,9 +49,9 @@ incident_record "$app" "$severity" "$event" "$detail" ["$skip_discord"]
 
 ### Ce qu'elle fait
 
-1. Écrit un log structuré dans `sork_log()` (stderr + fichier JSON)
-2. Ajoute une ligne au log texte (`.sork/incidents/incidents.log`)
-3. Ajoute un JSON au fichier journalier (`.sork/incidents/YYYY-MM-DD.jsonl`)
+1. Écrit un log structuré dans `caelix_log()` (stderr + fichier JSON)
+2. Ajoute une ligne au log texte (`.caelix/incidents/incidents.log`)
+3. Ajoute un JSON au fichier journalier (`.caelix/incidents/YYYY-MM-DD.jsonl`)
 4. Envoie une notification Discord via `notify_all()` (sauf si `skip_discord=1`)
 
 ---
@@ -60,19 +60,19 @@ incident_record "$app" "$severity" "$event" "$detail" ["$skip_discord"]
 
 ### Log texte
 
-Fichier append-only `.sork/incidents/incidents.log` :
+Fichier append-only `.caelix/incidents/incidents.log` :
 
 ```
 2025-01-15 10:30:00 [CRITICAL] web: unhealthy - Health check HTTP échoué (code 503)
 2025-01-15 10:30:15 [INFO] web: repair_restart - Redémarrage du conteneur
 2025-01-15 10:31:00 [OK] web: recovery - Service rétabli
-2025-01-15 10:45:00 [INFO] api: autoscale_up - Ajout replica sork-api-r3
+2025-01-15 10:45:00 [INFO] api: autoscale_up - Ajout replica caelix-api-r3
 2025-01-15 11:00:00 [WARN] redis: memory_soft - Usage mémoire 280Mo (seuil: 256Mo)
 ```
 
 ### Archive JSONL
 
-Fichiers journaliers `.sork/incidents/YYYY-MM-DD.jsonl` :
+Fichiers journaliers `.caelix/incidents/YYYY-MM-DD.jsonl` :
 
 ```json
 {"ts":"2025-01-15T10:30:00Z","app":"web","severity":"critical","event":"unhealthy","detail":"Health check HTTP échoué (code 503)"}
@@ -120,7 +120,7 @@ graph LR
 | `escalade_max` | `critical` | Seuil max_repair atteint |
 | `volume_remove_failed` | `warn` | Échec suppression volume lors du purge |
 | `container_create_failed` | `critical` | Échec de docker run |
-| `unexpected_restart` | `warn` | Redémarrage détecté sans action SORK |
+| `unexpected_restart` | `warn` | Redémarrage détecté sans action Caelix |
 
 ### Blue/Green
 
@@ -172,7 +172,7 @@ graph LR
 
 | Fichier | Rotation | Rétention |
 |---|---|---|
-| `incidents.log` | Quotidienne via `incident_archive_daily()` | Anciennes entrées → `.sork/archive/incidents-YYYY-MM-DD.log` |
+| `incidents.log` | Quotidienne via `incident_archive_daily()` | Anciennes entrées → `.caelix/archive/incidents-YYYY-MM-DD.log` |
 | `YYYY-MM-DD.jsonl` | Un fichier par jour | Conservation indéfinie |
 
 ---
@@ -183,19 +183,19 @@ graph LR
 
 ```bash
 # Derniers incidents
-tail -30 .sork/incidents/incidents.log
+tail -30 .caelix/incidents/incidents.log
 
 # Incidents critiques
-grep CRITICAL .sork/incidents/incidents.log
+grep CRITICAL .caelix/incidents/incidents.log
 
 # Incidents d'un service spécifique
-grep "web:" .sork/incidents/incidents.log
+grep "web:" .caelix/incidents/incidents.log
 
 # Analyse JSONL avec jq
-cat .sork/incidents/2025-01-15.jsonl | jq 'select(.severity=="critical")'
+cat .caelix/incidents/2025-01-15.jsonl | jq 'select(.severity=="critical")'
 
 # Compter les incidents par type
-cat .sork/incidents/2025-01-15.jsonl | jq -r '.event' | sort | uniq -c | sort -rn
+cat .caelix/incidents/2025-01-15.jsonl | jq -r '.event' | sort | uniq -c | sort -rn
 ```
 
 ### Via la console web

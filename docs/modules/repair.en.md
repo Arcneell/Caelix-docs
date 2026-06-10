@@ -36,7 +36,7 @@ graph TD
 ### Phase 1: Restart
 
 ```bash
-docker restart sork-<app>
+docker restart caelix-<app>
 ```
 
 - Simple and fast
@@ -46,7 +46,7 @@ docker restart sork-<app>
 ### Phase 2: Recreate
 
 ```bash
-docker rm -f sork-<app>
+docker rm -f caelix-<app>
 docker run ... (full re-creation from the manifest)
 ```
 
@@ -58,7 +58,7 @@ docker run ... (full re-creation from the manifest)
 ### Phase 3: Purge
 
 ```bash
-docker rm -f sork-<app>
+docker rm -f caelix-<app>
 docker volume rm <volumes>     # if purge_on_escalation=1
 docker run ... (full re-creation)
 ```
@@ -93,7 +93,7 @@ graph LR
     E["fail >= 3"] --> F["purge"]
 ```
 
-Each phase calls `sork_audit_event()` and `incident_record()` after execution.
+Each phase calls `caelix_audit_event()` and `incident_record()` after execution.
 
 ---
 
@@ -106,7 +106,7 @@ Blue/green deployment enables zero-downtime updates. A candidate container is cr
 ```mermaid
 sequenceDiagram
     participant M as Manifest
-    participant S as SORK
+    participant S as Caelix
     participant Old as Old (port 3000)
     participant New as Candidate (port 3001)
     participant D as Docker
@@ -132,7 +132,7 @@ sequenceDiagram
 
     alt Candidate HEALTHY
         S->>D: docker rename (old → temp)
-        S->>D: docker rename (candidate → sork-app)
+        S->>D: docker rename (candidate → caelix-app)
         S->>D: docker rm -f (old/temp)
         S->>S: incident_record(info, bluegreen_switch)
         S->>S: reset_fail_count()
@@ -158,7 +158,7 @@ preflight_cmd = python manage.py migrate                    # Pre-switch command
 ```
 
 !!! warning "candidate_publish is required"
-    If `rollout_strategy = blue_green` but `candidate_publish` is not defined, `bin/sork doctor` will report an error.
+    If `rollout_strategy = blue_green` but `candidate_publish` is not defined, `bin/caelix doctor` will report an error.
 
 ---
 
@@ -166,7 +166,7 @@ preflight_cmd = python manage.py migrate                    # Pre-switch command
 
 ### Problem Solved
 
-Without manual pause, an operator running `docker stop sork-web` would see SORK restart the service immediately on the next cycle.
+Without manual pause, an operator running `docker stop caelix-web` would see Caelix restart the service immediately on the next cycle.
 
 ### Operation
 
@@ -176,7 +176,7 @@ graph LR
     B -->|"0 / 137 / 143"| C["set_manual_pause()"]
     B -->|other| D["normal repair"]
     C --> E["skip reconciliation"]
-    E --> F["sork resume → resumes"]
+    E --> F["caelix resume → resumes"]
 ```
 
 ### Configuration
@@ -209,7 +209,7 @@ To force container re-creation without changing the image:
 config_version = 2   # Increment this value
 ```
 
-SORK compares the `sork.config_version` label of the container with the manifest value. If they differ, the container is recreated (or deployed via blue/green depending on the strategy).
+Caelix compares the `caelix.config_version` label of the container with the manifest value. If they differ, the container is recreated (or deployed via blue/green depending on the strategy).
 
 The `desired_config_version()` and `current_config_version()` functions handle this comparison.
 
@@ -228,14 +228,14 @@ graph LR
     F2 --> F3["Creation failure 3"]
     F3 --> S["SUSPENDED<br>.suspend_reconcile created"]
     S --> N["Critical notification"]
-    S --> R["bin/sork resume app"]
+    S --> R["bin/caelix resume app"]
     R --> OK["Reconciliation resumes"]
 
     style S fill:#e74c3c,color:#fff
     style OK fill:#27ae60,color:#fff
 ```
 
-The `sork_clear_suspend_state()` function removes suspension files and resets the counter to zero.
+The `caelix_clear_suspend_state()` function removes suspension files and resets the counter to zero.
 
 ---
 
@@ -250,8 +250,8 @@ The `sork_clear_suspend_state()` function removes suspension files and resets th
 | `candidate_preflight(app, cname)` | Execute preflight command in the candidate |
 | `create_candidate_name(app)` | Generate candidate container name |
 | `detect_unexpected_restart(app)` | Compare restart count with saved state |
-| `remove_orphan_containers()` | Remove undeclared sork-* containers |
-| `sork_section_reserved(section)` | Check if a section is reserved |
+| `remove_orphan_containers()` | Remove undeclared caelix-* containers |
+| `caelix_section_reserved(section)` | Check if a section is reserved |
 | `is_manual_pause_active(app)` | Check manual pause |
 | `set_manual_pause(app, reason)` | Enable pause |
 | `clear_manual_pause(app)` | Disable pause |

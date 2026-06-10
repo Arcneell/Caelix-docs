@@ -1,10 +1,10 @@
 # Distribution & Release
 
-Ce guide explique comment construire, publier et distribuer SORK sous forme d'image Docker pré-compilée, sans exposer le code source.
+Ce guide explique comment construire, publier et distribuer Caelix sous forme d'image Docker pré-compilée, sans exposer le code source.
 
 ## Architecture de distribution
 
-SORK est distribué sous forme d'une **image Docker unique** qui contient :
+Caelix est distribué sous forme d'une **image Docker unique** qui contient :
 
 | Composant | Contenu | Protection |
 |-----------|---------|------------|
@@ -35,7 +35,7 @@ echo "ghp_VOTRE_TOKEN" | docker login ghcr.io -u Arcneell --password-stdin
 Après le premier push :
 
 1. Aller sur [github.com/Arcneell?tab=packages](https://github.com/Arcneell?tab=packages)
-2. Cliquer sur le package `sork`
+2. Cliquer sur le package `caelix`
 3. **Package settings** > **Danger Zone** > **Change visibility**
 4. Choisir **Public** (ou configurer l'accès pour des utilisateurs spécifiques)
 
@@ -48,20 +48,20 @@ Le workflow Release (`.github/workflows/release.yml`) pousse l'image vers GHCR. 
 1. [github.com/settings/tokens](https://github.com/settings/tokens) → **Generate new token (classic)**
 2. Scopes : `write:packages`, `read:packages`
 3. Copier le token
-4. Repo **SORK** → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+4. Repo **Caelix** → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
 5. Nom : `GHCR_TOKEN`, valeur : le PAT
-6. Relancer le workflow Release (Actions → Release → Re-run, ou re-push du tag `v1.3.0`)
+6. Relancer le workflow Release (Actions → Release → Re-run, ou re-push du tag `v1.4.0`)
 
 **Option B — Permissions workflow**
 
-1. Repo **SORK** → **Settings** → **Actions** → **General**
+1. Repo **Caelix** → **Settings** → **Actions** → **General**
 2. **Workflow permissions** → cocher **Read and write permissions**
 3. Sauvegarder, puis relancer le workflow
 
 **Lier le package au dépôt** (si le package existe déjà) :
 
-1. [Packages `sork`](https://github.com/users/Arcneell/packages/container/sork/settings) → **Package settings**
-2. **Manage Actions access** / **Connect repository** → ajouter `Arcneell/SORK`
+1. [Packages `caelix`](https://github.com/users/Arcneell/packages/container/caelix/settings) → **Package settings**
+2. **Manage Actions access** / **Connect repository** → ajouter `Arcneell/Caelix`
 
 ## Build et publication
 
@@ -76,7 +76,7 @@ Le script :
 1. Build l'image multi-stage depuis le `Dockerfile` racine
 2. Compile le backend Python en `.pyc` (supprime les `.py`)
 3. Bundle le frontend Vue minifié
-4. Embarque le moteur Bash dans `/opt/sork/`
+4. Embarque le moteur Bash dans `/opt/caelix/`
 5. Vérifie qu'aucun fichier `.py` source n'est présent
 6. Tag l'image en `:latest` et `:<version>` (depuis le fichier `VERSION`)
 
@@ -107,7 +107,7 @@ Le script :
 ./scripts/build-release.sh --push --tag beta
 
 # Version spécifique
-./scripts/build-release.sh --push --tag 1.3.0
+./scripts/build-release.sh --push --tag 1.4.0
 ```
 
 ## Installation côté client
@@ -119,7 +119,7 @@ Le client s'authentifie au registry puis extrait et lance l'installeur depuis l'
 echo "TOKEN_CLIENT" | docker login ghcr.io -u Arcneell --password-stdin
 
 # 2. Installation
-docker run --rm ghcr.io/arcneell/sork:latest cat /opt/sork/install.sh | bash -s -- --with-systemd
+docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh | bash -s -- --with-systemd
 ```
 
 Le script d'installation est embarqué dans l'image — aucun accès au code source ni au dépôt GitHub n'est nécessaire.
@@ -153,15 +153,15 @@ git push --tags
 ## Structure de l'image
 
 ```
-ghcr.io/arcneell/sork:<version>
+ghcr.io/arcneell/caelix:<version>
 ├── /app/
 │   ├── app/                  # Backend Python (bytecode .pyc uniquement)
 │   │   ├── main.pyc            # Backend compilé (bytecode sourceless, compileall -b)
 │   │   ├── core/*.pyc          # Modules core compilés
 │   │   └── routers/*.pyc       # Routers compilés
 │   └── static/               # Frontend Vue (JS/CSS minifié)
-└── /opt/sork/                # Moteur (extrait par l'installeur)
-    ├── bin/sork
+└── /opt/caelix/                # Moteur (extrait par l'installeur)
+    ├── bin/caelix
     ├── lib/*.sh
     ├── lib/*.py
     ├── etc/

@@ -1,6 +1,6 @@
 # Development Workflow
 
-This document describes the development process for contributing to the SORK project. It covers prerequisites, local development, testing, and code conventions.
+This document describes the development process for contributing to the Caelix project. It covers prerequisites, local development, testing, and code conventions.
 
 ## Prerequisites
 
@@ -22,23 +22,23 @@ This document describes the development process for contributing to the SORK pro
 Start the reconciliation loop:
 
 ```bash
-bin/sork run
+bin/caelix run
 ```
 
 Or run a single reconciliation pass:
 
 ```bash
-bin/sork once
+bin/caelix once
 ```
 
 Environment variables for local development:
 
 ```bash
-export SORK_MANIFEST="$PWD/etc/manifest.ini"
-export SORK_NOTIFY_CONF="$PWD/etc/notify.ini"
-export SORK_DATA="$PWD/.sork"
-export SORK_INTERVAL=15
-export SORK_LOG_LEVEL=debug
+export CAELIX_MANIFEST="$PWD/etc/manifest.ini"
+export CAELIX_NOTIFY_CONF="$PWD/etc/notify.ini"
+export CAELIX_DATA="$PWD/.caelix"
+export CAELIX_INTERVAL=15
+export CAELIX_LOG_LEVEL=debug
 ```
 
 ### Deploying the Web UI
@@ -49,12 +49,12 @@ Use the deploy script to build and run the UI container:
 ./scripts/deploy-ui.sh
 ```
 
-This builds `sork-ui:2` and runs it with the project root mounted at `/workspace`. The UI is available at `http://127.0.0.1:18100/`.
+This builds `caelix-ui:2` and runs it with the project root mounted at `/workspace`. The UI is available at `http://127.0.0.1:18100/`.
 
 To expose on the LAN:
 
 ```bash
-SORK_UI_PUBLISH_BIND=0.0.0.0 ./scripts/deploy-ui.sh
+CAELIX_UI_PUBLISH_BIND=0.0.0.0 ./scripts/deploy-ui.sh
 ```
 
 ### Backend Development
@@ -62,10 +62,10 @@ SORK_UI_PUBLISH_BIND=0.0.0.0 ./scripts/deploy-ui.sh
 The backend code (`ui/backend/app/`) is mounted as a volume in the container. To apply changes:
 
 ```bash
-docker restart sork-sork-ui
+docker restart caelix-caelix-ui
 ```
 
-The backend runs with Uvicorn. Environment variables like `SORK_LOG_LEVEL=DEBUG` can be set via the manifest's `env` key or directly with `docker exec`.
+The backend runs with Uvicorn. Environment variables like `CAELIX_LOG_LEVEL=DEBUG` can be set via the manifest's `env` key or directly with `docker exec`.
 
 ### Frontend Development
 
@@ -91,7 +91,7 @@ The built assets land in `ui/frontend/dist/` and are copied into the Docker imag
 To rebuild the full UI image after frontend changes:
 
 ```bash
-docker build -t sork-ui:2 ./ui
+docker build -t caelix-ui:2 ./ui
 ```
 
 ## Testing
@@ -106,13 +106,13 @@ Run all automated checks:
 
 This script executes the following steps in order:
 
-1. **ShellCheck** (`shellcheck -x`): lint `bin/sork`, `lib/*.sh`, `scripts/*.sh` with external source following enabled.
+1. **ShellCheck** (`shellcheck -x`): lint `bin/caelix`, `lib/*.sh`, `scripts/*.sh` with external source following enabled.
 2. **Bash syntax** (`bash -n`): syntax-check all shell scripts.
 3. **Python compile**: compile-check `lib/`, `ui/backend/app/` with `python3 -m compileall`.
 4. **Python modules**: explicit compile of `manifest_doctor.py` and `audit_log.py`.
 5. **Manifest validation**: run `manifest_doctor.py check` against the example manifest.
-6. **SORK validate**: run `bin/sork validate` with the example manifest.
-7. **SORK doctor**: run `bin/sork doctor` with the example manifest.
+6. **Caelix validate**: run `bin/caelix validate` with the example manifest.
+7. **Caelix doctor**: run `bin/caelix doctor` with the example manifest.
 8. **Docker build** (optional): set `CHECK_UI_DOCKER_BUILD=1` to include a UI image build.
 
 ```bash
@@ -125,26 +125,26 @@ CHECK_UI_DOCKER_BUILD=1 ./scripts/check-all.sh
 Validate the manifest:
 
 ```bash
-bin/sork validate
+bin/caelix validate
 ```
 
 Run the doctor with auto-repair:
 
 ```bash
-bin/sork doctor --fix
+bin/caelix doctor --fix
 ```
 
 Run a single-service reconciliation:
 
 ```bash
-bin/sork reconcile-app myservice
+bin/caelix reconcile-app myservice
 ```
 
 Check the current state:
 
 ```bash
-bin/sork status
-bin/sork show
+bin/caelix status
+bin/caelix show
 ```
 
 ## Code Conventions
@@ -152,10 +152,10 @@ bin/sork show
 ### Bash
 
 - Use `set -euo pipefail` in all scripts.
-- Prefix all SORK functions with `sork_` or use module-specific prefixes (`manifest_`, `container_`, `autoscale_`, `proxy_`, etc.).
-- Container names follow the pattern `sork-<app>` (managed by `sork_cname()`).
-- State files go in `$SORK_DATA/state/`, incidents in `$SORK_DATA/incidents/`.
-- Use `sork_log <level> <message>` for all logging (writes to stderr and JSON log file).
+- Prefix all Caelix functions with `caelix_` or use module-specific prefixes (`manifest_`, `container_`, `autoscale_`, `proxy_`, etc.).
+- Container names follow the pattern `caelix-<app>` (managed by `caelix_cname()`).
+- State files go in `$CAELIX_DATA/state/`, incidents in `$CAELIX_DATA/incidents/`.
+- Use `caelix_log <level> <message>` for all logging (writes to stderr and JSON log file).
 - Add `# shellcheck shell=bash` and relevant `# shellcheck source=` directives.
 - Use `manifest_get_default` with sensible defaults rather than failing on missing keys.
 
@@ -215,7 +215,7 @@ refactor(backend): extract notification persistence to core module
 
 | Path                     | What to edit                                       |
 |--------------------------|----------------------------------------------------|
-| `bin/sork`               | CLI commands, reconcile_all, do_run                |
+| `bin/caelix`               | CLI commands, reconcile_all, do_run                |
 | `lib/*.sh`               | Bash engine modules                                |
 | `lib/*.py`               | Python helpers used by bash (audit, doctor)         |
 | `ui/backend/app/main.py` | FastAPI app, middleware, router registration        |

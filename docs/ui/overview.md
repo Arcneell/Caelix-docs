@@ -10,7 +10,7 @@ Interface web de gestion et de monitoring, construite avec FastAPI (backend REST
 graph LR
     A["Vue 3 SPA"] -->|"/api/*"| B["FastAPI Backend"]
     B --> C["Docker socket"]
-    B --> D["SORK data (/workspace)"]
+    B --> D["Caelix data (/workspace)"]
     B --> E["SSE streams"]
     B --> F["/metrics (Prometheus)"]
 ```
@@ -43,7 +43,7 @@ L'UI est accessible sur `http://localhost:18100`.
 Pour un accès LAN :
 
 ```bash
-SORK_UI_PUBLISH_BIND=0.0.0.0 ./scripts/deploy-ui.sh
+CAELIX_UI_PUBLISH_BIND=0.0.0.0 ./scripts/deploy-ui.sh
 ```
 
 ### Développement local
@@ -69,11 +69,11 @@ SORK_UI_PUBLISH_BIND=0.0.0.0 ./scripts/deploy-ui.sh
 
 ## Authentification
 
-L'authentification est **obligatoire**. SORK utilise un systeme multi-utilisateurs avec JWT et deux roles (`admin` / `technicien`).
+L'authentification est **obligatoire**. Caelix utilise un systeme multi-utilisateurs avec JWT et deux roles (`admin` / `technicien`).
 
 Au premier lancement, un compte `admin` / `admin` est créé automatiquement. L'interface force le changement du mot de passe par défaut.
 
-La **SPA** s'authentifie via un cookie de session **httpOnly** (`sork_session`, `SameSite=strict`) posé à la connexion — le token n'est jamais stocké dans `localStorage`. Les **clients CLI/API** utilisent l'en-tête `Authorization: Bearer`.
+La **SPA** s'authentifie via un cookie de session **httpOnly** (`caelix_session`, `SameSite=strict`) posé à la connexion — le token n'est jamais stocké dans `localStorage`. Les **clients CLI/API** utilisent l'en-tête `Authorization: Bearer`.
 
 ### Connexion API (CLI / scripts)
 
@@ -120,7 +120,7 @@ Gestion directe de toutes les ressources Docker :
 
 ### Orchestrator
 
-Interface spécifique SORK :
+Interface spécifique Caelix :
 
 | Sous-section | Fonctionnalités |
 |---|---|
@@ -142,7 +142,7 @@ Déploiement simplifié via templates préconfigurés :
 
 Visionneuse centralisée :
 
-- Logs daemon SORK (JSON formatté)
+- Logs daemon Caelix (JSON formatté)
 - Logs conteneurs (avec streaming temps réel)
 - Logs backend UI
 - Recherche dans les logs
@@ -161,7 +161,7 @@ Le conteneur UI nécessite deux volumes :
 
 | Volume hôte | Cible dans le conteneur | Usage |
 |---|---|---|
-| Racine du projet SORK | `/workspace` | Accès au manifest, state, logs, bin/sork |
+| Racine du projet Caelix | `/workspace` | Accès au manifest, state, logs, bin/caelix |
 | `/var/run/docker.sock` | `/var/run/docker.sock` | Communication avec le daemon Docker |
 
 ---
@@ -171,16 +171,16 @@ Le conteneur UI nécessite deux volumes :
 | Variable | Défaut | Description |
 |---|---|---|
 | `PORT` | `8080` | Port d'écoute du backend |
-| `SORK_UI_BIND` | `0.0.0.0` | Adresse de bind |
-| `SORK_ADMIN_PASSWORD` | `admin` | Mot de passe initial du compte admin |
-| `SORK_JWT_SECRET` | (auto) | Clé de signature JWT (auto-générée si absent) |
-| `SORK_JWT_EXPIRE_MINUTES` | `480` | Durée de validité des tokens JWT (minutes) |
-| `SORK_RUNTIME` | (auto) | `docker` ou `podman` |
-| `SORK_UI_TLS_CERT` | — | Chemin certificat TLS |
-| `SORK_UI_TLS_KEY` | — | Chemin clé TLS |
-| `SORK_METRICS_PROTECT` | `0` | Protéger /metrics par authentification |
-| `SORK_CORS_ORIGINS` | — | Origines CORS autorisées (CSV). Vide = même origine uniquement (recommandé) |
-| `SORK_UI_VERBOSE` | `0` | Logs HTTP détaillés |
+| `CAELIX_UI_BIND` | `0.0.0.0` | Adresse de bind |
+| `CAELIX_ADMIN_PASSWORD` | `admin` | Mot de passe initial du compte admin |
+| `CAELIX_JWT_SECRET` | (auto) | Clé de signature JWT (auto-générée si absent) |
+| `CAELIX_JWT_EXPIRE_MINUTES` | `480` | Durée de validité des tokens JWT (minutes) |
+| `CAELIX_RUNTIME` | (auto) | `docker` ou `podman` |
+| `CAELIX_UI_TLS_CERT` | — | Chemin certificat TLS |
+| `CAELIX_UI_TLS_KEY` | — | Chemin clé TLS |
+| `CAELIX_METRICS_PROTECT` | `0` | Protéger /metrics par authentification |
+| `CAELIX_CORS_ORIGINS` | — | Origines CORS autorisées (CSV). Vide = même origine uniquement (recommandé) |
+| `CAELIX_UI_VERBOSE` | `0` | Logs HTTP détaillés |
 
 ---
 

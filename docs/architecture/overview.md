@@ -46,7 +46,7 @@ graph LR
     B --> C["incidents.log"]
     B --> D["YYYY-MM-DD.jsonl"]
     B --> E["Discord webhook"]
-    A --> F["sork_audit_event()"]
+    A --> F["caelix_audit_event()"]
     F --> G["JSONL / SQLite"]
 ```
 
@@ -57,7 +57,7 @@ graph LR
 ```mermaid
 sequenceDiagram
     participant M as manifest.ini
-    participant S as bin/sork run
+    participant S as bin/caelix run
     participant R as reconcile_app()
     participant H as deep_diagnose_name()
     participant D as Docker
@@ -89,8 +89,8 @@ sequenceDiagram
             end
         end
         S->>S: remove_orphan_containers()
-        S->>S: sork_daemon_heartbeat()
-        S->>S: sleep SORK_INTERVAL
+        S->>S: caelix_daemon_heartbeat()
+        S->>S: sleep CAELIX_INTERVAL
     end
 ```
 
@@ -144,29 +144,29 @@ graph LR
 
 | Type | Format | Exemple |
 |---|---|---|
-| Service standard | `sork-<app>` | `sork-web` |
-| Candidat blue/green | `sork-<app>-candidate-<timestamp>` | `sork-web-candidate-1705312200` |
-| Replica autoscale | `sork-<app>-r<N>` | `sork-web-r3` |
-| Load balancer (legacy) | `sork-<app>-lb` | `sork-web-lb` |
+| Service standard | `caelix-<app>` | `caelix-web` |
+| Candidat blue/green | `caelix-<app>-candidate-<timestamp>` | `caelix-web-candidate-1705312200` |
+| Replica autoscale | `caelix-<app>-r<N>` | `caelix-web-r3` |
+| Load balancer (legacy) | `caelix-<app>-lb` | `caelix-web-lb` |
 
 ### Labels Docker
 
 | Label | Valeur | Usage |
 |---|---|---|
-| `sork.app` | Nom du service | Identification |
-| `sork.config_version` | Version de config | Détection de changement |
-| `sork.role` | `replica` | Distinction replicas autoscale |
-| `sork.replica` | Numéro (1, 2, 3...) | Index de la replica |
+| `caelix.app` | Nom du service | Identification |
+| `caelix.config_version` | Version de config | Détection de changement |
+| `caelix.role` | `replica` | Distinction replicas autoscale |
+| `caelix.replica` | Numéro (1, 2, 3...) | Index de la replica |
 
 ### Fichiers d'état
 
 | Pattern | Exemple | Contenu |
 |---|---|---|
-| `.sork/state/<app>.fail` | `.sork/state/web.fail` | Compteur d'échecs (entier) |
-| `.sork/state/<app>.manual_pause` | `.sork/state/web.manual_pause` | Raison de la pause |
-| `.sork/state/<app>.suspend_reconcile` | `.sork/state/web.suspend_reconcile` | Flag de suspension |
-| `.sork/state/<app>.create_fail_streak` | `.sork/state/web.create_fail_streak` | Échecs consécutifs |
-| `.sork/state/<app>.restart_count` | `.sork/state/web.restart_count` | Dernier restart count Docker |
-| `.sork/state/<app>.http_errrate` | `.sork/state/web.http_errrate` | `fail total` (fenêtre glissante) |
-| `.sork/state/<app>.autoscale_cooldown` | `.sork/state/web.autoscale_cooldown` | Streak de décisions |
-| `.sork/autoscale/<app>.backends` | `.sork/autoscale/web.backends` | `name host port` par ligne |
+| `.caelix/state/<app>.fail` | `.caelix/state/web.fail` | Compteur d'échecs (entier) |
+| `.caelix/state/<app>.manual_pause` | `.caelix/state/web.manual_pause` | Raison de la pause |
+| `.caelix/state/<app>.suspend_reconcile` | `.caelix/state/web.suspend_reconcile` | Flag de suspension |
+| `.caelix/state/<app>.create_fail_streak` | `.caelix/state/web.create_fail_streak` | Échecs consécutifs |
+| `.caelix/state/<app>.restart_count` | `.caelix/state/web.restart_count` | Dernier restart count Docker |
+| `.caelix/state/<app>.http_errrate` | `.caelix/state/web.http_errrate` | `fail total` (fenêtre glissante) |
+| `.caelix/state/<app>.autoscale_cooldown` | `.caelix/state/web.autoscale_cooldown` | Streak de décisions |
+| `.caelix/autoscale/<app>.backends` | `.caelix/autoscale/web.backends` | `name host port` par ligne |

@@ -1,7 +1,7 @@
-# SORK — Shell Orchestrator
+# Caelix — Orchestration Docker auto-réparatrice
 
 <p align="center">
-  <img src="/SORK-docs/assets/sork-logo.svg" alt="SORK Logo" width="100">
+  <img src="/Caelix-docs/assets/caelix-logo.svg" alt="Caelix Logo" width="100">
 </p>
 
 <p align="center"><strong>Orchestrateur Docker single-node en Bash</strong></p>
@@ -10,7 +10,7 @@
 
 ## Présentation
 
-SORK est un orchestrateur déclaratif pour conteneurs Docker sur un seul serveur. Les services sont définis dans un fichier INI. Le moteur assure la convergence vers l'état désiré via une boucle de réconciliation continue.
+Caelix est un orchestrateur déclaratif pour conteneurs Docker sur un seul serveur. Les services sont définis dans un fichier INI. Le moteur assure la convergence vers l'état désiré via une boucle de réconciliation continue.
 
 **Capacités principales :**
 
@@ -82,8 +82,8 @@ graph LR
 ## Structure du projet
 
 ```
-shell-orchestrator/
-├── bin/sork                    # CLI (9 commandes)
+caelix/
+├── bin/caelix                    # CLI (9 commandes)
 ├── lib/                        # Moteur Bash
 │   ├── common.sh               #   Logging, gestion d'état, allocation de ports
 │   ├── manifest.sh             #   Parseur INI
@@ -106,9 +106,9 @@ shell-orchestrator/
 │   ├── frontend/               #   Vue 3 SPA
 │   └── Dockerfile              #   Multi-stage build
 ├── scripts/                    # Installation et maintenance
-├── .sork/                      # Données runtime
-├── sork.global.service         # Unit systemd
-└── VERSION                     # 1.3.0
+├── .caelix/                      # Données runtime
+├── caelix.global.service         # Unit systemd
+└── VERSION                     # 1.4.0
 ```
 
 ---
@@ -118,20 +118,20 @@ shell-orchestrator/
 === "Installation automatique"
 
     ```bash
-    git clone https://github.com/Arcneell/SORK.git
-    cd SORK
+    git clone https://github.com/Arcneell/Caelix.git
+    cd Caelix
     ./scripts/install-all.sh
     ```
 
 === "Installation manuelle"
 
     ```bash
-    git clone https://github.com/Arcneell/SORK.git
-    cd SORK
+    git clone https://github.com/Arcneell/Caelix.git
+    cd Caelix
     cp etc/manifest.ini.example etc/manifest.ini
     cp etc/notify.ini.example etc/notify.ini
-    bin/sork validate
-    bin/sork run
+    bin/caelix validate
+    bin/caelix run
     ```
 
 :material-arrow-right: [Guide d'installation complet](getting-started/installation.md)

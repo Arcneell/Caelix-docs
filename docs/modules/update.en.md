@@ -4,7 +4,7 @@ The automatic update module (`lib/update.sh`) periodically checks whether new ve
 
 ## How It Works
 
-On each reconciliation pass, SORK checks for each service with `auto_update = 1`:
+On each reconciliation pass, Caelix checks for each service with `auto_update = 1`:
 
 1. **Interval check** -- has the configured delay (`auto_update_interval`) elapsed since the last check?
 2. **Image pull** -- `docker pull` to fetch the latest remote digest
@@ -55,7 +55,7 @@ rollout_strategy = blue_green
 candidate_publish = 127.0.0.1:3001:3000
 ```
 
-With this configuration, SORK checks once a day whether `myapp:latest` has a new digest. If so, it performs an automatic blue/green rollout.
+With this configuration, Caelix checks once a day whether `myapp:latest` has a new digest. If so, it performs an automatic blue/green rollout.
 
 ### Notify mode
 
@@ -67,7 +67,7 @@ auto_update_interval = hourly
 auto_update_strategy = notify
 ```
 
-SORK checks every hour and records an `auto_update_available` incident if an update is detected. The update can then be triggered manually via the UI or API.
+Caelix checks every hour and records an `auto_update_available` incident if an update is detected. The update can then be triggered manually via the UI or API.
 
 ## Manual Application
 
@@ -91,9 +91,9 @@ These events are sent to all configured notification channels (Discord, Slack, T
 
 | File | Content |
 |---|---|
-| `.sork/state/update_check_ts.<app>` | Timestamp of last check |
-| `.sork/state/update_digest.<app>` | Last known image digest |
-| `.sork/state/update_available.<app>` | Pending update marker (notify mode) |
+| `.caelix/state/update_check_ts.<app>` | Timestamp of last check |
+| `.caelix/state/update_digest.<app>` | Last known image digest |
+| `.caelix/state/update_available.<app>` | Pending update marker (notify mode) |
 
 ## Functions (lib/update.sh)
 

@@ -50,7 +50,7 @@ The Release workflow (`.github/workflows/release.yml`) pushes to GHCR. If `build
 3. Copy the token
 4. Repo **Caelix** → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
 5. Name: `GHCR_TOKEN`, value: the PAT
-6. Re-run the Release workflow (Actions → Release → Re-run, or re-push tag `v1.4.2`)
+6. Re-run the Release workflow (Actions → Release → Re-run, or re-push tag `v1.4.3`)
 
 **Option B — Workflow permissions**
 
@@ -106,7 +106,7 @@ The script:
 ./scripts/build-release.sh --push --tag beta
 
 # Specific version
-./scripts/build-release.sh --push --tag 1.4.2
+./scripts/build-release.sh --push --tag 1.4.3
 ```
 
 ## Client-Side Installation

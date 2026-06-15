@@ -108,7 +108,7 @@ caelix/
 ├── scripts/                    # Installation and maintenance
 ├── .caelix/                      # Runtime data
 ├── caelix.global.service         # systemd unit
-└── VERSION                     # 1.4.2
+└── VERSION                     # 1.4.3
 ```
 
 ---

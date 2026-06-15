@@ -16,7 +16,7 @@ Le client **n'a pas besoin du dépôt GitHub** — seulement d'un token registry
 ```bash
 # Installation ou mise à jour (même commande)
 echo "TOKEN" | docker login ghcr.io -u Arcneell --password-stdin
-docker run --rm ghcr.io/arcneell/caelix:1.4.1 cat /opt/caelix/install.sh | bash -s -- --with-systemd
+docker run --rm ghcr.io/arcneell/caelix:1.4.2 cat /opt/caelix/install.sh | bash -s -- --with-systemd
 ```
 
 Voir [Installation](installation.md) pour le détail côté client.

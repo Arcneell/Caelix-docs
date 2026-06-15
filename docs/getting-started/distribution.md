@@ -50,7 +50,7 @@ Le workflow Release (`.github/workflows/release.yml`) pousse l'image vers GHCR. 
 3. Copier le token
 4. Repo **Caelix** → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
 5. Nom : `GHCR_TOKEN`, valeur : le PAT
-6. Relancer le workflow Release (Actions → Release → Re-run, ou re-push du tag `v1.4.1`)
+6. Relancer le workflow Release (Actions → Release → Re-run, ou re-push du tag `v1.4.2`)
 
 **Option B — Permissions workflow**
 
@@ -107,7 +107,7 @@ Le script :
 ./scripts/build-release.sh --push --tag beta
 
 # Version spécifique
-./scripts/build-release.sh --push --tag 1.4.1
+./scripts/build-release.sh --push --tag 1.4.2
 ```
 
 ## Installation côté client

@@ -14,6 +14,20 @@ Caelix peut être configuré via des variables d'environnement en complément du
 | `CAELIX_LOG_LEVEL` | `info` | Niveau de log : `debug`, `info`, `warn`, `error` |
 | `CAELIX_STRICT_LOCAL` | `0` | Si `1`, les URLs de health check doivent cibler localhost |
 
+## Console web et reverse proxy
+
+Ces variables s'appliquent au conteneur de la console web (API FastAPI) lorsqu'il est placé derrière un reverse proxy (TLS, load balancer) :
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `CAELIX_FORWARDED_ALLOW_IPS` | `*` | IP/CIDR des proxys amont dont uvicorn accepte les en-têtes `X-Forwarded-*`. Restreindre à l'IP du reverse proxy empêche un client d'usurper `X-Forwarded-Proto`/`X-Forwarded-For`. |
+| `CAELIX_TRUSTED_PROXY` | `0` | Si `1`, l'application fait confiance à `X-Forwarded-For` pour l'IP client (verrouillage anti-bruteforce, audit). À n'activer que derrière un proxy de confiance qui réécrit l'en-tête. |
+| `CAELIX_FORCE_SECURE_COOKIE` | `0` | Si `1`, force l'attribut `Secure` sur le cookie de session même sans `X-Forwarded-Proto` (TLS terminé en amont qui ne propage pas l'en-tête). |
+| `CAELIX_METRICS_PROTECT` | `0` | Si `1`, l'endpoint `/metrics` exige une authentification. |
+| `CAELIX_CORS_ORIGINS` | _(vide)_ | Origines CORS autorisées, séparées par des virgules. Vide = same-origin uniquement (le plus sûr). |
+
+> Exemple : derrière un nginx unique en `172.18.0.2`, lancer le conteneur avec `-e CAELIX_FORWARDED_ALLOW_IPS=172.18.0.2 -e CAELIX_TRUSTED_PROXY=1` durcit la confiance accordée aux en-têtes transférés.
+
 ## Priorité de configuration
 
 Les variables d'environnement sont écrasées par les valeurs du manifest si elles sont définies dans `[orchestrator]` :

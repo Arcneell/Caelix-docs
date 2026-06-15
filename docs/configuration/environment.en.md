@@ -14,6 +14,20 @@ Caelix can be configured via environment variables in addition to the manifest.
 | `CAELIX_LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, `error` |
 | `CAELIX_STRICT_LOCAL` | `0` | If `1`, health check URLs must target localhost |
 
+## Web Console and Reverse Proxy
+
+These variables apply to the web console container (FastAPI API) when it sits behind a reverse proxy (TLS, load balancer):
+
+| Variable | Default | Description |
+|---|---|---|
+| `CAELIX_FORWARDED_ALLOW_IPS` | `*` | IP/CIDR of upstream proxies whose `X-Forwarded-*` headers uvicorn trusts. Restricting it to the reverse proxy IP prevents a client from spoofing `X-Forwarded-Proto`/`X-Forwarded-For`. |
+| `CAELIX_TRUSTED_PROXY` | `0` | If `1`, the app trusts `X-Forwarded-For` for the client IP (brute-force lockout, audit). Enable only behind a trusted proxy that rewrites the header. |
+| `CAELIX_FORCE_SECURE_COOKIE` | `0` | If `1`, forces the `Secure` attribute on the session cookie even without `X-Forwarded-Proto` (TLS terminated upstream that does not forward the header). |
+| `CAELIX_METRICS_PROTECT` | `0` | If `1`, the `/metrics` endpoint requires authentication. |
+| `CAELIX_CORS_ORIGINS` | _(empty)_ | Comma-separated allowed CORS origins. Empty = same-origin only (most secure). |
+
+> Example: behind a single nginx at `172.18.0.2`, run the container with `-e CAELIX_FORWARDED_ALLOW_IPS=172.18.0.2 -e CAELIX_TRUSTED_PROXY=1` to harden the trust placed in forwarded headers.
+
 ## Configuration Priority
 
 Environment variables are overridden by manifest values if defined in `[orchestrator]`:

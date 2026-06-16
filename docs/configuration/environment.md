@@ -14,6 +14,26 @@ Caelix peut être configuré via des variables d'environnement en complément du
 | `CAELIX_LOG_LEVEL` | `info` | Niveau de log : `debug`, `info`, `warn`, `error` |
 | `CAELIX_STRICT_LOCAL` | `0` | Si `1`, les URLs de health check doivent cibler localhost |
 
+## Runtime conteneur (démon local ou distant)
+
+Par défaut, Caelix pilote le démon Docker (ou Podman) **local** via son socket. Ces
+variables permettent de cibler un démon **distant**, y compris en TLS — première
+brique de la prise en charge multi-nœud. **Non définies, le comportement single-node
+est strictement inchangé.**
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `CAELIX_RUNTIME` | _(auto)_ | Force le moteur : `docker` ou `podman`. Auto-détection sinon. |
+| `CAELIX_DOCKER_HOST` | _(vide)_ | Démon cible (ex. `tcp://10.0.0.5:2376`). Si défini, est propagé aux variables Docker standard (`DOCKER_HOST`, et `CONTAINER_HOST` pour Podman). Vide = socket local. |
+| `CAELIX_DOCKER_TLS_VERIFY` | _(vide)_ | Si `1`, active la vérification TLS du client Docker (`DOCKER_TLS_VERIFY`). |
+| `CAELIX_DOCKER_CERT_PATH` | _(vide)_ | Répertoire des certificats client TLS (`ca.pem`, `cert.pem`, `key.pem`), mappé sur `DOCKER_CERT_PATH`. |
+| `CAELIX_RT_TIMEOUT` | `60` | Timeout (s) des commandes runtime courtes ; `0` désactive. Les verbes longs/streaming (`pull`, `run`, `exec`, `logs`…) ne sont jamais coupés. |
+| `CAELIX_RUNTIME_PROBE_TIMEOUT` | `10` | Timeout (s) de la sonde de disponibilité du démon (`info`). |
+
+> Exemple — piloter un démon distant en TLS :
+> `-e CAELIX_DOCKER_HOST=tcp://node-b:2376 -e CAELIX_DOCKER_TLS_VERIFY=1 -e CAELIX_DOCKER_CERT_PATH=/etc/caelix/certs`.
+> La même cible est honorée par le moteur Bash **et** par les appels Docker de la console web.
+
 ## Console web et reverse proxy
 
 Ces variables s'appliquent au conteneur de la console web (API FastAPI) lorsqu'il est placé derrière un reverse proxy (TLS, load balancer) :

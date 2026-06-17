@@ -33,6 +33,8 @@ est strictement inchangé.**
 | `CAELIX_NODE_LABELS` | _(vide)_ | Labels de placement du nœud, `clé=valeur` séparés par des virgules (ex. `zone=eu-west,disk=ssd`). Exposés par `caelix node-info`. |
 | `CAELIX_NODE_ADDR` | _(vide)_ | Adresse d'annonce du nœud (IP joignable par les autres nœuds, sur le mesh ou le LAN). Sert d'hôte des backends publiés dans le registre de services (ingress). Sans elle, l'agent ne publie pas de backend. |
 | `CAELIX_INGRESS` | `0` | Si `1`, le nœud agit comme ingress : à chaque cycle, le proxy global est alimenté par les backends cluster du registre (load-balancing cross-nœuds). Backend `file` pour l'instant. |
+| `CAELIX_WG_PUBKEY` | _(vide)_ | Clé publique WireGuard du nœud, publiée dans sa méta pour que le controller/pairs construisent le maillage. Vide tant que le mesh n'est pas configuré. |
+| `CAELIX_WG_ENDPOINT` | _(vide)_ | Endpoint WireGuard du nœud (`host:port`) annoncé aux pairs. |
 | `CAELIX_CLUSTER_STORE` | _(vide)_ | Racine du store cluster fichier (layout RFC §9). Si défini, l'agent (`caelix agent`) publie sa méta dans `nodes/<id>/meta.json` et adopte le sous-manifest `nodes/<id>/desired.ini` poussé par le controller. Vide = mode mono-hôte. |
 | `CAELIX_CLUSTER_BACKEND` | `file` | Backend du store cluster, **côté controller ET agent** : `file` (utilise `CAELIX_CLUSTER_STORE`) ou `consul` (KV Consul). L'agent (`caelix agent`) publie sa méta et lit son sous-manifest via ce backend. |
 | `CAELIX_CONSUL_ADDR` | `http://127.0.0.1:8500` | Adresse HTTP de l'agent Consul (si `CAELIX_CLUSTER_BACKEND=consul`). Côté agent, `curl` est requis. |

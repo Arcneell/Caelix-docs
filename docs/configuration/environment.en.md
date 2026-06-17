@@ -35,7 +35,9 @@ strictly unchanged.**
 | `CAELIX_INGRESS` | `0` | If `1`, the node acts as an ingress: on each cycle the global proxy is fed from the cluster backend registry (cross-node load-balancing). `file` backend for now. |
 | `CAELIX_WG_PUBKEY` | _(empty)_ | The node's WireGuard public key, published in its meta so the controller/peers can build the mesh. Empty until the mesh is configured. |
 | `CAELIX_WG_ENDPOINT` | _(empty)_ | The node's WireGuard endpoint (`host:port`) advertised to peers. |
-| `CAELIX_NODE_TTL` | `30` | Heartbeat lease duration (s): past it without renewal, the controller treats the node as *down* (reschedule via `POST /api/cluster/apply?live=1`). |
+| `CAELIX_NODE_TTL` | `30` | Heartbeat lease duration (s): past it without renewal, the controller treats the node as *down* (reschedule) and the agent that can no longer renew *fences* itself. |
+| `CAELIX_CONTROLLER` | `0` | If `1`, the backend runs the **controller loop** (HA): acquire leadership then periodically reschedule onto live nodes (only the leader acts). Enable it on control nodes. |
+| `CAELIX_CONTROLLER_INTERVAL` | `10` | Interval (s) between controller-loop passes. |
 | `CAELIX_CLUSTER_STORE` | _(empty)_ | File cluster store root (RFC §9 layout). When set, the agent (`caelix agent`) publishes its meta to `nodes/<id>/meta.json` and adopts the `nodes/<id>/desired.ini` sub-manifest pushed by the controller. Empty = single-host mode. |
 | `CAELIX_CLUSTER_BACKEND` | `file` | Cluster store backend, **on both the controller AND the agent**: `file` (uses `CAELIX_CLUSTER_STORE`) or `consul` (Consul KV). The agent (`caelix agent`) publishes its meta and reads its sub-manifest through this backend. |
 | `CAELIX_CONSUL_ADDR` | `http://127.0.0.1:8500` | Consul agent HTTP address (when `CAELIX_CLUSTER_BACKEND=consul`). On the agent side, `curl` is required. |

@@ -528,6 +528,11 @@ le reste prouvé, et pour que **chaque phase soit vendable**.
   watches.
 - **Compat** : un manifest single-node existant déployé sur un cluster à 1 nœud =
   zéro régression (rejouer la suite actuelle).
+- **Intégration mono-hôte** : `tests/integration/run.sh` valide la traversée réelle
+  agent (Bash) ↔ **Consul réel** ↔ controller (Python) — enregistrement, placement,
+  registre de backends, reschedule sur node-down, élection de leader — sur une seule
+  machine, sans dind ni WireGuard (hors CI). La couche données (mesh WireGuard via
+  `ip netns`, `dockerd` par nœud) est un harnais root distinct (cf. son README).
 
 ---
 

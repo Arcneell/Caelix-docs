@@ -516,6 +516,11 @@ and so **each phase is sellable**.
 - **Load**: N nodes × M apps, measure reschedule latency and watch frequency.
 - **Compat**: an existing single-node manifest deployed on a 1-node cluster = zero
   regression (replay the current suite).
+- **Single-host integration**: `tests/integration/run.sh` validates the real path
+  agent (Bash) ↔ **real Consul** ↔ controller (Python) — registration, placement,
+  backend registry, node-down reschedule, leader election — on one machine, with no
+  dind or WireGuard (outside CI). The data plane (WireGuard mesh via `ip netns`,
+  per-node `dockerd`) is a separate root harness (see its README).
 
 ---
 

@@ -71,6 +71,21 @@ Writes then prints the agent status (`.caelix/agent/status.json`): node meta +
 observed state of Caelix-managed containers (name, app, state, image, health
 failure count).
 
+### mesh-keygen / mesh-up / mesh-down
+
+```bash
+bin/caelix mesh-keygen   # generate (once) the node's WireGuard keypair
+sudo bin/caelix mesh-up  # apply the mesh from the directives in the store
+sudo bin/caelix mesh-down
+```
+
+Cross-host network layer (multi-node, RFC §6.2). `mesh-keygen` creates the local
+keypair (the private key is never published) and prints the public key — then
+published in the node meta. `mesh-up` applies the **secret-free directives**
+pushed by the controller (`address` + peer table) with the local private key, via
+`wg`/`ip` (**root required**). `mesh-down` tears the interface down. See the
+[multi-node RFC](../architecture/multi-node-rfc.md).
+
 ### once
 
 ```bash

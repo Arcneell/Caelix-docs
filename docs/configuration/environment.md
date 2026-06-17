@@ -35,6 +35,8 @@ est strictement inchangé.**
 | `CAELIX_INGRESS` | `0` | Si `1`, le nœud agit comme ingress : à chaque cycle, le proxy global est alimenté par les backends cluster du registre (load-balancing cross-nœuds). Backend `file` pour l'instant. |
 | `CAELIX_WG_PUBKEY` | _(vide)_ | Clé publique WireGuard du nœud, publiée dans sa méta pour que le controller/pairs construisent le maillage. Vide tant que le mesh n'est pas configuré. |
 | `CAELIX_WG_ENDPOINT` | _(vide)_ | Endpoint WireGuard du nœud (`host:port`) annoncé aux pairs. |
+| `CAELIX_WG_IFACE` | `caelix-wg0` | Nom de l'interface WireGuard créée par `caelix mesh-up`. |
+| `CAELIX_WG_LISTEN_PORT` | `51820` | Port d'écoute WireGuard local appliqué par `caelix mesh-up`. |
 | `CAELIX_NODE_TTL` | `30` | Durée (s) du bail de heartbeat : au-delà sans renouvellement, le controller considère le nœud *down* (reschedule) et l'agent qui ne peut plus renouveler se *fence*. |
 | `CAELIX_CONTROLLER` | `0` | Si `1`, le backend lance la **boucle controller** (HA) : acquisition du leadership puis reschedule périodique sur les nœuds vivants (seul le leader agit). À activer sur les nœuds de contrôle. |
 | `CAELIX_CONTROLLER_INTERVAL` | `10` | Intervalle (s) entre deux passes de la boucle controller. |

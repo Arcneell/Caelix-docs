@@ -32,8 +32,8 @@ strictly unchanged.**
 | `CAELIX_NODE_ID` | _(auto)_ | Node identity (`agent` mode, multi-node). If unset, an id is generated once and persisted in `.caelix/node/id`. Sanitized to `[a-z0-9-]`. |
 | `CAELIX_NODE_LABELS` | _(empty)_ | Node placement labels, comma-separated `key=value` (e.g. `zone=eu-west,disk=ssd`). Exposed by `caelix node-info`. |
 | `CAELIX_CLUSTER_STORE` | _(empty)_ | File cluster store root (RFC §9 layout). When set, the agent (`caelix agent`) publishes its meta to `nodes/<id>/meta.json` and adopts the `nodes/<id>/desired.ini` sub-manifest pushed by the controller. Empty = single-host mode. |
-| `CAELIX_CLUSTER_BACKEND` | `file` | Controller-side cluster store backend: `file` (uses `CAELIX_CLUSTER_STORE`) or `consul` (Consul KV). |
-| `CAELIX_CONSUL_ADDR` | `http://127.0.0.1:8500` | Consul agent HTTP address (when `CAELIX_CLUSTER_BACKEND=consul`). |
+| `CAELIX_CLUSTER_BACKEND` | `file` | Cluster store backend, **on both the controller AND the agent**: `file` (uses `CAELIX_CLUSTER_STORE`) or `consul` (Consul KV). The agent (`caelix agent`) publishes its meta and reads its sub-manifest through this backend. |
+| `CAELIX_CONSUL_ADDR` | `http://127.0.0.1:8500` | Consul agent HTTP address (when `CAELIX_CLUSTER_BACKEND=consul`). On the agent side, `curl` is required. |
 | `CAELIX_CONSUL_TOKEN` | _(empty)_ | Consul ACL token (`X-Consul-Token` header), for an ACL-secured Consul cluster. |
 
 > Example — drive a remote daemon over TLS:

@@ -44,6 +44,12 @@ The `.caelix/` directory contains all Caelix runtime data. It is automatically c
 ├── stacks/                         # Docker Compose data
 │   └── <stack>/                    # Per stack
 │
+├── node/                           # Node identity (agent mode, multi-node)
+│   └── id                          # Generated, persisted node id
+│
+├── agent/                          # Status published by the agent (multi-node)
+│   └── status.json                 # Node meta + observed state (read by the controller)
+│
 ├── notifications.json              # Notification buffer (200 max)
 ├── webhooks.json                   # Deployment webhooks
 └── registries.json                 # Docker registry credentials

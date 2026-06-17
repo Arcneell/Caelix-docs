@@ -493,7 +493,7 @@ le reste prouvé, et pour que **chaque phase soit vendable**.
 | Phase | Contenu | Valeur livrée | Effort |
 |---|---|---|---|
 | **0 — Abstraction runtime** ✅ | `_rt`/`run_cmd` ciblent un démon distant via `CAELIX_DOCKER_HOST`/`_TLS_VERIFY`/`_CERT_PATH` (→ `DOCKER_*`), défaut = socket local inchangé | Base technique ; débloque tout | _fait_ |
-| **1 — Agent autonome** | Empaqueter le moteur en agent réconciliant son local depuis un sous-manifest reçu | — | semaines |
+| **1 — Agent autonome** 🚧 | Empaqueter le moteur en agent réconciliant son local depuis un sous-manifest reçu. **Livré** : identité de nœud (`caelix node-info`), commande `caelix agent`, publication du statut `agent/status.json` (meta + observed, le contrat lu par le controller en §9). **Reste** : abstraction de la source du sous-manifest (fichier → store) + enregistrement du nœud, en phase 2 | — | en cours |
 | **2 — Controller mono-instance + store** | Consul, manifest cluster, scheduler statique, push par nœud | **« Multi-hôtes managé »** (console unique sur N serveurs) | semaines |
 | **3 — Réseau cross-host + ingress dynamique** | Maillage WireGuard + ingress (proxy existant) alimenté par Consul | **Scale horizontal** (répliques réparties derrière un LB) | semaines |
 | **4 — HA du controller** | Élection de leader, reschedule sur node-down, anti split-brain | **Vrai HA** | le plus dur |

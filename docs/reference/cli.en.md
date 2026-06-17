@@ -31,6 +31,44 @@ Starts the infinite reconciliation loop (daemon mode).
 
 This is the primary command for production operation.
 
+### agent
+
+```bash
+bin/caelix agent
+```
+
+Same as `run`, plus publishing the **node status** on each cycle (multi-node,
+phase 1). The agent:
+
+- has a stable **node identity** (`node-info`);
+- reconciles its local manifest just like single-host mode;
+- writes `.caelix/agent/status.json` (meta + observed state) on each cycle.
+
+The desired-state source stays the local manifest; in multi-node, the controller
+will push a per-node sub-manifest without changing this command. See the
+[multi-node RFC](../architecture/multi-node-rfc.md).
+
+### node-info
+
+```bash
+bin/caelix node-info
+```
+
+Prints the node identity and metadata as JSON (id, hostname, labels, engine,
+version, CPU, memory). The identity comes from `CAELIX_NODE_ID` if set, otherwise
+from an id generated once and persisted in `.caelix/node/id`. Placement labels are
+declared via `CAELIX_NODE_LABELS` (e.g. `zone=eu-west,disk=ssd`).
+
+### node-status
+
+```bash
+bin/caelix node-status
+```
+
+Writes then prints the agent status (`.caelix/agent/status.json`): node meta +
+observed state of Caelix-managed containers (name, app, state, image, health
+failure count).
+
 ### once
 
 ```bash

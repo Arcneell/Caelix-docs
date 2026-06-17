@@ -31,6 +31,44 @@ Lance la boucle de réconciliation infinie (mode daemon).
 
 C'est la commande principale pour le fonctionnement en production.
 
+### agent
+
+```bash
+bin/caelix agent
+```
+
+Identique à `run`, plus la publication du **statut de nœud** à chaque cycle
+(multi-nœud, phase 1). L'agent :
+
+- possède une **identité de nœud** stable (`node-info`) ;
+- réconcilie son manifeste local comme en mode mono-hôte ;
+- écrit `.caelix/agent/status.json` (méta + état observé) à chaque cycle.
+
+La source de l'état désiré reste le manifeste local ; en multi-nœud, le controller
+poussera un sous-manifest par nœud sans changer cette commande. Voir la
+[RFC multi-nœud](../architecture/multi-node-rfc.md).
+
+### node-info
+
+```bash
+bin/caelix node-info
+```
+
+Affiche l'identité et les méta-données du nœud en JSON (id, hostname, labels,
+moteur, version, CPU, mémoire). L'identité provient de `CAELIX_NODE_ID` si défini,
+sinon d'un id généré une fois et persisté dans `.caelix/node/id`. Les labels de
+placement se déclarent via `CAELIX_NODE_LABELS` (ex. `zone=eu-west,disk=ssd`).
+
+### node-status
+
+```bash
+bin/caelix node-status
+```
+
+Écrit puis affiche le statut de l'agent (`.caelix/agent/status.json`) : méta du
+nœud + état observé des conteneurs gérés par Caelix (nom, app, état, image,
+compteur d'échecs santé).
+
 ### once
 
 ```bash

@@ -44,6 +44,12 @@ Le répertoire `.caelix/` contient toutes les données d'exécution de Caelix. I
 ├── stacks/                         # Données Docker Compose
 │   └── <stack>/                    # Par stack
 │
+├── node/                           # Identité de nœud (mode agent, multi-nœud)
+│   └── id                          # Id de nœud généré et persisté
+│
+├── agent/                          # Statut publié par l'agent (multi-nœud)
+│   └── status.json                 # Méta du nœud + état observé (lu par le controller)
+│
 ├── notifications.json              # Buffer notifications (200 max)
 ├── webhooks.json                   # Webhooks de déploiement
 └── registries.json                 # Credentials registries Docker

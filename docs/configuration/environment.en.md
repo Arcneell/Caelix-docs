@@ -31,6 +31,7 @@ strictly unchanged.**
 | `CAELIX_RUNTIME_PROBE_TIMEOUT` | `10` | Timeout (s) for the daemon availability probe (`info`). |
 | `CAELIX_NODE_ID` | _(auto)_ | Node identity (`agent` mode, multi-node). If unset, an id is generated once and persisted in `.caelix/node/id`. Sanitized to `[a-z0-9-]`. |
 | `CAELIX_NODE_LABELS` | _(empty)_ | Node placement labels, comma-separated `key=value` (e.g. `zone=eu-west,disk=ssd`). Exposed by `caelix node-info`. |
+| `CAELIX_NODE_ADDR` | _(empty)_ | Node advertise address (IP reachable by other nodes, over the mesh or the LAN). Used as the host of the backends published to the service registry (ingress). Without it, the agent publishes no backend. |
 | `CAELIX_CLUSTER_STORE` | _(empty)_ | File cluster store root (RFC §9 layout). When set, the agent (`caelix agent`) publishes its meta to `nodes/<id>/meta.json` and adopts the `nodes/<id>/desired.ini` sub-manifest pushed by the controller. Empty = single-host mode. |
 | `CAELIX_CLUSTER_BACKEND` | `file` | Cluster store backend, **on both the controller AND the agent**: `file` (uses `CAELIX_CLUSTER_STORE`) or `consul` (Consul KV). The agent (`caelix agent`) publishes its meta and reads its sub-manifest through this backend. |
 | `CAELIX_CONSUL_ADDR` | `http://127.0.0.1:8500` | Consul agent HTTP address (when `CAELIX_CLUSTER_BACKEND=consul`). On the agent side, `curl` is required. |

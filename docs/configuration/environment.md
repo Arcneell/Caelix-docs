@@ -31,7 +31,10 @@ est strictement inchangé.**
 | `CAELIX_RUNTIME_PROBE_TIMEOUT` | `10` | Timeout (s) de la sonde de disponibilité du démon (`info`). |
 | `CAELIX_NODE_ID` | _(auto)_ | Identité du nœud (mode `agent`, multi-nœud). Si absent, un id est généré une fois et persisté dans `.caelix/node/id`. Sanitizé en `[a-z0-9-]`. |
 | `CAELIX_NODE_LABELS` | _(vide)_ | Labels de placement du nœud, `clé=valeur` séparés par des virgules (ex. `zone=eu-west,disk=ssd`). Exposés par `caelix node-info`. |
-| `CAELIX_CLUSTER_STORE` | _(vide)_ | Racine du store cluster (layout RFC §9). Si défini, l'agent (`caelix agent`) publie sa méta dans `nodes/<id>/meta.json` et adopte le sous-manifest `nodes/<id>/desired.ini` poussé par le controller. Vide = mode mono-hôte. |
+| `CAELIX_CLUSTER_STORE` | _(vide)_ | Racine du store cluster fichier (layout RFC §9). Si défini, l'agent (`caelix agent`) publie sa méta dans `nodes/<id>/meta.json` et adopte le sous-manifest `nodes/<id>/desired.ini` poussé par le controller. Vide = mode mono-hôte. |
+| `CAELIX_CLUSTER_BACKEND` | `file` | Backend du store cluster côté controller : `file` (utilise `CAELIX_CLUSTER_STORE`) ou `consul` (KV Consul). |
+| `CAELIX_CONSUL_ADDR` | `http://127.0.0.1:8500` | Adresse HTTP de l'agent Consul (si `CAELIX_CLUSTER_BACKEND=consul`). |
+| `CAELIX_CONSUL_TOKEN` | _(vide)_ | Token ACL Consul (en-tête `X-Consul-Token`), pour un cluster Consul sécurisé par ACL. |
 
 > Exemple — piloter un démon distant en TLS :
 > `-e CAELIX_DOCKER_HOST=tcp://node-b:2376 -e CAELIX_DOCKER_TLS_VERIFY=1 -e CAELIX_DOCKER_CERT_PATH=/etc/caelix/certs`.

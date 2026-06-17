@@ -483,7 +483,7 @@ and so **each phase is sellable**.
 |---|---|---|---|
 | **0 — Runtime abstraction** ✅ | `_rt`/`run_cmd` target a remote daemon via `CAELIX_DOCKER_HOST`/`_TLS_VERIFY`/`_CERT_PATH` (→ `DOCKER_*`), default = unchanged local socket | Technical base; unblocks everything | _done_ |
 | **1 — Standalone agent** 🚧 | Package the engine as an agent reconciling its local from a received sub-manifest. **Delivered**: node identity (`caelix node-info`), `caelix agent` command, `agent/status.json` publishing (meta + observed, the contract the controller reads in §9). **Remaining**: sub-manifest source abstraction (file → store) + node registration, in phase 2 | — | in progress |
-| **2 — Single-instance controller + store** | Consul, cluster manifest, static scheduler, per-node push | **"Managed multi-host"** (single console over N servers) | weeks |
+| **2 — Single-instance controller + store** 🚧 | Cluster manifest, static scheduler, per-node push. **Delivered**: Python placement core (`core/cluster/` — `schedule` with affinity/anti-affinity/`max_per_node`/`total_replicas`+pending, manifest split, `FileStore` in the §9 layout, `apply_cluster` action). **Remaining**: Consul backend (same interface as `FileStore`) + controller loop/endpoint + node registration from `agent/status.json` | **"Managed multi-host"** (single console over N servers) | in progress |
 | **3 — Cross-host network + dynamic ingress** | WireGuard mesh + ingress (existing proxy) fed by Consul | **Horizontal scale** (replicas spread behind an LB) | weeks |
 | **4 — Controller HA** | Leader election, reschedule on node-down, anti split-brain | **True HA** | hardest |
 | **5 — Stateful** | `pinned`/`shared` modes, clean node drain | HA for stateful apps | ongoing |

@@ -543,8 +543,11 @@ le reste prouvé, et pour que **chaque phase soit vendable**.
 - **Data-plane WireGuard** : `tests/integration/run-mesh.sh` (root) valide que
   `render_wg_config` produit une config établissant un **vrai tunnel chiffré** entre
   deux nœuds (network namespaces + underlay veth) — sous-réseaux déterministes,
-  ping cross-nœud, handshake. Validé sur l'hôte de dev. Reste : `dockerd` par nœud
-  (dind) pour le routage ingress cross-host bout-en-bout.
+  ping cross-nœud, handshake. Validé sur l'hôte de dev.
+- **End-to-end** : `tests/integration/run-dind.sh` (root) — un `dockerd` par nœud
+  (dind) + agents par nœud + Consul réel, vérifie qu'un conteneur tourne sur le bon
+  nœud (placement respecté). `run-all.sh` enchaîne les harnais ; déploiement réel
+  3 nœuds : `QUICKSTART-3nodes.md`.
 
 ---
 

@@ -530,8 +530,11 @@ and so **each phase is sellable**.
 - **WireGuard data plane**: `tests/integration/run-mesh.sh` (root) validates that
   `render_wg_config` produces a config establishing a **real encrypted tunnel**
   between two nodes (network namespaces + veth underlay) — deterministic subnets,
-  cross-node ping, handshake. Validated on the dev host. Remaining: per-node
-  `dockerd` (dind) for end-to-end cross-host ingress routing.
+  cross-node ping, handshake. Validated on the dev host.
+- **End-to-end**: `tests/integration/run-dind.sh` (root) — a `dockerd` per node
+  (dind) + per-node agents + a real Consul, asserts a container actually runs on
+  the right node (placement honoured). `run-all.sh` chains the harnesses; real
+  3-node deployment: `QUICKSTART-3nodes.md`.
 
 ---
 

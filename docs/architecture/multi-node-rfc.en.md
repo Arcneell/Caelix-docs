@@ -519,8 +519,12 @@ and so **each phase is sellable**.
 - **Single-host integration**: `tests/integration/run.sh` validates the real path
   agent (Bash) ↔ **real Consul** ↔ controller (Python) — registration, placement,
   backend registry, node-down reschedule, leader election — on one machine, with no
-  dind or WireGuard (outside CI). The data plane (WireGuard mesh via `ip netns`,
-  per-node `dockerd`) is a separate root harness (see its README).
+  dind or WireGuard (outside CI).
+- **WireGuard data plane**: `tests/integration/run-mesh.sh` (root) validates that
+  `render_wg_config` produces a config establishing a **real encrypted tunnel**
+  between two nodes (network namespaces + veth underlay) — deterministic subnets,
+  cross-node ping, handshake. Validated on the dev host. Remaining: per-node
+  `dockerd` (dind) for end-to-end cross-host ingress routing.
 
 ---
 

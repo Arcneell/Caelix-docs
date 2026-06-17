@@ -531,8 +531,12 @@ le reste prouvé, et pour que **chaque phase soit vendable**.
 - **Intégration mono-hôte** : `tests/integration/run.sh` valide la traversée réelle
   agent (Bash) ↔ **Consul réel** ↔ controller (Python) — enregistrement, placement,
   registre de backends, reschedule sur node-down, élection de leader — sur une seule
-  machine, sans dind ni WireGuard (hors CI). La couche données (mesh WireGuard via
-  `ip netns`, `dockerd` par nœud) est un harnais root distinct (cf. son README).
+  machine, sans dind ni WireGuard (hors CI).
+- **Data-plane WireGuard** : `tests/integration/run-mesh.sh` (root) valide que
+  `render_wg_config` produit une config établissant un **vrai tunnel chiffré** entre
+  deux nœuds (network namespaces + underlay veth) — sous-réseaux déterministes,
+  ping cross-nœud, handshake. Validé sur l'hôte de dev. Reste : `dockerd` par nœud
+  (dind) pour le routage ingress cross-host bout-en-bout.
 
 ---
 

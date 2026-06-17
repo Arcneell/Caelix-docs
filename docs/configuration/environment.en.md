@@ -32,7 +32,7 @@ strictly unchanged.**
 | `CAELIX_NODE_ID` | _(auto)_ | Node identity (`agent` mode, multi-node). If unset, an id is generated once and persisted in `.caelix/node/id`. Sanitized to `[a-z0-9-]`. |
 | `CAELIX_NODE_LABELS` | _(empty)_ | Node placement labels, comma-separated `key=value` (e.g. `zone=eu-west,disk=ssd`). Exposed by `caelix node-info`. |
 | `CAELIX_NODE_ADDR` | _(empty)_ | Node advertise address (IP reachable by other nodes, over the mesh or the LAN). Used as the host of the backends published to the service registry (ingress). Without it, the agent publishes no backend. |
-| `CAELIX_INGRESS` | `0` | If `1`, the node acts as an ingress: on each cycle the global proxy is fed from the cluster backend registry (cross-node load-balancing). `file` backend for now. |
+| `CAELIX_INGRESS` | `0` | If `1`, the node acts as an ingress: on each cycle the global proxy is fed from the cluster backend registry (cross-node load-balancing). Both `file` **and** `consul` backends. |
 | `CAELIX_WG_PUBKEY` | _(empty)_ | The node's WireGuard public key, published in its meta so the controller/peers can build the mesh. Empty until the mesh is configured. |
 | `CAELIX_WG_ENDPOINT` | _(empty)_ | The node's WireGuard endpoint (`host:port`) advertised to peers. |
 | `CAELIX_WG_IFACE` | `caelix-wg0` | Name of the WireGuard interface created by `caelix mesh-up`. |

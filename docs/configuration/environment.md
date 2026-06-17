@@ -32,7 +32,7 @@ est strictement inchangé.**
 | `CAELIX_NODE_ID` | _(auto)_ | Identité du nœud (mode `agent`, multi-nœud). Si absent, un id est généré une fois et persisté dans `.caelix/node/id`. Sanitizé en `[a-z0-9-]`. |
 | `CAELIX_NODE_LABELS` | _(vide)_ | Labels de placement du nœud, `clé=valeur` séparés par des virgules (ex. `zone=eu-west,disk=ssd`). Exposés par `caelix node-info`. |
 | `CAELIX_NODE_ADDR` | _(vide)_ | Adresse d'annonce du nœud (IP joignable par les autres nœuds, sur le mesh ou le LAN). Sert d'hôte des backends publiés dans le registre de services (ingress). Sans elle, l'agent ne publie pas de backend. |
-| `CAELIX_INGRESS` | `0` | Si `1`, le nœud agit comme ingress : à chaque cycle, le proxy global est alimenté par les backends cluster du registre (load-balancing cross-nœuds). Backend `file` pour l'instant. |
+| `CAELIX_INGRESS` | `0` | Si `1`, le nœud agit comme ingress : à chaque cycle, le proxy global est alimenté par les backends cluster du registre (load-balancing cross-nœuds). Backends `file` **et** `consul`. |
 | `CAELIX_WG_PUBKEY` | _(vide)_ | Clé publique WireGuard du nœud, publiée dans sa méta pour que le controller/pairs construisent le maillage. Vide tant que le mesh n'est pas configuré. |
 | `CAELIX_WG_ENDPOINT` | _(vide)_ | Endpoint WireGuard du nœud (`host:port`) annoncé aux pairs. |
 | `CAELIX_WG_IFACE` | `caelix-wg0` | Nom de l'interface WireGuard créée par `caelix mesh-up`. |

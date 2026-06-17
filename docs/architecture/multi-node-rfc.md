@@ -429,9 +429,17 @@ total_replicas   = 3              # nb total dans le cluster (remplace l'autosca
 node_affinity    = zone=eu-west   # contrainte de placement (label nœud)
 anti_affinity    = mon-app        # ne pas co-localiser deux répliques sur le même nœud
 storage          = shared         # pinned | shared (cf. §6.3)
-shared_volume    = mon-app-data   # nom du volume partagé si storage=shared
+shared_volume    = mon-app-data   # nom du volume Docker si storage=shared
+shared_nfs       = 10.42.0.1:/srv/mon-app   # export NFS (serveur:/chemin)
+shared_mount     = /var/lib/data  # point de montage dans le conteneur
+shared_nfs_opts  = rw,nfsvers=4   # (optionnel) options de montage NFS
 max_per_node     = 1              # plafond de répliques par nœud
 ```
+
+L'agent provisionne à la demande un volume Docker NFS (`docker volume create
+--driver local --opt type=nfs …`) pour les champs `shared_*`, puis le monte —
+ainsi un service `shared` retrouve ses données après replanification sur un autre
+nœud.
 
 Le scheduler traduit ces contraintes en affectations `nodes/<id>/desired`.
 
@@ -497,7 +505,7 @@ le reste prouvé, et pour que **chaque phase soit vendable**.
 | **2 — Controller mono-instance + store** 🚧 | Manifest cluster, scheduler statique, push par nœud. **Livré** : cœur de placement Python (`core/cluster/` — `schedule`, découpe, `FileStore` §9, `apply_cluster`) **+ boucle agent↔store** (`CAELIX_CLUSTER_STORE`) **+ API/UI controller** (`/api/cluster/*` ; vue « Cluster ») **+ backend Consul** (`ConsulStore` KV controller + **agent Bash lisant/écrivant dans Consul** via `curl`, sélection `CAELIX_CLUSTER_BACKEND=consul`) → chemin Consul **bout-en-bout**. | **« Multi-hôtes managé »** (console unique sur N serveurs) | ✅ |
 | **3 — Réseau cross-host + ingress dynamique** 🚧 | Maillage WireGuard + ingress (proxy existant) alimenté par Consul. **Livré** : registre de services (`register/deregister_backend`, `backends_for`, `service_apps`) + `build_routes` + `GET /api/cluster/routes` **+ publication des backends par l'agent** (`node_publish_backends`) **+ alimentation de l'ingress** (`CAELIX_INGRESS=1`) **+ plan de maillage WireGuard** (`core/cluster/mesh.py` : `assign_subnets` 10.42.N.0/24 déterministe, `mesh_overview`, `render_wg_config` wg0.conf depuis les métas des pairs ; méta nœud `wg_pubkey`/`wg_endpoint` ; `GET /api/cluster/mesh`). **+ application système `wg`/`ip` côté agent** (`publish_mesh` + `caelix mesh-keygen`/`mesh-up`/`mesh-down`) **+ refresh ingress backend `file` ET `consul`** (`node_cluster_apps`/`backends_for` lisent le registre Consul via `?keys`+`?raw`). **Reste** : harnais dind end-to-end | **Scale horizontal** (répliques réparties derrière un LB) | en cours |
 | **4 — HA du controller** 🚧 | Élection de leader, reschedule sur node-down, anti split-brain. **Livré** : heartbeat + liveness + reschedule (`apply_cluster(live_ttl=…)`, `/apply?live=1`, `/nodes`+`/status`) **+ élection de leader** (session/lock Consul ; `FileStore` mono-instance ; `GET /api/cluster/leader`) **+ fencing anti-split-brain** (`node_agent_cycle`) **+ boucle controller leader-gated** (`core/cluster/loop.py` : `controller_tick` n'agit que si leader ; `controller_loop` daemon session+reschedule périodique ; `CAELIX_CONTROLLER=1` dans le lifespan backend). | **Vrai HA** | ✅ |
-| **5 — Stateful** 🚧 | Modes `pinned`/`shared`, drain de nœud propre. **Livré** : placement storage-aware (`AppPlacement.storage`, pinned = instance unique non relocalisable → `pending` si son nœud tombe ; shared/stateless migrent) + **drain de nœud** (`set_node_drain`/`node_draining`, exclu du placement par `apply_cluster`, `POST /api/cluster/nodes/<id>/drain`, flag dans `/nodes`). **Reste** : volume `shared` réel (driver NFS), drain bloquant tant que des pinned restent | HA des apps à état | en cours |
+| **5 — Stateful** 🚧 | Modes `pinned`/`shared`, drain de nœud propre. **Livré** : placement storage-aware (`AppPlacement.storage`, pinned = instance unique non relocalisable → `pending` si son nœud tombe ; shared/stateless migrent) + **drain de nœud** (`set_node_drain`/`node_draining`, exclu du placement par `apply_cluster`, `POST /api/cluster/nodes/<id>/drain`, flag dans `/nodes`) **+ driver de volume NFS** (`ensure_shared_volume`/`shared_volume_mount` : provisionne et monte un volume Docker `type=nfs` pour `storage=shared` → données migrables). **Reste** : drain bloquant tant que des pinned restent | HA des apps à état | en cours |
 
 !!! note "L'onboarding est transversal"
     L'expérience d'install/join (§1.2) n'est **pas une phase** : `caelix cluster init`

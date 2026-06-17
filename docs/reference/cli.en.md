@@ -44,9 +44,10 @@ phase 1). The agent:
 - reconciles its local manifest just like single-host mode;
 - writes `.caelix/agent/status.json` (meta + observed state) on each cycle.
 
-The desired-state source stays the local manifest; in multi-node, the controller
-will push a per-node sub-manifest without changing this command. See the
-[multi-node RFC](../architecture/multi-node-rfc.md).
+If `CAELIX_CLUSTER_STORE` is set, the agent publishes its meta to the store and
+**adopts the `desired.ini` sub-manifest pushed by the controller** as its
+desired-state source; otherwise it reconciles its local manifest (single-host).
+See the [multi-node RFC](../architecture/multi-node-rfc.md).
 
 ### node-info
 

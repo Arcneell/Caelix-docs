@@ -1,13 +1,11 @@
 # Cluster multi-nœud
 
-Caelix fonctionne en **mono-hôte par défaut**. Ce guide montre comment **activer le
-mode cluster**, **ajouter un nœud**, et **tester** sur un vrai banc multi-nœud. Pour
-comprendre le fonctionnement interne, voir [Architecture › Cluster](../architecture/cluster.md).
+Caelix fonctionne en mono-hôte par défaut. Ce guide couvre l'activation du mode
+cluster, l'ajout d'un nœud et le banc de test. Pour le fonctionnement interne, voir
+[Architecture › Cluster](../architecture/cluster.md).
 
-!!! note "Installation simple, comme k3s — pas comme Kubernetes"
-    L'objectif produit est qu'on **ne tape jamais une commande Consul ni `wg`** :
-    ces composants sont embarqués et pilotés par Caelix. On n'interagit qu'avec
-    `caelix` et la console.
+Consul et WireGuard sont embarqués et pilotés par Caelix : on n'interagit qu'avec
+`caelix` et la console.
 
 ---
 

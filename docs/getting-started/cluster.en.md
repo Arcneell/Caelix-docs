@@ -1,13 +1,11 @@
 # Multi-node cluster
 
-Caelix runs **single-host by default**. This guide shows how to **enable cluster
-mode**, **add a node**, and **test** on a real multi-node bench. For the internals,
-see [Architecture › Cluster](../architecture/cluster.md).
+Caelix runs single-host by default. This guide covers enabling cluster mode, adding
+a node, and the test bench. For the internals, see
+[Architecture › Cluster](../architecture/cluster.md).
 
-!!! note "Simple install, like k3s — not like Kubernetes"
-    The product goal is that you **never type a Consul or `wg` command**: those
-    components are embedded and driven by Caelix. You only interact with `caelix` and
-    the console.
+Consul and WireGuard are embedded and driven by Caelix: you only interact with
+`caelix` and the console.
 
 ---
 

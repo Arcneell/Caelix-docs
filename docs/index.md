@@ -4,13 +4,13 @@
   <img src="/Caelix-docs/assets/caelix-logo.svg" alt="Caelix Logo" width="100">
 </p>
 
-<p align="center"><strong>Orchestrateur Docker single-node en Bash</strong></p>
+<p align="center"><strong>Orchestrateur Docker auto-réparateur — mono-hôte ou cluster HA</strong></p>
 
 ---
 
 ## Présentation
 
-Caelix est un orchestrateur déclaratif pour conteneurs Docker sur un seul serveur. Les services sont définis dans un fichier INI. Le moteur assure la convergence vers l'état désiré via une boucle de réconciliation continue.
+Caelix est un orchestrateur déclaratif pour conteneurs Docker. Les services sont définis dans un fichier INI. Le moteur assure la convergence vers l'état désiré via une boucle de réconciliation continue. Il fonctionne **en mono-hôte** par défaut, et **en cluster haute disponibilité** en option (plan de contrôle, replanification sur panne, maillage chiffré).
 
 **Capacités principales :**
 
@@ -19,6 +19,7 @@ Caelix est un orchestrateur déclaratif pour conteneurs Docker sur un seul serve
 - Réparation automatique par escalade (restart → recreate → purge)
 - Déploiement blue/green avec validation pré-bascule
 - Autoscaling horizontal avec load balancer TCP intégré (socat)
+- **Cluster multi-nœud optionnel** : leader élu, heartbeat/liveness, fencing par bail, maillage WireGuard
 - Alertes Discord avec diagnostic détaillé
 - Audit trail JSONL ou SQLite
 - Console web Vue 3 + FastAPI (150+ endpoints REST, auth par cookie httpOnly)
@@ -144,6 +145,7 @@ caelix/
 |---|---|
 | [Démarrage](getting-started/installation.md) | Installation, premier lancement, déploiement de la doc |
 | [Architecture](architecture/overview.md) | Composants, flux de réconciliation, répertoire d'état |
+| [Cluster](architecture/cluster.md) | Multi-nœud HA : fonctionnement, mise en place, banc de test |
 | [Configuration](configuration/manifest.md) | Manifest INI, notifications Discord, variables d'environnement |
 | [Modules](modules/health.md) | Health, repair, autoscale, proxy, audit, incidents, notifications |
 | [Console Web](ui/overview.md) | UI, API REST, frontend |

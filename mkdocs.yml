@@ -1,5 +1,5 @@
 site_name: Caelix
-site_description: Orchestrateur Docker single-node en Bash — réconciliation, autoscale, blue/green, monitoring et console web
+site_description: Orchestrateur Docker auto-réparateur — mono-hôte ou cluster HA — réconciliation, autoscale, blue/green, monitoring et console web
 site_url: https://arcneell.github.io/Caelix-docs/
 repo_url: https://github.com/Arcneell/Caelix
 repo_name: Arcneell/Caelix
@@ -60,6 +60,7 @@ plugins:
             Démarrage: Getting Started
             Installation: Installation
             Premier lancement: Quick Start
+            Cluster: Cluster
             Distribution & Release: Distribution & Release
             Mise à jour du paquet: Package Update Process
             Notes de release v1.4.3: Release Notes v1.4.3
@@ -72,6 +73,8 @@ plugins:
             Vue d'ensemble: Overview
             Boucle de réconciliation: Reconciliation Loop
             Répertoire d'état: State Directory
+            Cluster multi-nœud: Multi-node Cluster
+            RFC multi-nœud: Multi-node RFC
             Configuration: Configuration
             Manifest (manifest.ini): Manifest (manifest.ini)
             Authentification: Authentication
@@ -136,6 +139,7 @@ nav:
   - Démarrage:
     - Installation: getting-started/installation.md
     - Premier lancement: getting-started/quickstart.md
+    - Cluster: getting-started/cluster.md
     - Distribution & Release: getting-started/distribution.md
     - Mise à jour du paquet: getting-started/package-release.md
     - Notes de release v1.4.3: getting-started/release-notes/v1.4.3.md
@@ -148,6 +152,8 @@ nav:
     - Vue d'ensemble: architecture/overview.md
     - Boucle de réconciliation: architecture/reconciliation.md
     - Répertoire d'état: architecture/state-directory.md
+    - Cluster multi-nœud: architecture/cluster.md
+    - RFC multi-nœud: architecture/multi-node-rfc.md
   - Configuration:
     - Manifest (manifest.ini): configuration/manifest.md
     - Authentification: configuration/authentication.md

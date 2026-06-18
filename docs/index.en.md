@@ -4,13 +4,13 @@
   <img src="/Caelix-docs/assets/caelix-logo.svg" alt="Caelix Logo" width="100">
 </p>
 
-<p align="center"><strong>Single-node Docker orchestrator in Bash</strong></p>
+<p align="center"><strong>Self-healing Docker orchestrator — single host or HA cluster</strong></p>
 
 ---
 
 ## Overview
 
-Caelix is a declarative orchestrator for Docker containers on a single server. Services are defined in an INI file. The engine ensures convergence toward the desired state through a continuous reconciliation loop.
+Caelix is a declarative orchestrator for Docker containers. Services are defined in an INI file. The engine ensures convergence toward the desired state through a continuous reconciliation loop. It runs **single-host** by default, and **as a high-availability cluster** optionally (control plane, reschedule on failure, encrypted mesh).
 
 **Key capabilities:**
 
@@ -19,6 +19,7 @@ Caelix is a declarative orchestrator for Docker containers on a single server. S
 - Automatic repair through escalation (restart → recreate → purge)
 - Blue/green deployment with pre-switch validation
 - Horizontal autoscaling with built-in TCP load balancer (socat)
+- **Optional multi-node cluster**: leader election, heartbeat/liveness, lease-based fencing, WireGuard mesh
 - Discord alerts with detailed diagnostics
 - Audit trail in JSONL or SQLite
 - Web console: Vue 3 + FastAPI (150+ REST endpoints, httpOnly cookie auth)
@@ -144,6 +145,7 @@ caelix/
 |---|---|
 | [Getting Started](getting-started/installation.md) | Installation, first launch, documentation deployment |
 | [Architecture](architecture/overview.md) | Components, reconciliation flow, state directory |
+| [Cluster](architecture/cluster.md) | Multi-node HA: how it works, setup, test bench |
 | [Configuration](configuration/manifest.md) | INI manifest, Discord notifications, environment variables |
 | [Modules](modules/health.md) | Health, repair, autoscale, proxy, audit, incidents, notifications |
 | [Web Console](ui/overview.md) | UI, REST API, frontend |

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Statut** | Brouillon — à débattre |
+| **Statut** | ✅ Implémenté — voir [Architecture › Cluster](cluster.md) pour le fonctionnement réel |
 | **Date** | 2026-06-16 |
 | **Auteur** | Arcneell |
 | **Cible** | Cluster haute disponibilité conservant le moteur auto-réparateur Caelix |

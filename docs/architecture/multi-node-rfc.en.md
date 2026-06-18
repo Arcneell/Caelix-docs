@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft — for discussion |
+| **Status** | ✅ Implemented — see [Architecture › Cluster](cluster.md) for how it actually works |
 | **Date** | 2026-06-16 |
 | **Author** | Arcneell |
 | **Goal** | A high-availability cluster that keeps the Caelix self-healing engine |

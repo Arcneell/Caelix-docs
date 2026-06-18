@@ -114,7 +114,7 @@ reloads the views. "Controller (local)" returns to the local daemon.
 
 Technically, the console sends an `X-Caelix-Node` header that the backend resolves to
 the node's Docker endpoint — see
-[Architecture › Cluster §9](../architecture/cluster.md#9-targeting-a-node-from-the-orchestrator-and-ui).
+[Architecture › Cluster §9](../architecture/cluster.md#9-targeting-a-node).
 
 ---
 

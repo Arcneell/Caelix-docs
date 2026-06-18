@@ -114,7 +114,7 @@ Le choix est mémorisé et recharge les vues. « Controller (local) » revient a
 local.
 
 Techniquement, la console envoie un en-tête `X-Caelix-Node` que le backend résout
-vers l'endpoint Docker du nœud — voir [Architecture › Cluster §9](../architecture/cluster.md#9-cibler-un-nud-depuis-lorchestrateur-et-lui).
+vers l'endpoint Docker du nœud — voir [Architecture › Cluster §9](../architecture/cluster.md#9-ciblage-dun-nud).
 
 ---
 

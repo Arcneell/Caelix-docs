@@ -88,18 +88,31 @@ On the control node, a second unit starts the backend with `CAELIX_CONTROLLER=1`
 
 ---
 
-## 4. Add a node
+## 4. Add or remove a node
 
-1. Install Caelix on the new node (same version as the cluster).
-2. Fill `/etc/caelix-cluster.env`: `CAELIX_CLUSTER_BACKEND=consul`,
-   `CAELIX_CONSUL_ADDR`, a unique `CAELIX_NODE_ID`, `CAELIX_NODE_ADDR`,
-   `CAELIX_DOCKER_ADDR`, `CAELIX_WG_ENDPOINT`.
-3. `caelix mesh-keygen` then `sudo caelix mesh-up`.
-4. Start `caelix-agent`. The node publishes its meta, the controller sees it alive
-   and starts placing workloads on it.
+### Add
 
-The node then appears in the **Cluster** view of the console, and in the **node
-selector** in the header.
+On the controller console, **Cluster › Add a node** shows the command to run on the
+new machine. Otherwise, directly:
+
+```bash
+# Guided install: choose "join an existing cluster"
+docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
+  | bash -s -- --mode join --consul-addr http://<controller-IP>:8500
+
+# Or, if Caelix is already installed on the machine:
+caelix node join --consul-addr http://<controller-IP>:8500 --start
+```
+
+The node generates its WireGuard keys, registers in the store, and appears in the
+**Cluster** view and the header **node selector**.
+
+### Remove
+
+In the **Cluster** view, a row's **Remove** button drains the node (its workloads
+are rescheduled elsewhere) then removes it from the cluster. If pinned workloads
+block the drain, the console offers to force it. On the node, `caelix node leave`
+stops the agent and tears down the mesh.
 
 ---
 

@@ -88,18 +88,31 @@ Sur le nœud de contrôle, une seconde unit lance le backend avec
 
 ---
 
-## 4. Ajouter un nœud
+## 4. Ajouter ou supprimer un nœud
 
-1. Installer Caelix sur le nouveau nœud (même version que le cluster).
-2. Renseigner `/etc/caelix-cluster.env` : `CAELIX_CLUSTER_BACKEND=consul`,
-   `CAELIX_CONSUL_ADDR`, un `CAELIX_NODE_ID` unique, `CAELIX_NODE_ADDR`,
-   `CAELIX_DOCKER_ADDR`, `CAELIX_WG_ENDPOINT`.
-3. `caelix mesh-keygen` puis `sudo caelix mesh-up`.
-4. Démarrer `caelix-agent`. Le nœud publie sa meta, le controller le voit vivant et
-   commence à y placer des charges.
+### Ajouter
 
-Le nœud apparaît alors dans la vue **Cluster** de la console, et dans le **sélecteur
-de nœud** de l'en-tête.
+Dans la console du controller, **Cluster › Ajouter un nœud** affiche la commande à
+lancer sur la nouvelle machine. Sinon, directement :
+
+```bash
+# Installation guidée : choisir « rejoindre un cluster »
+docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
+  | bash -s -- --mode join --consul-addr http://<IP-controller>:8500
+
+# Ou, si Caelix est déjà installé sur la machine :
+caelix node join --consul-addr http://<IP-controller>:8500 --start
+```
+
+Le nœud génère ses clés WireGuard, s'enregistre dans le store, et apparaît dans la
+vue **Cluster** ainsi que dans le **sélecteur de nœud** de l'en-tête.
+
+### Supprimer
+
+Dans la vue **Cluster**, le bouton **Supprimer** d'une ligne vide le nœud (ses
+charges sont replanifiées ailleurs) puis le retire du cluster. Si des charges
+épinglées (`pinned`) bloquent le drain, la console propose de forcer. Côté nœud,
+`caelix node leave` arrête l'agent et démonte le maillage.
 
 ---
 

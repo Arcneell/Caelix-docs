@@ -7,6 +7,13 @@ cluster, l'ajout d'un nœud et le banc de test. Pour le fonctionnement interne, 
 Consul et WireGuard sont embarqués et pilotés par Caelix : on n'interagit qu'avec
 `caelix` et la console.
 
+En cluster, **chaque nœud est un serveur Consul (quorum Raft) et un controller** :
+la haute disponibilité est automatique. Avec **≥ 3 nœuds**, la perte du nœud leader est
+absorbée (le quorum 2/3 survit), un autre nœud reprend le leadership et la **VIP** en
+quelques secondes. Le **maillage WireGuard est obligatoire** : un nœud cluster ne peut
+exister sans lui (l'installeur exige `wireguard-tools` et l'agent applique le maillage
+automatiquement).
+
 ---
 
 ## 1. Activer le mode cluster
@@ -25,9 +32,11 @@ Caelix reste mono-hôte et rien ne change.
 | `CAELIX_NODE_LABELS` | Étiquettes pour l'affinité (`k=v,k=v`) | `zone=eu,disk=ssd` |
 | `CAELIX_NODE_TTL` | TTL du heartbeat en secondes | `30` |
 | `CAELIX_DOCKER_ADDR` | Endpoint Docker publié (pour le ciblage depuis l'UI) | `tcp://10.0.0.11:2375` |
-| `CAELIX_CONTROLLER` | `1` sur les nœuds de contrôle (active la boucle leader) | `1` |
+| `CAELIX_CONTROLLER` | `1` sur **tous** les nœuds cluster (HA : boucle leader élue par Consul) | `1` |
 | `CAELIX_INGRESS` | `1` pour publier les backends / rafraîchir l'ingress | `1` |
 | `CAELIX_WG_ENDPOINT` | Endpoint WireGuard annoncé aux pairs | `10.0.0.11:51820` |
+| `CAELIX_CLUSTER_VIP` | VIP flottante portée par le leader (adresse stable console + ingress) | `10.0.0.10/32` |
+| `CAELIX_VIP_IFACE` | Interface portant la VIP (défaut : interface de la route par défaut) | `enp5s0` |
 
 Une façon propre de les poser est un fichier d'environnement
 `/etc/caelix-cluster.env` chargé par les units systemd (voir §3).
@@ -129,24 +138,50 @@ vers l'endpoint Docker du nœud — voir [Architecture › Cluster §9](../archi
 
 ---
 
-## 6. Banc de test Incus
+## 6. VIP de cluster (adresse stable)
 
-Un banc multi-nœud **réel** est fourni dans `tests/integration/vmlab/` : il crée des
-**VM Incus** (KVM), installe Docker + WireGuard + Caelix, et monte un cluster
-3 nœuds (1 controller + Consul, 2 workers) avec Consul et WireGuard réels.
+Les IP des nœuds peuvent changer (DHCP) et le leader peut basculer. Pour offrir une
+**adresse d'accès stable** à la console et à l'ingress, Caelix gère une **VIP
+flottante** portée par le nœud **leader** :
+
+- Définir `CAELIX_CLUSTER_VIP` (ex. `10.0.0.10/32`) sur les nœuds controller-éligibles
+  — à l'install : `--mode controller --vip 10.0.0.10/32`.
+- L'**agent** du leader pose la VIP sur son interface (`CAELIX_VIP_IFACE`, sinon
+  l'interface de la route par défaut) et émet un ARP gratuit ; les autres nœuds la
+  relâchent. La console (`:18100`) et le proxy d'ingress (`:80`), qui écoutent en
+  `0.0.0.0`, répondent alors sur la VIP.
+- Le verrou Consul garantit **un seul leader** (pas de split-brain). À la bascule, le
+  nouveau leader reprend la VIP en ~1–2 ticks ; le leader sortant (ou en perte de bail)
+  la relâche. La VIP configurée est aussi **publiée dans le store**, pour qu'un nœud
+  promu leader la reprenne sans reconfiguration.
 
 ```bash
-cd tests/integration/vmlab
-./up.sh         # build du frontend, création + provisioning des VM, forwards console
-# … tester via la console (port-forward) …
-./down.sh       # détruit les VM
+caelix vip-status     # leader courant, VIP, interface, détention locale
 ```
 
-Le provisioning (`provision.sh`) écrit `/etc/caelix-cluster.env`, expose le `dockerd`
-de chaque nœud en TCP (pour que le controller cible les nœuds depuis l'UI) et
-installe les units `caelix-agent` + `caelix-ui`. Voir le `README.md` du dossier pour
-les détails et l'accès console.
+!!! note "Failover automatique"
+    Tous les nœuds d'un cluster sont controller-éligibles (`CAELIX_CONTROLLER=1`) et
+    serveurs Consul : la bascule est **automatique** dès **≥ 3 nœuds** (quorum Raft
+    maintenu à la perte d'un nœud). Le nouveau leader reprend la VIP en ~quelques
+    secondes ; le maillage WireGuard reste actif sur les nœuds survivants.
 
-!!! warning "TCP Docker = réseau isolé uniquement"
-    Le banc expose `dockerd` en TCP **clair** sur le réseau isolé des VM. En
-    production, restreindre cet endpoint au **sous-réseau WireGuard + mTLS**.
+---
+
+## 7. Monter un cluster réel
+
+Sur chaque VM ou serveur, installez via le paquet officiel (voir
+[Installation](installation.md)) :
+
+```bash
+# Controller (1er nœud) — démarre Consul, console + controller, porte la VIP
+docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
+  | bash -s -- --with-systemd --mode controller --vip 10.0.0.10/32
+
+# Workers
+docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
+  | bash -s -- --with-systemd --mode join --consul-addr http://<IP-controller>:8500
+```
+
+Puis, sur chaque nœud : `caelix mesh-keygen` et `sudo caelix mesh-up`. Les nœuds
+apparaissent dans la vue **Cluster** de la console, joignable sur la VIP
+(`http://10.0.0.10:18100`).

@@ -7,6 +7,12 @@ a node, and the test bench. For the internals, see
 Consul and WireGuard are embedded and driven by Caelix: you only interact with
 `caelix` and the console.
 
+In a cluster, **every node is a Consul server (Raft quorum) and a controller**: high
+availability is automatic. With **≥ 3 nodes**, losing the leader node is absorbed (the
+2/3 quorum survives), another node takes over leadership and the **VIP** within
+seconds. The **WireGuard mesh is mandatory**: a cluster node cannot exist without it
+(the installer requires `wireguard-tools` and the agent applies the mesh automatically).
+
 ---
 
 ## 1. Enable cluster mode
@@ -25,9 +31,11 @@ single-host and nothing changes.
 | `CAELIX_NODE_LABELS` | Labels for affinity (`k=v,k=v`) | `zone=eu,disk=ssd` |
 | `CAELIX_NODE_TTL` | Heartbeat TTL in seconds | `30` |
 | `CAELIX_DOCKER_ADDR` | Published Docker endpoint (for UI targeting) | `tcp://10.0.0.11:2375` |
-| `CAELIX_CONTROLLER` | `1` on control nodes (enables the leader loop) | `1` |
+| `CAELIX_CONTROLLER` | `1` on **all** cluster nodes (HA: leader loop, elected via Consul) | `1` |
 | `CAELIX_INGRESS` | `1` to publish backends / refresh the ingress | `1` |
 | `CAELIX_WG_ENDPOINT` | WireGuard endpoint advertised to peers | `10.0.0.11:51820` |
+| `CAELIX_CLUSTER_VIP` | Floating VIP held by the leader (stable console + ingress address) | `10.0.0.10/32` |
+| `CAELIX_VIP_IFACE` | Interface carrying the VIP (default: the default-route interface) | `enp5s0` |
 
 A clean way to set these is an environment file `/etc/caelix-cluster.env` loaded by
 the systemd units (see §3).
@@ -129,24 +137,49 @@ the node's Docker endpoint — see
 
 ---
 
-## 6. Incus test bench
+## 6. Cluster VIP (stable address)
 
-A **real** multi-node bench is provided in `tests/integration/vmlab/`: it creates
-**Incus VMs** (KVM), installs Docker + WireGuard + Caelix, and brings up a 3-node
-cluster (1 controller + Consul, 2 workers) with real Consul and WireGuard.
+Node IPs can change (DHCP) and the leader can fail over. To provide a **stable access
+address** for the console and the ingress, Caelix manages a **floating VIP** carried
+by the **leader** node:
+
+- Set `CAELIX_CLUSTER_VIP` (e.g. `10.0.0.10/32`) on controller-eligible nodes — at
+  install time: `--mode controller --vip 10.0.0.10/32`.
+- The leader's **agent** adds the VIP to its interface (`CAELIX_VIP_IFACE`, otherwise
+  the default-route interface) and sends a gratuitous ARP; other nodes release it. The
+  console (`:18100`) and the ingress proxy (`:80`), which listen on `0.0.0.0`, then
+  answer on the VIP.
+- The Consul lock guarantees a **single leader** (no split-brain). On failover the new
+  leader takes over the VIP within ~1–2 ticks; the outgoing leader (or one that lost
+  its lease) releases it. The configured VIP is also **published to the store** so a
+  promoted node can take it over without reconfiguration.
 
 ```bash
-cd tests/integration/vmlab
-./up.sh         # build the frontend, create + provision the VMs, console forwards
-# … test via the console (port-forward) …
-./down.sh       # destroy the VMs
+caelix vip-status     # current leader, VIP, interface, local ownership
 ```
 
-Provisioning (`provision.sh`) writes `/etc/caelix-cluster.env`, exposes each node's
-`dockerd` over TCP (so the controller can target nodes from the UI) and installs the
-`caelix-agent` + `caelix-ui` units. See the folder's `README.md` for details and
-console access.
+!!! note "Automatic failover"
+    Every cluster node is controller-eligible (`CAELIX_CONTROLLER=1`) and a Consul
+    server: failover is **automatic** from **≥ 3 nodes** (Raft quorum kept when a node
+    is lost). The new leader takes over the VIP within ~seconds; the WireGuard mesh
+    stays active on the surviving nodes.
 
-!!! warning "TCP Docker = isolated network only"
-    The bench exposes `dockerd` over **plain** TCP on the isolated VM network. In
-    production, restrict that endpoint to the **WireGuard subnet + mTLS**.
+---
+
+## 7. Bring up a real cluster
+
+On each VM or server, install via the official package (see
+[Installation](installation.md)):
+
+```bash
+# Controller (first node) — starts Consul, console + controller, carries the VIP
+docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
+  | bash -s -- --with-systemd --mode controller --vip 10.0.0.10/32
+
+# Workers
+docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
+  | bash -s -- --with-systemd --mode join --consul-addr http://<controller-IP>:8500
+```
+
+Then, on each node: `caelix mesh-keygen` and `sudo caelix mesh-up`. Nodes appear in
+the console's **Cluster** view, reachable on the VIP (`http://10.0.0.10:18100`).

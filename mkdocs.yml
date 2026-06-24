@@ -63,6 +63,7 @@ plugins:
             Cluster: Cluster
             Distribution & Release: Distribution & Release
             Mise à jour du paquet: Package Update Process
+            Notes de release v2.0.0: Release Notes v2.0.0
             Notes de release v1.4.3: Release Notes v1.4.3
             Notes de release v1.4.2: Release Notes v1.4.2
             Notes de release v1.4.1: Release Notes v1.4.1
@@ -142,6 +143,7 @@ nav:
     - Cluster: getting-started/cluster.md
     - Distribution & Release: getting-started/distribution.md
     - Mise à jour du paquet: getting-started/package-release.md
+    - Notes de release v2.0.0: getting-started/release-notes/v2.0.0.md
     - Notes de release v1.4.3: getting-started/release-notes/v1.4.3.md
     - Notes de release v1.4.2: getting-started/release-notes/v1.4.2.md
     - Notes de release v1.4.1: getting-started/release-notes/v1.4.1.md

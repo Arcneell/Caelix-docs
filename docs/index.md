@@ -10,7 +10,7 @@
 
 ## Présentation
 
-Caelix est un orchestrateur déclaratif pour conteneurs Docker. Les services sont définis dans un fichier INI. Le moteur assure la convergence vers l'état désiré via une boucle de réconciliation continue. Il fonctionne **en mono-hôte** par défaut, et **en cluster haute disponibilité** en option (plan de contrôle, replanification sur panne, maillage chiffré).
+Caelix est un orchestrateur déclaratif pour conteneurs Docker. Les services sont définis dans un fichier INI. Le moteur assure la convergence vers l'état désiré via une boucle de réconciliation continue. Il fonctionne **en mono-hôte** par défaut, et **en cluster hautement disponible** en option — un cluster **HA par conception** que l'on **pilote comme un mono-hôte** depuis la console : chaque nœud est serveur Consul + controller, une **VIP flottante** offre une adresse stable qui **bascule automatiquement**, l'état de la console est partagé, et on **pilote le Docker de n'importe quel nœud** depuis l'UI.
 
 **Capacités principales :**
 
@@ -19,10 +19,10 @@ Caelix est un orchestrateur déclaratif pour conteneurs Docker. Les services son
 - Réparation automatique par escalade (restart → recreate → purge)
 - Déploiement blue/green avec validation pré-bascule
 - Autoscaling horizontal avec load balancer TCP intégré (socat)
-- **Cluster multi-nœud optionnel** : leader élu, heartbeat/liveness, fencing par bail, maillage WireGuard
+- **Cluster HA (2.0)** : plan de contrôle Consul (quorum Raft), **VIP flottante** avec **bascule automatique**, maillage WireGuard obligatoire, **état console partagé** (utilisateurs, secret JWT, config, templates, stacks Compose, certs TLS), **Docker par nœud** (`X-Caelix-Node`), et **HPA** horizontal sur le CPU
 - Alertes Discord avec diagnostic détaillé
 - Audit trail JSONL ou SQLite
-- Console web Vue 3 + FastAPI (150+ endpoints REST, auth par cookie httpOnly)
+- Console web Vue 3 + FastAPI (~189 opérations REST, auth par cookie httpOnly)
 
 ---
 
@@ -103,13 +103,13 @@ caelix/
 │   ├── manifest.ini            #   Services déclarés
 │   └── notify.ini              #   Webhook Discord
 ├── ui/                         # Console web
-│   ├── backend/                #   FastAPI (21 routers, 150+ endpoints)
+│   ├── backend/                #   FastAPI (~27 routers, ~189 opérations)
 │   ├── frontend/               #   Vue 3 SPA
 │   └── Dockerfile              #   Multi-stage build
 ├── scripts/                    # Installation et maintenance
 ├── .caelix/                      # Données runtime
 ├── caelix.global.service         # Unit systemd
-└── VERSION                     # 1.4.3
+└── VERSION                     # 2.0.0-beta.1
 ```
 
 ---
@@ -135,6 +135,24 @@ caelix/
     bin/caelix run
     ```
 
+=== "Cluster HA (2.0, opt-in)"
+
+    Tirez le canal beta (`:2.0.0-beta.1` ou `:beta`) ; amorcez un controller avec une VIP flottante, puis rattachez les autres nœuds :
+
+    ```bash
+    INSTALL="ghcr.io/arcneell/caelix:2.0.0-beta.1"
+
+    # Nœud controller — bootstrappe Consul + porte la VIP
+    docker run --rm $INSTALL cat /opt/caelix/install.sh | bash -s -- \
+      --with-systemd --mode controller --vip 10.0.0.10/32 --admin-password 'IDENTIQUE_SUR_TOUS'
+
+    # Nœuds à rattacher — pointez vers l'API Consul d'un controller existant
+    docker run --rm $INSTALL cat /opt/caelix/install.sh | bash -s -- \
+      --with-systemd --mode join --consul-addr http://10.0.0.11:8500 --admin-password 'IDENTIQUE_SUR_TOUS'
+    ```
+
+    Console et ingress répondent alors sur la VIP (`http://10.0.0.10:18100`), qui suit le leader à la bascule (`caelix vip-status`).
+
 :material-arrow-right: [Guide d'installation complet](getting-started/installation.md)
 
 ---
@@ -145,7 +163,7 @@ caelix/
 |---|---|
 | [Démarrage](getting-started/installation.md) | Installation, premier lancement, déploiement de la doc |
 | [Architecture](architecture/overview.md) | Composants, flux de réconciliation, répertoire d'état |
-| [Cluster](architecture/cluster.md) | Multi-nœud HA : fonctionnement, mise en place, banc de test |
+| [Cluster](architecture/cluster.md) | Cluster HA : plan de contrôle Consul, VIP flottante, état partagé, HPA |
 | [Configuration](configuration/manifest.md) | Manifest INI, notifications Discord, variables d'environnement |
 | [Modules](modules/health.md) | Health, repair, autoscale, proxy, audit, incidents, notifications |
 | [Console Web](ui/overview.md) | UI, API REST, frontend |

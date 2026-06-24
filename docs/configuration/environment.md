@@ -44,6 +44,25 @@ est strictement inchangé.**
 | `CAELIX_CLUSTER_BACKEND` | `file` | Backend du store cluster, **côté controller ET agent** : `file` (utilise `CAELIX_CLUSTER_STORE`) ou `consul` (KV Consul). L'agent (`caelix agent`) publie sa méta et lit son sous-manifest via ce backend. |
 | `CAELIX_CONSUL_ADDR` | `http://127.0.0.1:8500` | Adresse HTTP de l'agent Consul (si `CAELIX_CLUSTER_BACKEND=consul`). Côté agent, `curl` est requis. |
 | `CAELIX_CONSUL_TOKEN` | _(vide)_ | Token ACL Consul (en-tête `X-Consul-Token`), pour un cluster Consul sécurisé par ACL. |
+| `CAELIX_DOCKER_ADDR` | _(vide)_ | Adresse TCP du démon Docker du nœud (ex. `tcp://10.0.0.5:2375`), publiée dans la méta du nœud. La console (et le HPA cluster) la consomment pour piloter le bon démon par nœud (en-tête `X-Caelix-Node`). |
+| `CAELIX_PIN_LOCAL_SECTIONS` | _(vide)_ | Sections du manifeste local à **épingler** (CSV) : réinjectées après adoption du sous-manifest poussé par le controller (ex. `caelix-ui,proxy`), pour qu'un nœud garde ses services locaux. |
+
+### VIP de cluster (ingress flottante)
+
+La VIP flottante donne une adresse d'accès stable (console + ingress) portée par le
+nœud **leader**. Voir le module [Proxy](../modules/proxy.md) et `node_vip_*` (lib/node.sh).
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `CAELIX_CLUSTER_VIP` | _(vide)_ | Adresse VIP du cluster en CIDR (ex. `10.0.0.10/32`). Posée sur l'interface par le nœud qui détient le leadership ; source de vérité de la VIP. Vide = pas de VIP. |
+| `CAELIX_VIP_IFACE` | _(auto)_ | Interface portant la VIP. Si absente, l'interface de la route par défaut est utilisée. |
+| `CAELIX_VIP_ARP` | `1` | Si `1`, émet un ARP gratuit (`arping`) lors de la prise de la VIP, pour que le LAN reroute immédiatement vers le nouveau leader. |
+| `CAELIX_ADMIN_PASSWORD` | _(vide)_ | Mot de passe admin initial de la console, à fixer identique sur tous les nœuds (le hash est stocké dans le store cluster). Aussi posable via `install.sh --admin-password`. |
+
+> **Sécurité (cluster)** — en mode cluster, `dockerd:2375` (cf. `CAELIX_DOCKER_ADDR`) et
+> Consul `:8500` sont liés à l'**IP privée** du nœud. En production, activez les ACL
+> Consul + token (`CAELIX_CONSUL_TOKEN`) + TLS : le KV Consul détient le secret JWT, les
+> hash de mots de passe et les clés TLS.
 
 > Exemple — piloter un démon distant en TLS :
 > `-e CAELIX_DOCKER_HOST=tcp://node-b:2376 -e CAELIX_DOCKER_TLS_VERIFY=1 -e CAELIX_DOCKER_CERT_PATH=/etc/caelix/certs`.

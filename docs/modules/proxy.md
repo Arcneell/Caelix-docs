@@ -103,6 +103,32 @@ autoscale_route = default
 
 La fonction `_proxy_route_lookup()` effectue le matching dans l'ordre : host → path → default.
 
+### Ingress cluster / VIP (mode 2.0)
+
+En mode cluster, le **proxy global tourne sur le nœud leader** et sert l'ingress sur
+`VIP:80` (la VIP flottante, cf. [variables d'environnement](../configuration/environment.md#vip-de-cluster-ingress-flottante) `CAELIX_CLUSTER_VIP` / `CAELIX_VIP_IFACE`). Il
+load-balance le trafic à travers les backends des **services cluster** publiés par
+chaque nœud.
+
+Mécanique de bout en bout :
+
+1. Chaque agent qui a une `CAELIX_NODE_ADDR` publie, pour ses services, un backend
+   `<CAELIX_NODE_ADDR>:<hostport>` dans le registre de services (clé `publish` du
+   manifest cluster).
+2. Sur un nœud ingress (`CAELIX_INGRESS=1`), `build_routes` lit le registre et regroupe,
+   par **clé de route** (`autoscale_route`, ou le nom de l'app), la liste dédupliquée et
+   triée des adresses de backend de tous les nœuds. Plusieurs apps partageant la même
+   clé sont fusionnées derrière une seule route. `default` est la route catch-all
+   servie sur `VIP:80`.
+3. À chaque passe, `routes.conf` est **régénéré** depuis le registre puis **relu par
+   connexion** : un changement de route (replica ajouté/retiré, nœud disparu) ne
+   nécessite **aucun redémarrage** du proxy.
+4. Les backends morts sont **écartés** : la boucle de health du proxy sonde chaque
+   backend et le round-robin n'envoie le trafic qu'aux backends sains.
+
+Comme en mono-hôte, ce proxy global gère aussi le LB par application de l'autoscale et
+le routage par domaine/TLS — l'ingress cluster réutilise le même moteur `proxy.sh`.
+
 ---
 
 ## Endpoints intégrés

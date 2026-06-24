@@ -86,6 +86,25 @@ pushed by the controller (`address` + peer table) with the local private key, vi
 `wg`/`ip` (**root required**). `mesh-down` tears the interface down. See the
 [multi-node RFC](../architecture/multi-node-rfc.md).
 
+### vip-status
+
+```bash
+bin/caelix vip-status
+```
+
+Prints the state of the **cluster VIP** (floating ingress) from the current node's
+point of view:
+
+- `node` — the local node identity
+- `leader` — the node currently holding leadership (which should carry the VIP)
+- `vip` — the configured VIP address (`CAELIX_CLUSTER_VIP`), or "not configured"
+- `interface` — the interface carrying the VIP (`CAELIX_VIP_IFACE` or the default route)
+- `held` — `yes` if the VIP is actually held locally, `no` otherwise
+
+Handy to quickly check which node holds the VIP after a failover. See the
+[Proxy](../modules/proxy.md) module (cluster ingress) and the
+`CAELIX_CLUSTER_VIP` / `CAELIX_VIP_IFACE` / `CAELIX_VIP_ARP` variables.
+
 ### once
 
 ```bash

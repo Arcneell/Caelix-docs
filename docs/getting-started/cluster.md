@@ -1,187 +1,283 @@
 # Cluster multi-nœud
 
-Caelix fonctionne en mono-hôte par défaut. Ce guide couvre l'activation du mode
-cluster, l'ajout d'un nœud et le banc de test. Pour le fonctionnement interne, voir
+Caelix fonctionne en mono-hôte par défaut. À partir de la **2.0**, le mode cluster est
+**hautement disponible par conception** et se pilote **comme un mono-hôte** depuis la
+console. Ce guide couvre l'installation d'un cluster réel (nœud d'amorçage + nœuds
+qui rejoignent), sa vérification, le déploiement d'un **service cluster** et la
+bascule (failover). Pour le fonctionnement interne, voir
 [Architecture › Cluster](../architecture/cluster.md).
 
 Consul et WireGuard sont embarqués et pilotés par Caelix : on n'interagit qu'avec
-`caelix` et la console.
+`caelix` et la console. **L'installeur met en place tous les prérequis** (Docker,
+socat, `wireguard-tools` + `modprobe wireguard`, `arping` pour la VIP) : un nœud
+cluster est autonome.
 
-En cluster, **chaque nœud est un serveur Consul (quorum Raft) et un controller** :
-la haute disponibilité est automatique. Avec **≥ 3 nœuds**, la perte du nœud leader est
-absorbée (le quorum 2/3 survit), un autre nœud reprend le leadership et la **VIP** en
-quelques secondes. Le **maillage WireGuard est obligatoire** : un nœud cluster ne peut
-exister sans lui (l'installeur exige `wireguard-tools` et l'agent applique le maillage
-automatiquement).
+En cluster, **chaque nœud est un serveur Consul (quorum Raft) et un controller**
+(`CAELIX_CONTROLLER=1`) : la haute disponibilité est automatique. Avec **≥ 3 nœuds**,
+la perte du nœud leader est absorbée (le quorum 2/3 survit), un autre nœud reprend le
+leadership et la **VIP** en quelques secondes. Le **maillage WireGuard est obligatoire** :
+un nœud cluster ne peut exister sans lui (l'installeur exige `wireguard-tools` et
+l'agent applique le maillage automatiquement).
+
+!!! note "Cluster / VIP strictement opt-in"
+    Le mono-hôte reste le mode **par défaut** et ne change pas. Le cluster et la VIP
+    ne s'activent que via `--mode controller|join` (et `--vip …`). Sans ces options,
+    le comportement de Caelix est identique à la 1.x.
+
+!!! warning "Image 2.0 (beta)"
+    Le cluster HA est livré dans la **2.0**. Tirez l'image
+    `ghcr.io/arcneell/caelix:2.0.0-beta.1` (ou le canal `:beta`). `:latest` reste sur
+    la 1.x stable. Pour authentifier le registry, voir [Installation](installation.md).
 
 ---
 
-## 1. Activer le mode cluster
+## 1. Prérequis
 
-Le mode cluster s'active par variables d'environnement. Hors de ces variables,
-Caelix reste mono-hôte et rien ne change.
+- Au moins **3 machines/VM Linux** pour un vrai failover automatique (quorum Raft
+  maintenu à la perte d'un nœud). 1 ou 2 nœuds fonctionnent mais sans quorum tolérant
+  aux pannes.
+- Connectivité réseau privée entre les nœuds (les IP privées portent Consul `:8500`,
+  dockerd `:2375` et le maillage WireGuard `:51820`).
+- Une **adresse VIP libre** sur le sous-réseau des nœuds (ex. `10.0.0.10`), qui servira
+  d'adresse stable pour la console et l'ingress.
+- Accès au registry Caelix (`docker login ghcr.io`, voir [Installation](installation.md)).
+
+Tout le reste (Docker, socat, WireGuard, arping, Consul, Compose) est installé
+automatiquement par `install.sh`.
+
+---
+
+## 2. Installer le nœud d'amorçage (controller)
+
+Sur la **première** machine, lancez l'installeur en mode `controller`. Ce nœud
+bootstrappe le raft Consul, lance la console + la boucle controller, et **porte la VIP**.
+
+```bash
+docker run --rm ghcr.io/arcneell/caelix:2.0.0-beta.1 cat /opt/caelix/install.sh \
+  | bash -s -- --with-systemd --mode controller --vip 10.0.0.10/32 \
+      --cluster-size 3 --admin-password 'ChangeMoi-Fort'
+```
+
+Options cluster utiles à l'install :
+
+| Option | Rôle |
+|---|---|
+| `--mode controller` | Nœud d'amorçage : bootstrappe Consul (`-bootstrap-expect=1`), lance la console + controller |
+| `--vip 10.0.0.10/32` | VIP flottante portée par le leader (adresse stable console + ingress) |
+| `--cluster-size 3` | Nombre de serveurs Consul attendus (quorum HA, défaut **3**) |
+| `--admin-password <pw>` | Mot de passe admin initial. **La même valeur sur tous les nœuds** → admin cohérent après bascule. Sinon un mot de passe fort est généré et affiché une fois dans les logs de la console |
+| `--consul-token <tok>` | Token ACL Consul (durcissement prod) |
+| `--ui-bind <addr>` | Adresse d'écoute de la console (défaut `0.0.0.0`) |
+
+!!! tip "Mot de passe admin"
+    Sans `--admin-password`, récupérez le mot de passe généré une fois :
+    `docker logs caelix-caelix-ui | grep -i password`.
+
+À la fin, le nœud expose Consul (`caelix-consul`), écrit `/etc/caelix-cluster.env` et
+démarre l'agent via systemd (`caelix-agent.service`). La console est joignable sur la
+VIP : **http://10.0.0.10:18100**.
+
+---
+
+## 3. Faire rejoindre les autres nœuds
+
+Sur **chaque** nœud supplémentaire, lancez l'installeur en mode `join` en pointant
+l'adresse Consul du nœud d'amorçage (son IP privée, port 8500) :
+
+```bash
+docker run --rm ghcr.io/arcneell/caelix:2.0.0-beta.1 cat /opt/caelix/install.sh \
+  | bash -s -- --with-systemd --mode join \
+      --consul-addr http://<IP-controller>:8500 \
+      --admin-password 'ChangeMoi-Fort'
+```
+
+Passez le **même** `--admin-password` qu'au controller pour garder un admin cohérent
+après bascule. Le nœud rejoint le gossip Consul (`-retry-join`), grossit le quorum
+Raft, devient lui aussi controller-éligible, génère ses clés WireGuard et applique le
+maillage automatiquement.
+
+!!! note "Le cluster force systemd"
+    Hors mono-hôte, `--with-systemd` est implicite : l'agent tourne en service
+    (`caelix-agent.service`) et charge `/etc/caelix-cluster.env`.
+
+Si Caelix est **déjà installé** sur une machine, on peut aussi la faire rejoindre
+sans relancer l'installeur :
+
+```bash
+caelix node join --consul-addr http://<IP-controller>:8500 --start
+```
+
+---
+
+## 4. Vérifier le cluster
+
+1. **Console sur la VIP** — ouvrez **http://10.0.0.10:18100** (la VIP, quel que soit le
+   leader). La vue **Cluster** doit lister **les 3 nœuds vivants**.
+2. **Statut VIP** — sur n'importe quel nœud :
+
+   ```bash
+   caelix vip-status     # leader courant, VIP, interface, détention locale
+   ```
+
+   Un seul nœud (le leader) détient la VIP.
+3. **VIP joignable** — depuis une autre machine du réseau :
+
+   ```bash
+   curl -I http://10.0.0.10:18100     # console
+   curl -I http://10.0.0.10:80        # ingress (une fois un service publié)
+   ```
+
+Sélecteur de nœud : en cluster, un sélecteur apparaît dans l'en-tête de la console.
+Choisir un nœud route **toutes** les actions Docker (conteneurs, images, volumes,
+réseaux, stacks, logs, métriques, déploiements) vers le démon de ce nœud, via
+l'en-tête `X-Caelix-Node`. « Controller (local) » revient au démon local.
+
+---
+
+## 5. Déployer un service cluster (l'essentiel)
+
+Un **service cluster** se décrit dans le manifeste cluster (via la console : section
+d'app du manifeste). Contrairement à un service mono-hôte, on déclare un **nombre total
+de réplicas** que le scheduler répartit sur les nœuds, et une **route ingress** que le
+proxy global du leader sert sur la VIP.
+
+Clés d'une section d'app cluster :
+
+| Clé | Rôle |
+|---|---|
+| `image` | Image du conteneur (ex. `nginx:latest`) |
+| `total_replicas` | Nombre total de réplicas à répartir sur les nœuds |
+| `publish` | `<hostport>:<containerport>` — le backend ingress est `<adresse-nœud>:<hostport>` |
+| `autoscale_route` | Clé de route ingress. Utilisez **`default`** pour la route fourre-tout `VIP:80` |
+| `anti_affinity` | (optionnel) Nom d'app → 1 réplica par nœud max |
+| `node_affinity` | (optionnel) Épingle les réplicas sur des nœuds étiquetés |
+| `max_per_node` | (optionnel) Plafond de réplicas par nœud |
+
+!!! note "Health par défaut = none"
+    Un service sans `health_type` explicite **défaut à `none`** en cluster : il n'est
+    pas « réparé à mort ». La reprise au crash passe par `create_missing`. Déclarez une
+    sonde explicite (`health_type = http`, `health_url`, …) pour activer la surveillance.
+
+### Exemple : nginx servi sur la VIP
+
+```ini
+[web]
+image = nginx:latest
+total_replicas = 3
+publish = 8080:80
+autoscale_route = default
+anti_affinity = web
+```
+
+Le scheduler place 3 réplicas (1 par nœud grâce à `anti_affinity`), chacun publié sur
+`<nœud>:8080`. Le **proxy global du leader** load-balance `VIP:80` sur ces backends et
+**retire les backends morts**. Le service est alors joignable sur :
+
+```bash
+curl http://10.0.0.10/        # → réponse nginx, quel que soit le leader
+```
+
+---
+
+## 6. Autoscale horizontal (HPA)
+
+Pour ajuster `total_replicas` automatiquement selon la charge CPU, ajoutez à la section
+d'app :
+
+| Clé | Rôle |
+|---|---|
+| `hpa = 1` | Active l'autoscale horizontal |
+| `hpa_min` / `hpa_max` | Bornes du nombre de réplicas |
+| `hpa_target` | Cible d'utilisation CPU (%) |
+| `hpa_cooldown` | Délai (s) entre deux ajustements |
+
+```ini
+[web]
+image = nginx:latest
+total_replicas = 3
+publish = 8080:80
+autoscale_route = default
+anti_affinity = web
+hpa = 1
+hpa_min = 2
+hpa_max = 8
+hpa_target = 70
+hpa_cooldown = 60
+```
+
+Le leader mesure le CPU des réplicas, ajuste `total_replicas` (entre `hpa_min` et
+`hpa_max`), le scheduler replace et l'ingress load-balance les nouveaux backends.
+
+---
+
+## 7. Bascule (failover)
+
+Tous les nœuds sont controller-éligibles et serveurs Consul. Le **verrou Consul**
+garantit **un seul leader** (pas de split-brain). À la perte du leader :
+
+- avec **≥ 3 nœuds**, le quorum 2/3 survit, un autre nœud est élu leader ;
+- le nouveau leader **reprend la VIP** en ~quelques secondes (pose sur son interface +
+  ARP gratuit) ; le leader sortant la relâche ;
+- l'**état console est partagé via Consul** (login, utilisateurs, config, stacks,
+  certs) : la console reste identique après bascule ;
+- le **maillage WireGuard** reste actif sur les nœuds survivants ;
+- l'ingress (`VIP:80`) continue de servir les backends encore vivants.
+
+```bash
+caelix vip-status     # confirme le nouveau leader et la détention de la VIP
+```
+
+La VIP configurée est **publiée dans le store** : un nœud promu leader la reprend sans
+reconfiguration.
+
+---
+
+## 8. Retirer un nœud
+
+Dans la vue **Cluster**, le bouton **Supprimer** d'une ligne draine le nœud (ses
+charges sont replanifiées ailleurs) puis le retire du cluster. Si des charges épinglées
+(`pinned`) bloquent le drain, la console propose de forcer. Côté nœud :
+
+```bash
+caelix node leave     # arrête l'agent et démonte le maillage
+```
+
+---
+
+## 9. Durcissement sécurité (production)
+
+À l'install, **dockerd `:2375` et l'API Consul `:8500` sont liés à l'IP privée du nœud**
+(jamais `0.0.0.0`), et un pare-feu best-effort restreint 2375 aux réseaux privés. C'est
+la première barrière, mais **insuffisant seul en production** :
+
+- Le **KV Consul est le plan de contrôle** : il contient le secret JWT, les hash de mots
+  de passe et les clés TLS. Quiconque atteint l'API Consul peut les lire.
+- En production, l'opérateur **doit** activer :
+  - les **ACL Consul** (`default_policy = deny` + token via `CAELIX_CONSUL_TOKEN`,
+    passé à l'install avec `--consul-token`) ;
+  - le **chiffrement gossip** ;
+  - **TLS** sur l'API Consul et **mTLS** sur dockerd.
+
+---
+
+## 10. Référence : variables d'environnement cluster
+
+L'installeur écrit `/etc/caelix-cluster.env`, chargé par `caelix-agent.service`. Pour
+un réglage manuel ou avancé :
 
 | Variable | Rôle | Exemple |
 |---|---|---|
 | `CAELIX_CLUSTER_BACKEND` | `file` (mono-controller) ou `consul` (HA) | `consul` |
-| `CAELIX_CLUSTER_STORE` | Chemin du store (backend `file`) | `/opt/caelix/.caelix/cluster` |
 | `CAELIX_CONSUL_ADDR` | Adresse Consul (backend `consul`) | `http://127.0.0.1:8500` |
 | `CAELIX_CONSUL_TOKEN` | Token ACL Consul (optionnel) | — |
 | `CAELIX_NODE_ID` | Identité du nœud (sinon généré et persisté) | `node-a` |
 | `CAELIX_NODE_ADDR` | IP du nœud sur le réseau cluster | `10.0.0.11` |
 | `CAELIX_NODE_LABELS` | Étiquettes pour l'affinité (`k=v,k=v`) | `zone=eu,disk=ssd` |
-| `CAELIX_NODE_TTL` | TTL du heartbeat en secondes | `30` |
-| `CAELIX_DOCKER_ADDR` | Endpoint Docker publié (pour le ciblage depuis l'UI) | `tcp://10.0.0.11:2375` |
-| `CAELIX_CONTROLLER` | `1` sur **tous** les nœuds cluster (HA : boucle leader élue par Consul) | `1` |
+| `CAELIX_DOCKER_ADDR` | Endpoint Docker publié (ciblage `X-Caelix-Node`) | `tcp://10.0.0.11:2375` |
+| `CAELIX_CONTROLLER` | `1` sur **tous** les nœuds cluster (boucle leader élue par Consul) | `1` |
 | `CAELIX_INGRESS` | `1` pour publier les backends / rafraîchir l'ingress | `1` |
 | `CAELIX_WG_ENDPOINT` | Endpoint WireGuard annoncé aux pairs | `10.0.0.11:51820` |
-| `CAELIX_CLUSTER_VIP` | VIP flottante portée par le leader (adresse stable console + ingress) | `10.0.0.10/32` |
+| `CAELIX_CLUSTER_VIP` | VIP flottante portée par le leader | `10.0.0.10/32` |
 | `CAELIX_VIP_IFACE` | Interface portant la VIP (défaut : interface de la route par défaut) | `enp5s0` |
 
-Une façon propre de les poser est un fichier d'environnement
-`/etc/caelix-cluster.env` chargé par les units systemd (voir §3).
-
----
-
-## 2. Démarrer un nœud (agent)
-
-Sur chaque nœud, le moteur tourne en **mode agent** : comme `caelix run`, plus la
-publication de l'identité, du heartbeat et des backends.
-
-```bash
-# Génère (une fois) la paire de clés WireGuard ; affiche la clé publique
-caelix mesh-keygen
-
-# Applique le maillage WireGuard depuis les directives du store (root)
-sudo caelix mesh-up
-
-# Démarre l'agent (réconcilie le sous-manifeste poussé par le controller)
-caelix agent
-```
-
-Commandes d'inspection utiles :
-
-```bash
-caelix node-info      # identité + méta-données du nœud (JSON)
-caelix node-status    # écrit + affiche le statut de l'agent (meta + état observé)
-```
-
-Le **controller** est le backend FastAPI lancé avec `CAELIX_CONTROLLER=1` : il lit
-l'état désiré et les nœuds vivants, planifie le placement et écrit un sous-manifeste
-par nœud. En backend `consul`, il s'auto-élit leader ; en backend `file`, il est le
-seul controller.
-
----
-
-## 3. Exemple de unit systemd
-
-```ini
-# /etc/systemd/system/caelix-agent.service
-[Unit]
-Description=Caelix agent
-After=docker.service
-Wants=docker.service
-
-[Service]
-EnvironmentFile=/etc/caelix-cluster.env
-Environment=CAELIX_DATA=/opt/caelix/.caelix
-ExecStart=/bin/bash /opt/caelix/bin/caelix agent
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Sur le nœud de contrôle, une seconde unit lance le backend avec
-`CAELIX_CONTROLLER=1` (la boucle leader y est activée).
-
----
-
-## 4. Ajouter ou supprimer un nœud
-
-### Ajouter
-
-Dans la console du controller, **Cluster › Ajouter un nœud** affiche la commande à
-lancer sur la nouvelle machine. Sinon, directement :
-
-```bash
-# Installation guidée : choisir « rejoindre un cluster »
-docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
-  | bash -s -- --mode join --consul-addr http://<IP-controller>:8500
-
-# Ou, si Caelix est déjà installé sur la machine :
-caelix node join --consul-addr http://<IP-controller>:8500 --start
-```
-
-Le nœud génère ses clés WireGuard, s'enregistre dans le store, et apparaît dans la
-vue **Cluster** ainsi que dans le **sélecteur de nœud** de l'en-tête.
-
-### Supprimer
-
-Dans la vue **Cluster**, le bouton **Supprimer** d'une ligne vide le nœud (ses
-charges sont replanifiées ailleurs) puis le retire du cluster. Si des charges
-épinglées (`pinned`) bloquent le drain, la console propose de forcer. Côté nœud,
-`caelix node leave` arrête l'agent et démonte le maillage.
-
----
-
-## 5. Cibler un nœud depuis la console
-
-En mode cluster, un **sélecteur de nœud** apparaît dans l'en-tête de la console.
-Choisir un nœud route **toutes** les actions adossées à Docker (conteneurs, images,
-volumes, réseaux, stacks, logs, métriques, déploiements) vers le démon de ce nœud.
-Le choix est mémorisé et recharge les vues. « Controller (local) » revient au démon
-local.
-
-Techniquement, la console envoie un en-tête `X-Caelix-Node` que le backend résout
-vers l'endpoint Docker du nœud — voir [Architecture › Cluster §9](../architecture/cluster.md#9-ciblage-dun-nud).
-
----
-
-## 6. VIP de cluster (adresse stable)
-
-Les IP des nœuds peuvent changer (DHCP) et le leader peut basculer. Pour offrir une
-**adresse d'accès stable** à la console et à l'ingress, Caelix gère une **VIP
-flottante** portée par le nœud **leader** :
-
-- Définir `CAELIX_CLUSTER_VIP` (ex. `10.0.0.10/32`) sur les nœuds controller-éligibles
-  — à l'install : `--mode controller --vip 10.0.0.10/32`.
-- L'**agent** du leader pose la VIP sur son interface (`CAELIX_VIP_IFACE`, sinon
-  l'interface de la route par défaut) et émet un ARP gratuit ; les autres nœuds la
-  relâchent. La console (`:18100`) et le proxy d'ingress (`:80`), qui écoutent en
-  `0.0.0.0`, répondent alors sur la VIP.
-- Le verrou Consul garantit **un seul leader** (pas de split-brain). À la bascule, le
-  nouveau leader reprend la VIP en ~1–2 ticks ; le leader sortant (ou en perte de bail)
-  la relâche. La VIP configurée est aussi **publiée dans le store**, pour qu'un nœud
-  promu leader la reprenne sans reconfiguration.
-
-```bash
-caelix vip-status     # leader courant, VIP, interface, détention locale
-```
-
-!!! note "Failover automatique"
-    Tous les nœuds d'un cluster sont controller-éligibles (`CAELIX_CONTROLLER=1`) et
-    serveurs Consul : la bascule est **automatique** dès **≥ 3 nœuds** (quorum Raft
-    maintenu à la perte d'un nœud). Le nouveau leader reprend la VIP en ~quelques
-    secondes ; le maillage WireGuard reste actif sur les nœuds survivants.
-
----
-
-## 7. Monter un cluster réel
-
-Sur chaque VM ou serveur, installez via le paquet officiel (voir
-[Installation](installation.md)) :
-
-```bash
-# Controller (1er nœud) — démarre Consul, console + controller, porte la VIP
-docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
-  | bash -s -- --with-systemd --mode controller --vip 10.0.0.10/32
-
-# Workers
-docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
-  | bash -s -- --with-systemd --mode join --consul-addr http://<IP-controller>:8500
-```
-
-Puis, sur chaque nœud : `caelix mesh-keygen` et `sudo caelix mesh-up`. Les nœuds
-apparaissent dans la vue **Cluster** de la console, joignable sur la VIP
-(`http://10.0.0.10:18100`).
+Commandes d'inspection : `caelix node-info`, `caelix node-status`, `caelix vip-status`.

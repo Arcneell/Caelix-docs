@@ -4,11 +4,20 @@
 
 | Principe | Description |
 |---|---|
-| **Single-node** | Pas de coordination multi-machines. Conçu pour orchestrer des conteneurs sur un seul hôte. |
+| **Mono-hôte par défaut** | Conçu pour orchestrer des conteneurs sur un seul hôte, sans coordination multi-machines. Un mode cluster HA reste **opt-in** (voir ci-dessous). |
 | **Déclaratif** | L'état désiré est défini dans un fichier INI. Le moteur converge vers cet état à chaque cycle. |
 | **Self-healing** | Réparation automatique par escalade (restart → recreate → purge) sans intervention. |
 | **Minimal** | Dépendances : Bash 5, curl, Docker ou Podman. Pas de runtime additionnel requis. |
 | **Observable** | Audit trail, journal d'incidents, alertes Discord, métriques Prometheus. |
+
+---
+
+## Deux modes de déploiement
+
+| Mode | Activation | Description |
+|---|---|---|
+| **Mono-hôte** (défaut) | aucune | Le moteur réconcilie le manifeste local sur un seul hôte. Tout le reste de cette page décrit ce mode. |
+| **Cluster multi-nœud (HA)** | `CAELIX_CLUSTER_BACKEND=consul` | Un **plan de contrôle verrouillé par leader** (chaque nœud exécute le backend FastAPI ; seul le leader agit) planifie le placement sur plusieurs nœuds, ajuste les répliques (HPA), porte une **VIP flottante** et un **ingress global**, le tout coordonné via **Consul KV**. Le moteur ci-dessous reste l'**exécuteur local** inchangé de chaque nœud. Voir [Cluster multi-nœud](cluster.md). |
 
 ---
 

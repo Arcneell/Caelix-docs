@@ -154,6 +154,65 @@ Available monitoring types:
 | `autoscale_health_path` | `/` | HTTP path for backend probes |
 | `autoscale_route` | — | Global routing: `host:hostname`, `path:/prefix`, `port:N`, `default` |
 
+### Cluster Placement & Ingress (2.0 mode)
+
+In cluster mode (2.0 console, `file` or `consul` store), a service section may carry
+extra **placement** keys. These are interpreted by the controller (leader), which
+decides which nodes host the replicas, then they are **stripped from the sub-manifest**
+pushed to each agent (the single-host agent does not understand them). See
+`PLACEMENT_KEYS` in `model.py`.
+
+| Key | Default | Description |
+|---|---|---|
+| `total_replicas` | `1` | Total number of replicas to spread across the cluster |
+| `node_affinity` | — | Placement constraint (label/node) for where to place replicas |
+| `anti_affinity` | — | Avoid co-locating replicas (one per node when possible) |
+| `max_per_node` | — | Cap on replicas of the same service per node |
+| `storage` | — | Placement-only key (state/volume), stripped from the sub-manifest |
+| `shared_volume` | — | Shared volume of a *stateful* app — **kept** in the sub-manifest (the agent needs it for the mount) |
+
+**Cluster HPA** (cluster horizontal autoscaler, distinct from the single-host autoscale) — see the [Autoscale](../modules/autoscale.md) module:
+
+| Key | Default | Description |
+|---|---|---|
+| `hpa` | `0` | Enable the cluster autoscaler (`1`); the leader adjusts `total_replicas` |
+| `hpa_min` | `1` | Lower bound of `total_replicas` |
+| `hpa_max` | (= min) | Upper bound of `total_replicas` |
+| `hpa_metric` | (CPU) | Watched metric (replica CPU% via `docker stats`) |
+| `hpa_target` | `60` | Target (CPU %) to aim for |
+| `hpa_cooldown` | `2` | Consecutive ticks before acting |
+
+#### Cluster service ingress
+
+| Key | Default | Description |
+|---|---|---|
+| `publish` | — | `<hostport>:<containerport>`; the backend address published to the ingress becomes `<CAELIX_NODE_ADDR>:<hostport>` |
+| `autoscale_route` | (= app name) | Ingress route key. `default` = catch-all route on `VIP:80`. The `domain:<host>` / `port:<n>` forms are also supported. Several apps sharing a key are merged behind the same route. |
+| `health_type` | `none` (in cluster) | **In cluster mode, the absence of an explicit `health_type` means `none`**: the container is healthy while it runs (crash recovery still fires via `create_missing`), and the ingress probes each backend itself before routing. Prevents a probe-less service from being "repaired to death". An explicit `health_type` always wins. |
+
+#### Cluster service example
+
+```ini
+# Cluster manifest (edited via the console / controller)
+[web]
+image = myapp:latest
+total_replicas = 4
+anti_affinity = 1
+max_per_node = 2
+publish = 8080:80
+autoscale_route = default      # catch-all route on VIP:80
+hpa = 1
+hpa_min = 2
+hpa_max = 8
+hpa_target = 65
+hpa_cooldown = 3
+# no health_type → defaults to `none` in cluster; the ingress probes the backends
+```
+
+> **Security (cluster)** — in cluster mode, `dockerd:2375` and Consul `:8500` are bound
+> to the node's **private IP**. In production you must enable Consul ACLs + token + TLS:
+> the Consul KV holds the JWT secret, password hashes and TLS keys.
+
 ## Complete Example
 
 ```ini

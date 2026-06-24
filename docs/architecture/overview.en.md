@@ -4,11 +4,20 @@
 
 | Principle | Description |
 |---|---|
-| **Single-node** | No multi-machine coordination. Designed to orchestrate containers on a single host. |
+| **Single-host by default** | Designed to orchestrate containers on a single host, with no multi-machine coordination. An HA cluster mode is **opt-in** (see below). |
 | **Declarative** | The desired state is defined in an INI file. The engine converges toward that state on each cycle. |
 | **Self-healing** | Automatic repair through escalation (restart → recreate → purge) without intervention. |
 | **Minimal** | Dependencies: Bash 5, curl, Docker or Podman. No additional runtime required. |
 | **Observable** | Audit trail, incident journal, Discord alerts, Prometheus metrics. |
+
+---
+
+## Two deployment modes
+
+| Mode | Enable | Description |
+|---|---|---|
+| **Single-host** (default) | none | The engine reconciles the local manifest on a single host. The rest of this page describes this mode. |
+| **Multi-node cluster (HA)** | `CAELIX_CLUSTER_BACKEND=consul` | A **leader-gated control plane** (every node runs the FastAPI backend; only the leader acts) schedules placement across nodes, adjusts replicas (HPA), carries a **floating VIP** and a **global ingress**, all coordinated through **Consul KV**. The engine below stays each node's unchanged **local executor**. See [Multi-node cluster](cluster.md). |
 
 ---
 

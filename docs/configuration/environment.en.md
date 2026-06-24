@@ -44,6 +44,25 @@ strictly unchanged.**
 | `CAELIX_CLUSTER_BACKEND` | `file` | Cluster store backend, **on both the controller AND the agent**: `file` (uses `CAELIX_CLUSTER_STORE`) or `consul` (Consul KV). The agent (`caelix agent`) publishes its meta and reads its sub-manifest through this backend. |
 | `CAELIX_CONSUL_ADDR` | `http://127.0.0.1:8500` | Consul agent HTTP address (when `CAELIX_CLUSTER_BACKEND=consul`). On the agent side, `curl` is required. |
 | `CAELIX_CONSUL_TOKEN` | _(empty)_ | Consul ACL token (`X-Consul-Token` header), for an ACL-secured Consul cluster. |
+| `CAELIX_DOCKER_ADDR` | _(empty)_ | TCP address of the node's Docker daemon (e.g. `tcp://10.0.0.5:2375`), published in the node meta. The console (and the cluster HPA) consume it to drive the right per-node daemon (`X-Caelix-Node` header). |
+| `CAELIX_PIN_LOCAL_SECTIONS` | _(empty)_ | Local manifest sections to **pin** (CSV): re-injected after adopting the controller's pushed sub-manifest (e.g. `caelix-ui,proxy`), so a node keeps its local services. |
+
+### Cluster VIP (floating ingress)
+
+The floating VIP gives a stable access address (console + ingress) held by the
+**leader** node. See the [Proxy](../modules/proxy.md) module and `node_vip_*` (lib/node.sh).
+
+| Variable | Default | Description |
+|---|---|---|
+| `CAELIX_CLUSTER_VIP` | _(empty)_ | Cluster VIP address as a CIDR (e.g. `10.0.0.10/32`). Placed on the interface by the node holding leadership; source of truth for the VIP. Empty = no VIP. |
+| `CAELIX_VIP_IFACE` | _(auto)_ | Interface carrying the VIP. If unset, the default-route interface is used. |
+| `CAELIX_VIP_ARP` | `1` | If `1`, sends a gratuitous ARP (`arping`) when taking the VIP, so the LAN immediately reroutes to the new leader. |
+| `CAELIX_ADMIN_PASSWORD` | _(empty)_ | Initial console admin password, to set identically on all nodes (the hash is stored in the cluster store). Also settable via `install.sh --admin-password`. |
+
+> **Security (cluster)** — in cluster mode, `dockerd:2375` (cf. `CAELIX_DOCKER_ADDR`) and
+> Consul `:8500` are bound to the node's **private IP**. In production, enable Consul ACLs
+> + token (`CAELIX_CONSUL_TOKEN`) + TLS: the Consul KV holds the JWT secret, password
+> hashes and TLS keys.
 
 > Example — drive a remote daemon over TLS:
 > `-e CAELIX_DOCKER_HOST=tcp://node-b:2376 -e CAELIX_DOCKER_TLS_VERIFY=1 -e CAELIX_DOCKER_CERT_PATH=/etc/caelix/certs`.

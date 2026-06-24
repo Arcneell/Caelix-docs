@@ -10,11 +10,19 @@ Install Caelix on any Linux server in two steps:
 echo "YOUR_TOKEN" | docker login ghcr.io -u Arcneell --password-stdin
 ```
 
-**2. Install:**
+**2. Install (single-host):**
 
 ```bash
 docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh | bash -s -- --with-systemd
 ```
+
+!!! tip "High-availability cluster (2.0)"
+    The installer also supports **cluster mode** via `--mode controller|join` and the
+    floating **VIP** via `--vip`. HA clustering ships in the **2.0** image
+    (`ghcr.io/arcneell/caelix:2.0.0-beta.1` or the `:beta` channel; `:latest` stays on
+    stable 1.x). The single-host install above stays the **default** and is unchanged.
+    See [Multi-node cluster](cluster.en.md) for the full guide, and
+    [Cluster mode](#cluster-mode-high-availability) below for the flags.
 
 ### What the Script Does
 
@@ -23,6 +31,8 @@ docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh | bash
 3. Creates default configuration files
 4. Runs an initial reconciliation (`caelix once`)
 5. Installs the systemd service (if `--with-systemd`)
+6. In cluster mode: also installs `wireguard-tools` (+ `modprobe wireguard`), `arping`,
+   starts an HA Consul server and writes `/etc/caelix-cluster.env`
 
 ### Prerequisites
 
@@ -48,6 +58,13 @@ install.sh [options]
   --root PATH            Installation directory (default: /opt/caelix)
   --image IMAGE          Docker image (default: ghcr.io/arcneell/caelix:latest)
   --with-systemd         Install and start the systemd service
+  --mode MODE            single | controller | join (cluster; default: single)
+  --vip CIDR             (controller mode) cluster VIP carried by the leader (e.g. 10.0.0.10/32)
+  --cluster-size N       (cluster) number of expected Consul servers (HA quorum; default: 3)
+  --consul-addr URL      (join mode) cluster Consul address (e.g. http://10.0.0.1:8500)
+  --consul-token TOK     (cluster) Consul ACL token (production hardening)
+  --admin-password PW    initial admin password (same value on every node)
+  --node-id ID           (cluster) identifier for this node (auto-generated otherwise)
   --no-install-docker    Don't install Docker (fail if missing)
   --skip-engine          Don't extract the engine (UI image only)
   --skip-pull            Don't pull the image (use local image)
@@ -69,6 +86,28 @@ Examples:
 
 Every option also has an environment-variable equivalent:
 `CAELIX_UI_PORT`, `CAELIX_UI_BIND`, `CAELIX_LANG`, `CAELIX_ROOT`, `CAELIX_IMAGE`.
+
+### Cluster mode (high availability)
+
+As of **2.0**, the installer brings up an HA cluster. Use the 2.0 image
+(`ghcr.io/arcneell/caelix:2.0.0-beta.1` or the `:beta` channel). Cluster mode forces
+`--with-systemd` and automatically installs WireGuard, arping and a Consul server.
+
+```bash
+# Bootstrap node (controller) — carries the VIP, starts Consul + console
+docker run --rm ghcr.io/arcneell/caelix:2.0.0-beta.1 cat /opt/caelix/install.sh \
+  | bash -s -- --with-systemd --mode controller --vip 10.0.0.10/32 \
+      --cluster-size 3 --admin-password 'ChangeMe-Strong'
+
+# Additional nodes — join the cluster
+docker run --rm ghcr.io/arcneell/caelix:2.0.0-beta.1 cat /opt/caelix/install.sh \
+  | bash -s -- --with-systemd --mode join \
+      --consul-addr http://<controller-IP>:8500 --admin-password 'ChangeMe-Strong'
+```
+
+The console is then reachable on the **VIP** (`http://10.0.0.10:18100`). Full guide
+(verification, deploying a cluster service, HPA, failover, hardening):
+[Multi-node cluster](cluster.en.md).
 
 ### Environment Variables
 

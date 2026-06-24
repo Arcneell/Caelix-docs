@@ -2,6 +2,15 @@
 
 The `autoscale.sh` module implements horizontal scaling: replica management, metric collection, scaling decisions with cooldown, and built-in load balancer control.
 
+Caelix ships **two** distinct autoscalers, which coexist:
+
+- **Single-host autoscale** (`autoscale.sh`, key `autoscale = 1`) — covered by most of
+  this page. Creates `caelix-<app>-rN` replicas on a single host, behind the per-app
+  socat load balancer.
+- **Cluster HPA** (key `hpa = 1`, 2.0 mode) — covered in the
+  [Cluster HPA](#cluster-hpa-mode-20) section below. The leader adjusts a service's
+  `total_replicas` and the scheduler/ingress spread the replicas across nodes.
+
 ---
 
 ## Overview
@@ -318,3 +327,63 @@ monitoring_types = all
 env = NODE_ENV=production;LOG_LEVEL=info
 memory_limit_mb = 512
 ```
+
+---
+
+## Cluster HPA (2.0 mode) {#cluster-hpa-mode-20}
+
+The **cluster HPA** (`ui/backend/app/core/cluster/hpa.py`) is the multi-node horizontal
+autoscaler. It is **distinct** from the single-host autoscale above: instead of managing
+`caelix-<app>-rN` replicas on one host, it adjusts a service's `total_replicas` in the
+cluster manifest, and the scheduler + ingress then place and load-balance the replicas
+across nodes — exactly like changing `total_replicas` by hand, but automatically.
+
+### Activation
+
+Opt-in per service, in the cluster manifest:
+
+```ini
+[web]
+image = myapp:latest
+total_replicas = 2
+hpa = 1            # enable the cluster HPA
+hpa_min = 2        # lower bound of total_replicas
+hpa_max = 8        # upper bound of total_replicas
+hpa_target = 60    # target CPU % (default 60)
+hpa_cooldown = 3   # consecutive ticks before acting (default 2)
+```
+
+| Key | Default | Description |
+|---|---|---|
+| `hpa` | `0` | Enable the cluster autoscaler (`1`/`true`) |
+| `hpa_min` | `1` | Lower bound of `total_replicas` |
+| `hpa_max` | (= min) | Upper bound of `total_replicas` |
+| `hpa_metric` | (CPU) | Watched metric |
+| `hpa_target` | `60` | Target (CPU %) to aim for |
+| `hpa_cooldown` | `2` | Consecutive ticks before acting |
+
+These keys are part of `PLACEMENT_KEYS`: they are stripped from the sub-manifest pushed
+to agents (the agent only sees the `total_replicas` the leader decided).
+
+### How it works
+
+On each pass (`hpa_tick`), run by the **leader** only:
+
+1. For each replica of an `hpa = 1` service, the leader reads the `caelix-<app>`
+   container's **CPU%** via `docker stats --no-stream`, targeting each node's Docker
+   daemon (the same `docker_addr`/`X-Caelix-Node` the console uses). Samples are
+   averaged (`_avg_cpu`).
+2. The decision applies **asymmetric hysteresis**:
+   - **scale up** when `average > hpa_target` and `total_replicas < hpa_max`;
+   - **scale down** when `average < hpa_target × 0.5` and `total_replicas > hpa_min`.
+   - In between, the counters reset (no flapping around the target).
+3. The action only fires after `hpa_cooldown` consecutive ticks in the same direction,
+   and changes `total_replicas` by **one** at a time (clamped to `[hpa_min, hpa_max]`).
+4. If the manifest changes, it is rewritten to the store; the scheduler re-places the
+   replicas and the ingress updates its backends.
+
+> Cooldown counters are in-process in the leader loop. A failover resets them on the new
+> leader, which is harmless: the HPA simply re-evaluates from the live metric.
+
+> If no live metric is available yet (replica absent / daemon unreachable), the service
+> is left untouched for that pass.

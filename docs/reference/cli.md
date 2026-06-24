@@ -86,6 +86,25 @@ poussées par le controller (`address` + table de pairs) avec la clé privée lo
 via `wg`/`ip` (**root requis**). `mesh-down` démonte l'interface. Voir la
 [RFC multi-nœud](../architecture/multi-node-rfc.md).
 
+### vip-status
+
+```bash
+bin/caelix vip-status
+```
+
+Affiche l'état de la **VIP de cluster** (ingress flottante) du point de vue du nœud
+courant :
+
+- `node` — identité du nœud local
+- `leader` — nœud actuellement leader (qui doit porter la VIP)
+- `vip` — adresse VIP configurée (`CAELIX_CLUSTER_VIP`), ou « non configurée »
+- `interface` — interface portant la VIP (`CAELIX_VIP_IFACE` ou route par défaut)
+- `détenue` — `oui` si la VIP est effectivement portée localement, `non` sinon
+
+Utile pour vérifier rapidement quel nœud détient la VIP après un failover. Voir le
+module [Proxy](../modules/proxy.md) (ingress cluster) et les variables
+`CAELIX_CLUSTER_VIP` / `CAELIX_VIP_IFACE` / `CAELIX_VIP_ARP`.
+
 ### once
 
 ```bash

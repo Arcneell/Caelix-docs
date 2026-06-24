@@ -1,6 +1,65 @@
 # Premier lancement
 
-Ce guide vous accompagne pour lancer Caelix avec un premier service.
+Ce guide vous accompagne pour lancer Caelix avec un premier service. Deux chemins
+rapides selon votre cible : **mono-hôte** (défaut) ou **cluster** HA (2.0).
+
+## Chemin rapide — mono-hôte
+
+Installez Caelix sur un serveur Linux (voir [Installation](installation.md) pour le
+`docker login` au registry) :
+
+```bash
+docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
+  | bash -s -- --with-systemd
+```
+
+Ouvrez la console sur **http://IP_DU_SERVEUR:18100** (login `admin` ; mot de passe
+affiché dans `docker logs caelix-caelix-ui | grep -i password`, ou fixé via
+`--admin-password`). Depuis la console, ajoutez vos services. En CLI, le flux manifeste
+ci-dessous fait la même chose.
+
+## Chemin rapide — cluster HA (2.0)
+
+Trois nœuds, image 2.0 (`:2.0.0-beta.1`). Sur le **nœud d'amorçage** :
+
+```bash
+docker run --rm ghcr.io/arcneell/caelix:2.0.0-beta.1 cat /opt/caelix/install.sh \
+  | bash -s -- --with-systemd --mode controller --vip 10.0.0.10/32 \
+      --cluster-size 3 --admin-password 'ChangeMoi-Fort'
+```
+
+Sur **chaque autre nœud** :
+
+```bash
+docker run --rm ghcr.io/arcneell/caelix:2.0.0-beta.1 cat /opt/caelix/install.sh \
+  | bash -s -- --with-systemd --mode join \
+      --consul-addr http://<IP-controller>:8500 --admin-password 'ChangeMoi-Fort'
+```
+
+Ouvrez la console sur la **VIP** (`http://10.0.0.10:18100`), vérifiez les 3 nœuds dans
+la vue **Cluster**, puis déployez un service cluster. Exemple nginx servi sur la VIP :
+
+```ini
+[web]
+image = nginx:latest
+total_replicas = 3
+publish = 8080:80
+autoscale_route = default
+anti_affinity = web
+```
+
+Le service est joignable sur `http://10.0.0.10/`. Le guide complet (vérification,
+`caelix vip-status`, HPA, bascule, durcissement) :
+[Cluster multi-nœud](cluster.md).
+
+---
+
+## Flux manifeste (mono-hôte, en détail)
+
+Les étapes ci-dessous montrent le flux mono-hôte piloté par le manifeste (équivalent
+CLI de l'ajout d'un service). Depuis une installation par image, le manifeste est dans
+`/opt/caelix/etc/manifest.ini` et la commande globale est `caelix` (les exemples
+`bin/caelix` ci-dessous valent pour une checkout des sources).
 
 ## 1. Créer le manifest
 

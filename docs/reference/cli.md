@@ -45,7 +45,7 @@ Identique à `run`, plus la publication du statut de nœud à chaque cycle
 - écrit `.caelix/agent/status.json` (méta + état observé) à chaque cycle.
 
 Si un store cluster est configuré (`CAELIX_CLUSTER_BACKEND` = `file` via
-`CAELIX_CLUSTER_STORE`, ou `consul`), l'agent publie sa méta dans le store et
+`CAELIX_CLUSTER_STORE`, ou `etcd`), l'agent publie sa méta dans le store et
 adopte le sous-manifest poussé par le controller comme source d'état désiré ;
 sinon il réconcilie son manifeste local (mono-hôte). Voir la
 [RFC multi-nœud](../architecture/multi-node-rfc.md).

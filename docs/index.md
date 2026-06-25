@@ -14,7 +14,7 @@ Caelix est un orchestrateur de conteneurs déclaratif. Les services sont décrit
 dans un fichier INI ; une boucle de réconciliation continue compare cet état désiré
 à ce que Docker exécute réellement et corrige les écarts. Caelix fonctionne en
 mono-hôte par défaut et, en option, en cluster haute disponibilité piloté depuis la
-console comme s'il s'agissait d'un seul hôte : chaque nœud est serveur Consul et
+console comme s'il s'agissait d'un seul hôte : chaque nœud est membre etcd et
 controller, une VIP flottante fournit une adresse stable qui bascule
 automatiquement, l'état de la console est répliqué entre les nœuds, et une seule
 interface pilote le Docker de n'importe quel nœud.
@@ -26,7 +26,7 @@ Capacités principales :
 - Réparation automatique par escalade (restart, recreate, purge).
 - Déploiement blue/green avec validation avant bascule.
 - Autoscaling horizontal derrière un load balancer TCP intégré (socat).
-- Cluster HA : plan de contrôle Consul (quorum Raft), VIP flottante avec bascule
+- Cluster HA : plan de contrôle etcd (quorum Raft), VIP flottante avec bascule
   automatique, maillage WireGuard, état console partagé (utilisateurs, secret JWT,
   configuration, templates, stacks Compose, certificats TLS), Docker par nœud
   (`X-Caelix-Node`) et autoscaling sur le CPU.
@@ -86,7 +86,7 @@ graph LR
 | Proxy | socat (TCP round-robin, rechargement à chaud) |
 | Backend de la console | Python 3.11+, FastAPI, SSE |
 | Frontend de la console | Vue 3, TypeScript, Tailwind CSS, Vite |
-| Contrôle de cluster | Consul (KV, sessions, verrou de leader), WireGuard |
+| Contrôle de cluster | etcd (KV, lease + transaction put-if-absent), WireGuard |
 | Notifications | Discord, Slack, Teams, Telegram, SMTP |
 | Audit | JSONL ou SQLite |
 
@@ -150,13 +150,13 @@ caelix/
     ```bash
     IMAGE="ghcr.io/arcneell/caelix:latest"
 
-    # Controller : amorce Consul et porte la VIP
+    # Controller : amorce etcd et porte la VIP
     docker run --rm $IMAGE cat /opt/caelix/install.sh | bash -s -- \
       --with-systemd --mode controller --vip 10.0.0.10/32 --admin-password 'IDENTIQUE_SUR_TOUS'
 
-    # Nœud à rattacher : pointez vers l'API Consul d'un controller existant
+    # Nœud à rattacher : pointez vers l'API etcd d'un controller existant
     docker run --rm $IMAGE cat /opt/caelix/install.sh | bash -s -- \
-      --with-systemd --mode join --consul-addr http://10.0.0.11:8500 --admin-password 'IDENTIQUE_SUR_TOUS'
+      --with-systemd --mode join --store-addr http://10.0.0.11:2379 --admin-password 'IDENTIQUE_SUR_TOUS'
     ```
 
     La console et l'ingress répondent alors sur la VIP (`http://10.0.0.10:18100`),
@@ -172,7 +172,7 @@ caelix/
 |---|---|
 | [Démarrage](getting-started/installation.md) | Installation, premier lancement, déploiement de la documentation |
 | [Architecture](architecture/overview.md) | Composants, flux de réconciliation, répertoire d'état |
-| [Cluster](architecture/cluster.md) | Cluster HA : plan de contrôle Consul, VIP flottante, état partagé, autoscaling |
+| [Cluster](architecture/cluster.md) | Cluster HA : plan de contrôle etcd, VIP flottante, état partagé, autoscaling |
 | [Configuration](configuration/manifest.md) | Manifest INI, notifications, variables d'environnement |
 | [Modules](modules/health.md) | Health, repair, autoscale, proxy, audit, incidents, notifications |
 | [Console web](ui/overview.md) | Interface, API REST, frontend |

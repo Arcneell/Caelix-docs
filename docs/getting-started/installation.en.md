@@ -31,7 +31,7 @@ docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh | bash
 4. Runs an initial reconciliation (`caelix once`)
 5. Installs the systemd service (if `--with-systemd`)
 6. In cluster mode: also installs `wireguard-tools` (+ `modprobe wireguard`) and `arping`,
-   starts an HA Consul server and writes `/etc/caelix-cluster.env`
+   starts an HA etcd member and writes `/etc/caelix-cluster.env`
 
 ### Prerequisites
 
@@ -59,9 +59,8 @@ install.sh [options]
   --with-systemd         Install and start the systemd service
   --mode MODE            single | controller | join (cluster; default: single)
   --vip CIDR             (controller mode) cluster VIP carried by the leader (e.g. 10.0.0.10/32)
-  --cluster-size N       (cluster) number of expected Consul servers (HA quorum; default: 3)
-  --consul-addr URL      (join mode) cluster Consul address (e.g. http://10.0.0.1:8500)
-  --consul-token TOK     (cluster) Consul ACL token (production hardening)
+  --cluster-size N       (cluster) number of expected etcd members (HA quorum; default: 3)
+  --store-addr URL       (join mode) cluster etcd store address (e.g. http://10.0.0.1:2379)
   --admin-password PW    initial admin password (same value on every node)
   --node-id ID           (cluster) identifier for this node (auto-generated otherwise)
   --no-install-docker    Don't install Docker (fail if missing)
@@ -89,10 +88,10 @@ Every option also has an environment-variable equivalent:
 ### Cluster mode (high availability)
 
 The installer can bring up an HA cluster from the `:latest` image. Cluster mode forces
-`--with-systemd` and automatically installs WireGuard, arping and a Consul server.
+`--with-systemd` and automatically installs WireGuard, arping and an etcd member.
 
 ```bash
-# Bootstrap node (controller): carries the VIP, starts Consul + console
+# Bootstrap node (controller): carries the VIP, starts etcd + console
 docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
   | bash -s -- --with-systemd --mode controller --vip 10.0.0.10/32 \
       --cluster-size 3 --admin-password 'ChangeMe-Strong'
@@ -100,7 +99,7 @@ docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
 # Additional nodes: join the cluster
 docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
   | bash -s -- --with-systemd --mode join \
-      --consul-addr http://<controller-IP>:8500 --admin-password 'ChangeMe-Strong'
+      --store-addr http://<controller-IP>:2379 --admin-password 'ChangeMe-Strong'
 ```
 
 The console is then reachable on the VIP (`http://10.0.0.10:18100`). For the full guide

@@ -33,7 +33,7 @@ Sur chaque autre nœud :
 ```bash
 docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
   | bash -s -- --with-systemd --mode join \
-      --consul-addr http://<IP-controller>:8500 --admin-password 'ChangeMoi-Fort'
+      --store-addr http://<IP-controller>:2379 --admin-password 'ChangeMoi-Fort'
 ```
 
 Ouvrez la console sur la VIP (`http://10.0.0.10:18100`), vérifiez les 3 nœuds dans

@@ -32,7 +32,7 @@ est strictement inchangé.
 | `CAELIX_NODE_ID` | _(auto)_ | Identité du nœud (mode `agent`, multi-nœud). Si absent, un id est généré une fois et persisté dans `.caelix/node/id`. Sanitizé en `[a-z0-9-]`. |
 | `CAELIX_NODE_LABELS` | _(vide)_ | Labels de placement du nœud, `clé=valeur` séparés par des virgules (ex. `zone=eu-west,disk=ssd`). Exposés par `caelix node-info`. |
 | `CAELIX_NODE_ADDR` | _(vide)_ | Adresse d'annonce du nœud (IP joignable par les autres nœuds, sur le mesh ou le LAN). Sert d'hôte des backends publiés dans le registre de services (ingress). Sans elle, l'agent ne publie pas de backend. |
-| `CAELIX_INGRESS` | `0` | Si `1`, le nœud agit comme ingress : à chaque cycle, le proxy global est alimenté par les backends cluster du registre (load-balancing cross-nœuds). Backends `file` **et** `consul`. |
+| `CAELIX_INGRESS` | `0` | Si `1`, le nœud agit comme ingress : à chaque cycle, le proxy global est alimenté par les backends cluster du registre (load-balancing cross-nœuds). Backends `file` **et** `etcd`. |
 | `CAELIX_WG_PUBKEY` | _(vide)_ | Clé publique WireGuard du nœud, publiée dans sa méta pour que le controller/pairs construisent le maillage. Vide tant que le mesh n'est pas configuré. |
 | `CAELIX_WG_ENDPOINT` | _(vide)_ | Endpoint WireGuard du nœud (`host:port`) annoncé aux pairs. |
 | `CAELIX_WG_IFACE` | `caelix-wg0` | Nom de l'interface WireGuard créée par `caelix mesh-up`. |
@@ -41,9 +41,8 @@ est strictement inchangé.
 | `CAELIX_CONTROLLER` | `0` | Si `1`, le backend lance la **boucle controller** (HA) : acquisition du leadership puis reschedule périodique sur les nœuds vivants (seul le leader agit). À activer sur les nœuds de contrôle. |
 | `CAELIX_CONTROLLER_INTERVAL` | `10` | Intervalle (s) entre deux passes de la boucle controller. |
 | `CAELIX_CLUSTER_STORE` | _(vide)_ | Racine du store cluster fichier (layout RFC §9). Si défini, l'agent (`caelix agent`) publie sa méta dans `nodes/<id>/meta.json` et adopte le sous-manifest `nodes/<id>/desired.ini` poussé par le controller. Vide = mode mono-hôte. |
-| `CAELIX_CLUSTER_BACKEND` | `file` | Backend du store cluster, **côté controller ET agent** : `file` (utilise `CAELIX_CLUSTER_STORE`) ou `consul` (KV Consul). L'agent (`caelix agent`) publie sa méta et lit son sous-manifest via ce backend. |
-| `CAELIX_CONSUL_ADDR` | `http://127.0.0.1:8500` | Adresse HTTP de l'agent Consul (si `CAELIX_CLUSTER_BACKEND=consul`). Côté agent, `curl` est requis. |
-| `CAELIX_CONSUL_TOKEN` | _(vide)_ | Token ACL Consul (en-tête `X-Consul-Token`), pour un cluster Consul sécurisé par ACL. |
+| `CAELIX_CLUSTER_BACKEND` | `file` | Backend du store cluster, **côté controller ET agent** : `file` (utilise `CAELIX_CLUSTER_STORE`) ou `etcd` (KV etcd). L'agent (`caelix agent`) publie sa méta et lit son sous-manifest via ce backend. |
+| `CAELIX_ETCD_ADDR` | `http://127.0.0.1:2379` | Adresse HTTP du membre etcd (si `CAELIX_CLUSTER_BACKEND=etcd`). Côté agent, `curl` est requis. |
 | `CAELIX_DOCKER_ADDR` | _(vide)_ | Adresse TCP du démon Docker du nœud (ex. `tcp://10.0.0.5:2375`), publiée dans la méta du nœud. La console (et le HPA cluster) la consomment pour piloter le bon démon par nœud (en-tête `X-Caelix-Node`). |
 | `CAELIX_PIN_LOCAL_SECTIONS` | _(vide)_ | Sections du manifeste local à **épingler** (CSV) : réinjectées après adoption du sous-manifest poussé par le controller (ex. `caelix-ui,proxy`), pour qu'un nœud garde ses services locaux. |
 
@@ -60,9 +59,8 @@ nœud **leader**. Voir le module [Proxy](../modules/proxy.md) et `node_vip_*` (l
 | `CAELIX_ADMIN_PASSWORD` | _(vide)_ | Mot de passe admin initial de la console, à fixer identique sur tous les nœuds (le hash est stocké dans le store cluster). Aussi posable via `install.sh --admin-password`. |
 
 > **Sécurité (cluster)** : en mode cluster, `dockerd:2375` (cf. `CAELIX_DOCKER_ADDR`) et
-> Consul `:8500` sont liés à l'IP privée du nœud. En production, activez les ACL
-> Consul + token (`CAELIX_CONSUL_TOKEN`) + TLS : le KV Consul détient le secret JWT, les
-> hash de mots de passe et les clés TLS.
+> etcd `:2379` sont liés à l'IP privée du nœud. En production, activez le TLS sur
+> etcd : le KV etcd détient le secret JWT, les hash de mots de passe et les clés TLS.
 
 > Exemple, piloter un démon distant en TLS :
 > `-e CAELIX_DOCKER_HOST=tcp://node-b:2376 -e CAELIX_DOCKER_TLS_VERIFY=1 -e CAELIX_DOCKER_CERT_PATH=/etc/caelix/certs`.

@@ -32,7 +32,7 @@ strictly unchanged.
 | `CAELIX_NODE_ID` | _(auto)_ | Node identity (`agent` mode, multi-node). If unset, an id is generated once and persisted in `.caelix/node/id`. Sanitized to `[a-z0-9-]`. |
 | `CAELIX_NODE_LABELS` | _(empty)_ | Node placement labels, comma-separated `key=value` (e.g. `zone=eu-west,disk=ssd`). Exposed by `caelix node-info`. |
 | `CAELIX_NODE_ADDR` | _(empty)_ | Node advertise address (IP reachable by other nodes, over the mesh or the LAN). Used as the host of the backends published to the service registry (ingress). Without it, the agent publishes no backend. |
-| `CAELIX_INGRESS` | `0` | If `1`, the node acts as an ingress: on each cycle the global proxy is fed from the cluster backend registry (cross-node load-balancing). Both `file` **and** `consul` backends. |
+| `CAELIX_INGRESS` | `0` | If `1`, the node acts as an ingress: on each cycle the global proxy is fed from the cluster backend registry (cross-node load-balancing). Both `file` **and** `etcd` backends. |
 | `CAELIX_WG_PUBKEY` | _(empty)_ | The node's WireGuard public key, published in its meta so the controller/peers can build the mesh. Empty until the mesh is configured. |
 | `CAELIX_WG_ENDPOINT` | _(empty)_ | The node's WireGuard endpoint (`host:port`) advertised to peers. |
 | `CAELIX_WG_IFACE` | `caelix-wg0` | Name of the WireGuard interface created by `caelix mesh-up`. |
@@ -41,9 +41,8 @@ strictly unchanged.
 | `CAELIX_CONTROLLER` | `0` | If `1`, the backend runs the **controller loop** (HA): acquire leadership then periodically reschedule onto live nodes (only the leader acts). Enable it on control nodes. |
 | `CAELIX_CONTROLLER_INTERVAL` | `10` | Interval (s) between controller-loop passes. |
 | `CAELIX_CLUSTER_STORE` | _(empty)_ | File cluster store root (RFC §9 layout). When set, the agent (`caelix agent`) publishes its meta to `nodes/<id>/meta.json` and adopts the `nodes/<id>/desired.ini` sub-manifest pushed by the controller. Empty = single-host mode. |
-| `CAELIX_CLUSTER_BACKEND` | `file` | Cluster store backend, **on both the controller AND the agent**: `file` (uses `CAELIX_CLUSTER_STORE`) or `consul` (Consul KV). The agent (`caelix agent`) publishes its meta and reads its sub-manifest through this backend. |
-| `CAELIX_CONSUL_ADDR` | `http://127.0.0.1:8500` | Consul agent HTTP address (when `CAELIX_CLUSTER_BACKEND=consul`). On the agent side, `curl` is required. |
-| `CAELIX_CONSUL_TOKEN` | _(empty)_ | Consul ACL token (`X-Consul-Token` header), for an ACL-secured Consul cluster. |
+| `CAELIX_CLUSTER_BACKEND` | `file` | Cluster store backend, **on both the controller AND the agent**: `file` (uses `CAELIX_CLUSTER_STORE`) or `etcd` (etcd KV). The agent (`caelix agent`) publishes its meta and reads its sub-manifest through this backend. |
+| `CAELIX_ETCD_ADDR` | `http://127.0.0.1:2379` | etcd member HTTP address (when `CAELIX_CLUSTER_BACKEND=etcd`). On the agent side, `curl` is required. |
 | `CAELIX_DOCKER_ADDR` | _(empty)_ | TCP address of the node's Docker daemon (e.g. `tcp://10.0.0.5:2375`), published in the node meta. The console (and the cluster HPA) consume it to drive the right per-node daemon (`X-Caelix-Node` header). |
 | `CAELIX_PIN_LOCAL_SECTIONS` | _(empty)_ | Local manifest sections to **pin** (CSV): re-injected after adopting the controller's pushed sub-manifest (e.g. `caelix-ui,proxy`), so a node keeps its local services. |
 
@@ -60,9 +59,8 @@ The floating VIP gives a stable access address (console + ingress) held by the
 | `CAELIX_ADMIN_PASSWORD` | _(empty)_ | Initial console admin password, to set identically on all nodes (the hash is stored in the cluster store). Also settable via `install.sh --admin-password`. |
 
 > **Security (cluster)**: in cluster mode, `dockerd:2375` (cf. `CAELIX_DOCKER_ADDR`) and
-> Consul `:8500` are bound to the node's private IP. In production, enable Consul ACLs
-> + token (`CAELIX_CONSUL_TOKEN`) + TLS: the Consul KV holds the JWT secret, password
-> hashes and TLS keys.
+> etcd `:2379` are bound to the node's private IP. In production, enable TLS on etcd:
+> the etcd KV holds the JWT secret, password hashes and TLS keys.
 
 > Example, drive a remote daemon over TLS:
 > `-e CAELIX_DOCKER_HOST=tcp://node-b:2376 -e CAELIX_DOCKER_TLS_VERIFY=1 -e CAELIX_DOCKER_CERT_PATH=/etc/caelix/certs`.

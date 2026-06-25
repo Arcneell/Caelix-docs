@@ -32,7 +32,7 @@ On each other node:
 ```bash
 docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
   | bash -s -- --with-systemd --mode join \
-      --consul-addr http://<controller-IP>:8500 --admin-password 'ChangeMe-Strong'
+      --store-addr http://<controller-IP>:2379 --admin-password 'ChangeMe-Strong'
 ```
 
 Open the console on the VIP (`http://10.0.0.10:18100`), check all 3 nodes in the

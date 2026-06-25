@@ -14,7 +14,7 @@ Caelix is a declarative container orchestrator. Services are described in an INI
 file; a continuous reconciliation loop compares that declared state against what
 Docker is actually running and corrects the difference. Caelix runs on a single
 host by default and, optionally, as a high-availability cluster operated from the
-console as though it were one host: every node is a Consul server and a controller,
+console as though it were one host: every node is an etcd member and a controller,
 a floating VIP provides a stable address that fails over automatically, console
 state is replicated across the nodes, and one interface drives the Docker daemon of
 any node.
@@ -26,7 +26,7 @@ Key capabilities:
 - Automatic repair by escalation (restart, recreate, purge).
 - Blue/green deployment with validation before the cutover.
 - Horizontal autoscaling behind a built-in TCP load balancer (socat).
-- HA cluster: Consul control plane (Raft quorum), floating VIP with automatic
+- HA cluster: etcd control plane (Raft quorum), floating VIP with automatic
   failover, WireGuard mesh, shared console state (users, JWT secret, configuration,
   templates, Compose stacks, TLS certificates), per-node Docker (`X-Caelix-Node`),
   and CPU-based autoscaling.
@@ -86,7 +86,7 @@ graph LR
 | Proxy | socat (TCP round-robin, hot reload) |
 | Console backend | Python 3.11+, FastAPI, SSE |
 | Console frontend | Vue 3, TypeScript, Tailwind CSS, Vite |
-| Cluster control | Consul (KV, sessions, leader lock), WireGuard |
+| Cluster control | etcd (KV, lease + put-if-absent transaction), WireGuard |
 | Notifications | Discord, Slack, Teams, Telegram, SMTP |
 | Audit | JSONL or SQLite |
 
@@ -150,13 +150,13 @@ caelix/
     ```bash
     IMAGE="ghcr.io/arcneell/caelix:latest"
 
-    # Controller: bootstraps Consul and owns the VIP
+    # Controller: bootstraps etcd and owns the VIP
     docker run --rm $IMAGE cat /opt/caelix/install.sh | bash -s -- \
       --with-systemd --mode controller --vip 10.0.0.10/32 --admin-password 'SAME_ON_ALL_NODES'
 
-    # Join node: point it at an existing controller's Consul API
+    # Join node: point it at an existing controller's etcd API
     docker run --rm $IMAGE cat /opt/caelix/install.sh | bash -s -- \
-      --with-systemd --mode join --consul-addr http://10.0.0.11:8500 --admin-password 'SAME_ON_ALL_NODES'
+      --with-systemd --mode join --store-addr http://10.0.0.11:2379 --admin-password 'SAME_ON_ALL_NODES'
     ```
 
     The console and ingress then answer on the VIP (`http://10.0.0.10:18100`), which
@@ -172,7 +172,7 @@ caelix/
 |---|---|
 | [Getting started](getting-started/installation.md) | Installation, first launch, documentation deployment |
 | [Architecture](architecture/overview.md) | Components, reconciliation flow, state directory |
-| [Cluster](architecture/cluster.md) | HA cluster: Consul control plane, floating VIP, shared state, autoscaling |
+| [Cluster](architecture/cluster.md) | HA cluster: etcd control plane, floating VIP, shared state, autoscaling |
 | [Configuration](configuration/manifest.md) | INI manifest, notifications, environment variables |
 | [Modules](modules/health.md) | Health, repair, autoscale, proxy, audit, incidents, notifications |
 | [Web console](ui/overview.md) | UI, REST API, frontend |

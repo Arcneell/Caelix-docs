@@ -156,7 +156,7 @@ Available monitoring types:
 
 ### Cluster Placement & Ingress (2.0 mode)
 
-In cluster mode (2.0 console, `file` or `consul` store), a service section may carry
+In cluster mode (2.0 console, `file` or `etcd` store), a service section may carry
 extra placement keys. These are interpreted by the controller (leader), which
 decides which nodes host the replicas, then they are stripped from the sub-manifest
 pushed to each agent (the single-host agent does not understand them). See
@@ -209,9 +209,9 @@ hpa_cooldown = 3
 # no health_type → defaults to `none` in cluster; the ingress probes the backends
 ```
 
-> **Security (cluster)**: in cluster mode, `dockerd:2375` and Consul `:8500` are bound
-> to the node's private IP. In production you must enable Consul ACLs + token + TLS:
-> the Consul KV holds the JWT secret, password hashes and TLS keys.
+> **Security (cluster)**: in cluster mode, `dockerd:2375` and etcd `:2379` are bound
+> to the node's private IP. In production you must enable TLS on etcd: the etcd KV
+> holds the JWT secret, password hashes and TLS keys.
 
 ## Complete Example
 

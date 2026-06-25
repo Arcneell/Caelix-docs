@@ -45,7 +45,7 @@ phase 1). The agent:
 - writes `.caelix/agent/status.json` (meta + observed state) on each cycle.
 
 If a cluster store is configured (`CAELIX_CLUSTER_BACKEND` = `file` via
-`CAELIX_CLUSTER_STORE`, or `consul`), the agent publishes its meta to the store and
+`CAELIX_CLUSTER_STORE`, or `etcd`), the agent publishes its meta to the store and
 adopts the sub-manifest pushed by the controller as its desired-state source;
 otherwise it reconciles its local manifest (single-host). See the
 [multi-node RFC](../architecture/multi-node-rfc.md).

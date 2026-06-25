@@ -156,7 +156,7 @@ Types de monitoring disponibles :
 
 ### Placement cluster et ingress (mode 2.0)
 
-En mode cluster (console 2.0, store `file` ou `consul`), une section de service peut
+En mode cluster (console 2.0, store `file` ou `etcd`), une section de service peut
 porter des clés de placement supplémentaires. Ces clés sont interprétées par le
 controller (leader), qui décide sur quels nœuds placer les replicas, puis sont
 retirées du sous-manifest poussé à chaque agent (l'agent mono-hôte ne les comprend
@@ -209,10 +209,9 @@ hpa_cooldown = 3
 # pas de health_type → défaut `none` en cluster ; l'ingress sonde les backends
 ```
 
-> **Sécurité (cluster)** : en mode cluster, `dockerd:2375` et Consul `:8500` sont liés
-> à l'IP privée du nœud. En production, activez impérativement les ACL Consul +
-> token + TLS : le KV Consul détient le secret JWT, les hash de mots de passe et les
-> clés TLS.
+> **Sécurité (cluster)** : en mode cluster, `dockerd:2375` et etcd `:2379` sont liés
+> à l'IP privée du nœud. En production, activez impérativement le TLS sur etcd : le
+> KV etcd détient le secret JWT, les hash de mots de passe et les clés TLS.
 
 ## Exemple complet
 

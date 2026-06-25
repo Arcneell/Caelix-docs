@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Availability | Optional; Caelix stays single-host by default |
-| Enable | `CAELIX_CLUSTER_BACKEND` variable (`file` or `consul`) |
+| Enable | `CAELIX_CLUSTER_BACKEND` variable (`file` or `etcd`) |
 | Setup | [Getting Started › Cluster](../getting-started/cluster.md) |
 | Design decisions | [Multi-node RFC](multi-node-rfc.md) |
 
@@ -23,12 +23,12 @@ it is clustered. Above it, a leader-gated control plane decides which node hosts
 what, reschedules on failure, adjusts replica counts (HPA), and publishes the ingress
 routing table.
 
-Shared state lives in a store (Consul KV in production). A floating VIP follows the
+Shared state lives in a store (etcd in production). A floating VIP follows the
 leader to provide a stable access point, and east-west traffic flows over a mandatory
 encrypted WireGuard mesh.
 
 Key 2.0 point: every node runs the FastAPI backend with the same control loop, and
-leadership (a Consul session lock) designates the single node that acts. No node has a
+leadership (an etcd lease + a put-if-absent transaction) designates the single node that acts. No node has a
 fixed role; a promoted survivor takes over everything, from placement to the VIP and
 ingress.
 
@@ -41,7 +41,7 @@ graph TB
         ingress["Ingress<br>routing table on VIP:80"]
     end
 
-    store[("Shared store<br>Consul KV / FileStore")]
+    store[("Shared store<br>etcd / FileStore")]
 
     subgraph N1["Node A (agent + backend)"]
         a1["Caelix engine<br>reconciles desired.ini"]
@@ -66,8 +66,8 @@ graph TB
 ## 2. The leader-gated control plane
 
 All nodes run the FastAPI backend, so all run the control loop (`core/cluster/loop.py`:
-`controller_loop` → `controller_tick`). Leadership is a Consul session lock
-(`ConsulStore.acquire_leadership`), and only the leader acts. With the `FileStore` (single
+`controller_loop` → `controller_tick`). Leadership is an etcd lease + a put-if-absent
+transaction (`EtcdStore.acquire_leadership`), and only the leader acts. With the `FileStore` (single
 controller), that controller is always leader.
 
 On each tick, the leader runs, in order:
@@ -79,17 +79,17 @@ On each tick, the leader runs, in order:
 3. `publish_mesh`: renders and publishes the (secret-free) WireGuard directives per
    node (§9).
 
-The loop renews its Consul session each iteration (interval
-`CAELIX_CONTROLLER_INTERVAL`, 10 s by default; session TTL ≥ `CAELIX_NODE_TTL`). An HPA
+The loop renews its etcd lease each iteration (interval
+`CAELIX_CONTROLLER_INTERVAL`, 10 s by default; lease TTL ≥ `CAELIX_NODE_TTL`). An HPA
 failure is caught and never breaks the control plane.
 
 | Role | Process | Responsibility |
 |---|---|---|
-| Agent | `lib/node.sh` (on each node's host) | Renews its Consul lease, syncs its sub-manifest, reconciles it with the normal engine, publishes its meta and backends, applies the WireGuard mesh, and reconciles the VIP. |
+| Agent | `lib/node.sh` (on each node's host) | Renews its etcd lease, syncs its sub-manifest, reconciles it with the normal engine, publishes its meta and backends, applies the WireGuard mesh, and reconciles the VIP. |
 | Control loop | FastAPI backend (on every node) | Leader-gated: HPA → placement → mesh. Only one leader acts. |
 
 A node holds both at once (backend co-located with the agent). The typical deployment is
-3 nodes, each an agent and backend, with 3 Consul servers for quorum.
+3 nodes, each an agent and backend, with 3 etcd members for quorum.
 
 ---
 
@@ -100,9 +100,9 @@ All shared state goes through a store interface, with two implementations select
 
 - `FileStore` (`file`): a local file tree. Dependency-free and single-controller, it
   covers development, tests, and a single-controller "managed" cluster.
-- `ConsulStore` (`consul`): Consul KV over its HTTP API (stdlib `urllib`, no extra
-  dependency). It brings Raft consensus and leader election (sessions/locks), and it is
-  the high-availability backend.
+- `EtcdStore` (`etcd`): etcd over its v3 HTTP/JSON gateway (stdlib `urllib`, no extra
+  dependency). It brings Raft consensus and leader election (lease + put-if-absent
+  transaction), and it is the high-availability backend.
 
 Scheduler, controller, ingress, HPA and liveness are backend-agnostic: they only talk
 to the store interface.
@@ -118,7 +118,7 @@ The store holds (prefix `caelix/`):
 | `nodes/<id>/mesh` | (secret-free) WireGuard directives rendered by the leader |
 | `nodes/<id>/drain` | Drain flag |
 | `services/<app>/backends/<inst>` | Service backend registry `<node_addr>:<hostport>` published by agents |
-| `cluster/leader` | Leadership lock (session + `node_id`) |
+| `cluster/leader` | Leadership key (lease + `node_id`) |
 | `cluster/vip` | Floating VIP published by the leader |
 | `console/...` | Shared console state (users, JWT secret, config, templates, stacks, certs); see §7 |
 
@@ -201,10 +201,10 @@ reconfiguration.
 
 ## 7. Failover and fencing
 
-- Quorum: with ≥ 3 Consul servers, the 2/3 Raft quorum survives losing one node.
-  The leadership lock (`cluster/leader`, session `Behavior=delete`) is auto-released
-  when the leader's session expires (crash, partition); a survivor acquires it and its
-  agent binds the VIP. Consul's quorum guarantees a single leader, so there is no
+- Quorum: with ≥ 3 etcd members, the 2/3 Raft quorum survives losing one node.
+  The leadership key (`cluster/leader`) is bound to the leader's lease, so etcd deletes
+  it automatically when that lease expires (crash, partition); a survivor acquires it and its
+  agent binds the VIP. etcd's quorum guarantees a single leader, so there is no
   split-brain.
 - Liveness: the leader only schedules onto live nodes, meaning those whose heartbeat is
   within the `CAELIX_NODE_TTL` (30 s by default, `liveness.py`). A node that stops beating
@@ -255,8 +255,8 @@ reset on failover is harmless, since the HPA re-evaluates from the live metric.
 
 ## 10. Shared console state
 
-`ui/backend/app/core/shared_state.py` is a Consul-KV abstraction (prefix
-`caelix/console/`), active in cluster mode (`CAELIX_CLUSTER_BACKEND=consul`), inert in
+`ui/backend/app/core/shared_state.py` is an etcd KV abstraction (prefix
+`caelix/console/`), active in cluster mode (`CAELIX_CLUSTER_BACKEND=etcd`), inert in
 single-host. Because every node runs the console, console-managed state must be
 coherent across nodes and survive failover:
 
@@ -310,7 +310,7 @@ The system application (`wg` / `ip`) requires root; `wg` is mandatory on a clust
 |---|---|---|
 | Control loop | `cluster/loop.py` | Leader lock + tick (HPA → placement → mesh) |
 | Controller action | `cluster/controller.py` | `apply_cluster`, `publish_mesh`, drain |
-| Store | `cluster/consul_store.py`, `cluster/store.py` (FileStore), `factory.py` | Consul KV / file + selection |
+| Store | `cluster/etcd_store.py`, `cluster/store.py` (FileStore), `factory.py` | etcd KV / file + selection |
 | Placement | `cluster/scheduler.py` | Deterministic, constraint-aware placement |
 | Split | `cluster/manifest_split.py` | Per-node INI sub-manifest |
 | Liveness | `cluster/liveness.py` | Heartbeat / live nodes |
@@ -318,17 +318,17 @@ The system application (`wg` / `ip`) requires root; `wg` is mandatory on a clust
 | Ingress (table) | `cluster/ingress.py` | `build_routes` → `GET /api/cluster/routes` |
 | Ingress (proxy) | `lib/autoscale_proxy.sh` | Global socat proxy on `VIP:80` |
 | Mesh | `cluster/mesh.py`, `lib/node.sh` | WireGuard directives + application |
-| Shared console state | `core/shared_state.py` | Consul-KV `caelix/console/` |
+| Shared console state | `core/shared_state.py` | etcd KV `caelix/console/` |
 | Agent | `lib/node.sh` | Lease, sync, backends, mesh, VIP, fencing |
 
 ---
 
 ## 14. Security
 
-- mTLS on the control plane, per-node Consul ACL (token `CAELIX_CONSUL_TOKEN`).
+- mTLS on the control plane.
 - Lease = authority (fencing): a node without a lease does not reconcile and releases
   the VIP.
 - WireGuard private keys: generated on the node, never transmitted.
-- Consul quorum: `Behavior=delete` session lock, so a single leader and no split-brain.
+- etcd quorum: the leadership key is bound to a lease, so a single leader and no split-brain.
 - Remote Docker endpoint: in production, restrict it to the WireGuard subnet with mTLS
   (the test bench exposes it over plain TCP on an isolated network).

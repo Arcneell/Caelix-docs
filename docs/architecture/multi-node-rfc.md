@@ -6,7 +6,7 @@
 | **Date** | 2026-06-16 |
 | **Auteur** | Arcneell |
 | **Cible** | Cluster haute disponibilité conservant le moteur auto-réparateur Caelix |
-| **Stack retenue** | Consul, WireGuard, 3 controllers co-localisés, NFSv4, ingress maison (voir §1.1) |
+| **Stack retenue** | etcd, WireGuard, 3 controllers co-localisés, NFSv4, ingress maison (voir §1.1) |
 
 ---
 
@@ -38,32 +38,32 @@ les alternatives écartées figurent aux sections référencées.
 
 | Brique | Décision | Pourquoi | Réf. |
 |---|---|---|---|
-| Store / consensus / discovery | **Consul** | Un seul binaire : KV Raft, élection de leader, service-discovery, health-checks, ACL, chiffrement gossip et TLS | §6.1 |
+| Store / consensus | **etcd** (Apache-2.0) | KV Raft, élection de leader (bail + transaction « put-if-absent »), watch performant, en un seul binaire ; Docker-natif | §6.1 |
 | Réseau cross-host | **Maillage WireGuard** (underlay chiffré) + sous-réseau conteneurs par nœud routé sur le mesh | Tout le trafic est-ouest chiffré par défaut, kernel-natif, faible surface ; indépendant de Swarm | §6.2 |
-| Ingress / LB | **Proxy Caelix existant**, régénéré depuis Consul (façon `consul-template`) | Réutilise l'intégration certbot/domaines et évite un second système TLS | §7 |
-| Topologie controller | **3 controllers co-localisés** avec les 3 serveurs Consul ; leader élu, followers en lecture seule | Le quorum Consul réclame déjà 3 nœuds ; survit à la perte d'un nœud sans intervention | §8.1 |
+| Ingress / LB | **Proxy Caelix existant**, régénéré depuis etcd | Réutilise l'intégration certbot/domaines et évite un second système TLS | §7 |
+| Topologie controller | **3 controllers co-localisés** avec les 3 membres etcd ; leader élu, followers en lecture seule | Le quorum etcd réclame déjà 3 nœuds ; survit à la perte d'un nœud sans intervention | §8.1 |
 | Stockage `shared` | **NFSv4** d'abord (driver de volume Docker), trafic sur le mesh WireGuard ; CephFS/SFTP ensuite | Ubiquitaire et simple ; `pinned` reste le défaut sûr | §6.3 |
-| Sécurité contrôle | **mTLS** partout, **ACL Consul** par nœud, **bail = autorité** (fencing) | Sûr par défaut, argument commercial | §12 |
+| Sécurité contrôle | **mTLS** partout, **bail = autorité** (fencing) | Sûr par défaut, argument commercial | §12 |
 | Auth/UI (SQLite) | Lecture partout, écriture leader ; migration KV/Postgres si la charge l'exige | Réutilise l'existant sans réécrire l'auth | §6.1 |
-| Install / ajout de nœud | **Composants embarqués + join-token** (modèle k3s / Docker Swarm), une commande ou un bouton UI | La simplicité d'installation est un objectif produit : aucune commande Consul ou WireGuard exposée | §1.2 |
+| Install / ajout de nœud | **Composants embarqués + join-token** (modèle k3s / Docker Swarm), une commande ou un bouton UI | La simplicité d'installation est un objectif produit : aucune commande etcd ou WireGuard exposée | §1.2 |
 
 ## 1.2 Expérience d'installation et d'ajout de nœud (objectif produit)
 
 !!! danger "Contrainte produit : simplicité d'installation de premier rang"
     Le multi-nœud Caelix doit s'installer comme k3s ou Docker Swarm, pas comme
     Kubernetes/kubeadm. Une commande pour démarrer, une commande (ou un bouton UI)
-    pour ajouter un nœud. L'utilisateur ne doit jamais taper une commande Consul ni
+    pour ajouter un nœud. L'utilisateur ne doit jamais taper une commande etcd ni
     `wg` : ces composants sont des détails d'implémentation embarqués.
 
 Principe : tout est embarqué et auto-piloté. Le binaire Caelix embarque et gère le
-cycle de vie de Consul et de WireGuard (clés, interface, pairs, CA mTLS). L'opérateur
+cycle de vie d'etcd et de WireGuard (clés, interface, pairs, CA mTLS). L'opérateur
 n'interagit qu'avec `caelix` et l'UI.
 
 Démarrer un cluster (1 nœud) :
 
 ```bash
 caelix cluster init
-# → ce nœud devient controller ; Caelix démarre Consul en mode bootstrap,
+# → ce nœud devient controller ; Caelix démarre etcd en mode bootstrap,
 #   génère la CA mTLS + les clés WireGuard, et affiche un join-token.
 #   Un cluster à 1 nœud = exactement le comportement single-node actuel.
 ```
@@ -71,8 +71,9 @@ caelix cluster init
 Ajouter un nœud (une seule commande, comme `docker swarm join`) :
 
 ```bash
-caelix node join --token <join-token> <controller-ip>
-# → Caelix configure tout seul : agent Consul, pair WireGuard (clé + route),
+caelix node join --token <join-token> --store-addr http://<controller-ip>:2379
+# → Caelix configure tout seul : ajout du membre etcd (`etcdctl member add`,
+#   démarrage avec --initial-cluster-state existing), pair WireGuard (clé + route),
 #   certificat mTLS (obtenu via le token), enregistrement du nœud.
 #   Aucune édition de fichier, aucune commande tierce.
 ```
@@ -119,7 +120,7 @@ bootstrap-token, sans la complexité opérationnelle.
    particulier (cluster à 1 nœud) sans régression.
 6. **Installation et onboarding triviaux** : démarrer un cluster et ajouter un nœud
    doivent tenir en une commande ou un bouton UI (modèle k3s / Docker Swarm), sans
-   jamais exposer Consul ni WireGuard (cf. §1.2). C'est un critère d'acceptation
+   jamais exposer etcd ni WireGuard (cf. §1.2). C'est un critère d'acceptation
    produit, pas un confort optionnel.
 
 ### Non-objectifs (pour cette itération)
@@ -246,7 +247,7 @@ Sens des données :
 | Sens | Donnée | Clé store (cf. §9) |
 |---|---|---|
 | controller → agent | sous-manifest désiré | `caelix/nodes/<id>/desired` |
-| agent → controller | heartbeat + bail | `caelix/nodes/<id>/heartbeat` (TTL) |
+| agent → controller | heartbeat + bail | `caelix/nodes/<id>/heartbeat` (bail) |
 | agent → controller | état observé (conteneurs, santé) | `caelix/nodes/<id>/observed` |
 | agent → cluster | backends pour LB | `caelix/services/<app>/backends/<inst>` |
 
@@ -262,15 +263,16 @@ controllers replanifient la même app).
 
 | Option | Avantages | Inconvénients |
 |---|---|---|
-| **Consul** *(retenu)* | KV Raft, élection de leader, health-checks, service-discovery, ACL, gossip chiffré et TLS, en un seul binaire ; Docker-natif | Dépendance externe à opérer (cluster 3 nœuds) |
-| etcd | Référence k8s, éprouvé, watch performant | Pas de service-discovery/health intégré, à compléter |
-| Postgres + advisory locks | Pertinent si une instance SQL est déjà exploitée ; SQL familier | HA SQL à gérer soi-même ; pas de watch natif (polling) ; pas de service-discovery |
+| **etcd** *(retenu)* | KV Raft, élection de leader (bail + transaction « put-if-absent »), watch performant, en un seul binaire ; Apache-2.0 ; Docker-natif | Dépendance externe à opérer (cluster 3 nœuds) |
+| Postgres + advisory locks | Pertinent si une instance SQL est déjà exploitée ; SQL familier | HA SQL à gérer soi-même ; pas de watch natif (polling) |
+| ZooKeeper | Éprouvé, élection de leader robuste | JVM à opérer, plus lourd ; API moins ergonomique |
 
-**Décision : Consul.** Il couvre d'un coup les trois besoins : KV répliqué (état
-désiré/observé), élection de leader (sessions + locks), et service-discovery/health
-pour l'ingress (§7). SQLite (`auth.db`) reste pour l'auth/UI : lue partout, écrite par
-le leader (puis répliquée, ou migrée vers le KV/Postgres si la charge d'écriture le
-justifie).
+**Décision : etcd.** Il couvre les besoins de coordination : KV répliqué (état
+désiré/observé) et élection de leader (un bail porte la clé de leadership ; à son
+expiration, etcd supprime la clé et un follower l'acquiert). Le registre de backends
+pour l'ingress (§7) vit dans les mêmes clés KV. SQLite (`auth.db`) reste pour l'auth/UI :
+lue partout, écrite par le leader (puis répliquée, ou migrée vers le KV/Postgres si la
+charge d'écriture le justifie).
 
 ### 6.2 Réseau cross-host + ingress
 
@@ -294,7 +296,7 @@ reste l'alternative documentée si un client refuse WireGuard.
 
 **Ingress : on fait évoluer le proxy existant.** `global_proxy_update_routes` génère
 déjà `routes.conf` ; on remplace la source « ports locaux » par les backends découverts
-dans Consul (régénération façon `consul-template` sur watch), de sorte qu'un ingress sur
+dans etcd (régénération sur watch), de sorte qu'un ingress sur
 n'importe quel nœud route, via le mesh, vers une réplique saine sur n'importe quel autre
 nœud. On réutilise ainsi l'intégration TLS/certbot/domaines existante (`proxy.sh`) au
 lieu d'introduire un second système ; Traefik/Caddy reste l'échappatoire si le besoin L7
@@ -328,7 +330,7 @@ Les apps stateless migrent librement (cible principale du HA en phase 1).
 
 Flux cible :
 
-1. À chaque (re)déploiement, l'agent enregistre l'instance dans Consul :
+1. À chaque (re)déploiement, l'agent enregistre l'instance dans etcd :
    `caelix/services/<app>/backends/<node>-<replica> = host:port` + un health-check.
 2. L'ingress de chaque nœud watch cette clé et régénère sa table de routage
    (`routes.conf`), filtrée sur les backends sains.
@@ -344,14 +346,15 @@ même hôte mais réparties, et le proxy global devient un ingress cluster.
 
 ### 8.1 Élection de leader (controller)
 
-La topologie retenue est de 3 controllers co-localisés avec les 3 serveurs Consul, mais
+La topologie retenue est de 3 controllers co-localisés avec les 3 membres etcd, mais
 uniquement quand on veut le HA du plan de contrôle. Un cluster peut démarrer avec un seul
 controller (install la plus simple, cf. §1.2) puis être promu à 3 via `caelix node
-promote` sans interruption. Le quorum Consul exige déjà 3 nœuds ; on réutilise ces mêmes
-nœuds plutôt que d'ajouter une couche séparée. Les controllers acquièrent un lock de
-session Consul ; le détenteur est leader (scheduling et écritures de l'état désiré). Les
+promote` sans interruption. Le quorum etcd exige déjà 3 nœuds ; on réutilise ces mêmes
+nœuds plutôt que d'ajouter une couche séparée. Les controllers acquièrent la clé de
+leadership via un bail etcd (transaction « put-if-absent ») ; le détenteur est leader
+(scheduling et écritures de l'état désiré). Les
 deux followers servent l'UI/API en lecture seule et proxifient les écritures vers le
-leader. Une perte de session (crash, partition) libère le lock, un follower devient leader
+leader. Une expiration de bail (crash, partition) supprime la clé, un follower devient leader
 et reprend le scheduling. Les agents, en pull/watch, ne sont pas interrompus. La perte d'un
 des 3 nœuds de contrôle préserve le quorum (2/3) et donc la disponibilité du plan de
 contrôle.
@@ -371,7 +374,7 @@ nœud `down`, puis :
 
 - **Une seule autorité d'écriture** : seul le leader écrit l'état désiré, donc pas de
   décision concurrente.
-- **Quorum** : le store (Consul/etcd) exige la majorité ; un nœud minoritaire dans une
+- **Quorum** : le store (etcd) exige la majorité ; un nœud minoritaire dans une
   partition ne peut pas devenir leader.
 - **Fencing applicatif** : avant de replanifier une charge, le leader révoque le bail du
   nœud suspect ; l'agent qui perd son bail suspend ses créations pour éviter le
@@ -386,12 +389,12 @@ de Caelix.
 
 ---
 
-## 9. Schéma d'état (layout Consul KV)
+## 9. Schéma d'état (layout KV etcd)
 
 ```text
 caelix/
 ├── cluster/
-│   ├── leader                      # lock de session (élection controller)
+│   ├── leader                      # clé liée à un bail (élection controller)
 │   ├── desired/manifest            # manifest cluster (état désiré global)
 │   └── config/                     # paramètres cluster (intervalles, politiques)
 ├── nodes/
@@ -465,12 +468,12 @@ vente, le plan de contrôle distribué doit être sûr par défaut :
   de contrôle en clair sur le réseau.
 - **Distribution de secrets** : les secrets ne transitent pas dans les sous-manifests
   en clair ; ils sont référencés par clé, résolus côté agent depuis un magasin chiffré
-  (Consul + chiffrement au repos, ou Vault en option). Prolonge la logique
+  (etcd + chiffrement au repos, ou Vault en option). Prolonge la logique
   `write_text_secret` et les fichiers `0600` déjà en place.
 - **Bail = autorité** : un agent sans bail valide ne crée pas de conteneur (anti
   double-start, §8.3).
-- **ACL du store** : chaque agent n'a accès qu'à `nodes/<son-id>/*` et à la lecture du
-  service-discovery ; seul le controller écrit `desired`.
+- **Cloisonnement du store** : chaque agent n'écrit que sous `nodes/<son-id>/*` et lit
+  le registre de backends ; seul le controller écrit `desired`.
 - **Surface réseau** : l'overlay (WireGuard) chiffre le trafic est-ouest entre nœuds.
 
 ---
@@ -479,8 +482,8 @@ vente, le plan de contrôle distribué doit être sûr par défaut :
 
 - **Cluster à 1 nœud = single-node actuel.** Si aucun champ de placement n'est défini
   et qu'un seul agent est enregistré, le comportement est identique à aujourd'hui.
-- **Mode dégradé sans store** : on peut conserver un chemin « standalone » (pas de
-  Consul) qui retombe exactement sur le moteur mono-hôte, utile pour les petits clients
+- **Mode dégradé sans store** : on peut conserver un chemin « standalone » (pas d'etcd)
+  qui retombe exactement sur le moteur mono-hôte, utile pour les petits clients
   et le développement.
 - **Migration** : un déploiement existant devient le premier nœud du cluster ; on ajoute
   des agents progressivement ; le manifest existant fonctionne sans modification jusqu'à
@@ -497,16 +500,16 @@ le reste prouvé, et pour que chaque phase soit vendable.
 |---|---|---|---|
 | **0 — Abstraction runtime** ✅ | `_rt`/`run_cmd` ciblent un démon distant via `CAELIX_DOCKER_HOST`/`_TLS_VERIFY`/`_CERT_PATH` (→ `DOCKER_*`), défaut = socket local inchangé | Base technique ; débloque tout | _fait_ |
 | **1 — Agent autonome** 🚧 | Empaqueter le moteur en agent réconciliant son local depuis un sous-manifest reçu. **Livré** : identité de nœud (`caelix node-info`), commande `caelix agent`, publication du statut `agent/status.json` (meta + observed, le contrat lu par le controller en §9). **Reste** : abstraction de la source du sous-manifest (fichier → store) + enregistrement du nœud, en phase 2 | — | en cours |
-| **2 — Controller mono-instance + store** 🚧 | Manifest cluster, scheduler statique, push par nœud. **Livré** : cœur de placement Python (`core/cluster/` — `schedule`, découpe, `FileStore` §9, `apply_cluster`) **+ boucle agent↔store** (`CAELIX_CLUSTER_STORE`) **+ API/UI controller** (`/api/cluster/*` ; vue « Cluster ») **+ backend Consul** (`ConsulStore` KV controller + **agent Bash lisant/écrivant dans Consul** via `curl`, sélection `CAELIX_CLUSTER_BACKEND=consul`) → chemin Consul **bout-en-bout**. | **« Multi-hôtes managé »** (console unique sur N serveurs) | ✅ |
-| **3 — Réseau cross-host + ingress dynamique** 🚧 | Maillage WireGuard + ingress (proxy existant) alimenté par Consul. **Livré** : registre de services (`register/deregister_backend`, `backends_for`, `service_apps`) + `build_routes` + `GET /api/cluster/routes` **+ publication des backends par l'agent** (`node_publish_backends`) **+ alimentation de l'ingress** (`CAELIX_INGRESS=1`) **+ plan de maillage WireGuard** (`core/cluster/mesh.py` : `assign_subnets` 10.42.N.0/24 déterministe, `mesh_overview`, `render_wg_config` wg0.conf depuis les métas des pairs ; méta nœud `wg_pubkey`/`wg_endpoint` ; `GET /api/cluster/mesh`). **+ application système `wg`/`ip` côté agent** (`publish_mesh` + `caelix mesh-keygen`/`mesh-up`/`mesh-down`) **+ refresh ingress backend `file` ET `consul`** (`node_cluster_apps`/`backends_for` lisent le registre Consul via `?keys`+`?raw`). **Reste** : harnais dind end-to-end | **Scale horizontal** (répliques réparties derrière un LB) | en cours |
-| **4 — HA du controller** 🚧 | Élection de leader, reschedule sur node-down, anti split-brain. **Livré** : heartbeat + liveness + reschedule (`apply_cluster(live_ttl=…)`, `/apply?live=1`, `/nodes`+`/status`) **+ élection de leader** (session/lock Consul ; `FileStore` mono-instance ; `GET /api/cluster/leader`) **+ fencing anti-split-brain** (`node_agent_cycle`) **+ boucle controller leader-gated** (`core/cluster/loop.py` : `controller_tick` n'agit que si leader ; `controller_loop` daemon session+reschedule périodique ; `CAELIX_CONTROLLER=1` dans le lifespan backend). | **Vrai HA** | ✅ |
+| **2 — Controller mono-instance + store** 🚧 | Manifest cluster, scheduler statique, push par nœud. **Livré** : cœur de placement Python (`core/cluster/` — `schedule`, découpe, `FileStore` §9, `apply_cluster`) **+ boucle agent↔store** (`CAELIX_CLUSTER_STORE`) **+ API/UI controller** (`/api/cluster/*` ; vue « Cluster ») **+ backend etcd** (`EtcdStore` KV controller + **agent Bash lisant/écrivant dans etcd** via `curl`, sélection `CAELIX_CLUSTER_BACKEND=etcd`) → chemin etcd **bout-en-bout**. | **« Multi-hôtes managé »** (console unique sur N serveurs) | ✅ |
+| **3 — Réseau cross-host + ingress dynamique** 🚧 | Maillage WireGuard + ingress (proxy existant) alimenté par etcd. **Livré** : registre de services (`register/deregister_backend`, `backends_for`, `service_apps`) + `build_routes` + `GET /api/cluster/routes` **+ publication des backends par l'agent** (`node_publish_backends`) **+ alimentation de l'ingress** (`CAELIX_INGRESS=1`) **+ plan de maillage WireGuard** (`core/cluster/mesh.py` : `assign_subnets` 10.42.N.0/24 déterministe, `mesh_overview`, `render_wg_config` wg0.conf depuis les métas des pairs ; méta nœud `wg_pubkey`/`wg_endpoint` ; `GET /api/cluster/mesh`). **+ application système `wg`/`ip` côté agent** (`publish_mesh` + `caelix mesh-keygen`/`mesh-up`/`mesh-down`) **+ refresh ingress backend `file` ET `etcd`** (`node_cluster_apps`/`backends_for` lisent le registre etcd via la passerelle HTTP/JSON v3). **Reste** : harnais dind end-to-end | **Scale horizontal** (répliques réparties derrière un LB) | en cours |
+| **4 — HA du controller** 🚧 | Élection de leader, reschedule sur node-down, anti split-brain. **Livré** : heartbeat + liveness + reschedule (`apply_cluster(live_ttl=…)`, `/apply?live=1`, `/nodes`+`/status`) **+ élection de leader** (bail + transaction « put-if-absent » etcd ; `FileStore` mono-instance ; `GET /api/cluster/leader`) **+ fencing anti-split-brain** (`node_agent_cycle`) **+ boucle controller leader-gated** (`core/cluster/loop.py` : `controller_tick` n'agit que si leader ; `controller_loop` daemon session+reschedule périodique ; `CAELIX_CONTROLLER=1` dans le lifespan backend). | **Vrai HA** | ✅ |
 | **5 — Stateful** 🚧 | Modes `pinned`/`shared`, drain de nœud propre. **Livré** : placement storage-aware (`AppPlacement.storage`, pinned = instance unique non relocalisable → `pending` si son nœud tombe ; shared/stateless migrent) + **drain de nœud** (`set_node_drain`/`node_draining`, exclu du placement par `apply_cluster`, `POST /api/cluster/nodes/<id>/drain`, flag dans `/nodes`) **+ driver de volume NFS** (`ensure_shared_volume`/`shared_volume_mount`) **+ drain bloquant** (`node_drain_status` : un drain n'est `complete` que si aucun app `pinned` n'y reste cloué ; `blocked_by` listé ; `GET /api/cluster/nodes/<id>/drain`). | HA des apps à état | ✅ |
 
 !!! note "L'onboarding est transversal"
     L'expérience d'install/join (§1.2) n'est pas une phase : `caelix cluster init`
     arrive en phase 1, `caelix node join` + le bouton UI en phase 2, `caelix node
     promote` (montée HA) en phase 4. À chaque phase, la règle « une commande / un
-    bouton, zéro Consul/WireGuard exposé » est un critère d'acceptation.
+    bouton, zéro etcd/WireGuard exposé » est un critère d'acceptation.
 
 !!! warning "Point de non-retour"
     Les phases 0→2 sont incrémentales et peu risquées (l'état reste fondamentalement
@@ -532,7 +535,7 @@ le reste prouvé, et pour que chaque phase soit vendable.
 - **Compat** : un manifest single-node existant déployé sur un cluster à 1 nœud = zéro
   régression (rejouer la suite actuelle).
 - **Intégration mono-hôte** : `tests/integration/run.sh` valide la traversée réelle
-  agent (Bash) ↔ **Consul réel** ↔ controller (Python) — enregistrement, placement,
+  agent (Bash) ↔ **etcd réel** ↔ controller (Python) — enregistrement, placement,
   registre de backends, reschedule sur node-down, élection de leader — sur une seule
   machine, sans dind ni WireGuard (hors CI).
 - **Data-plane WireGuard** : `tests/integration/run-mesh.sh` (root) valide que
@@ -540,7 +543,7 @@ le reste prouvé, et pour que chaque phase soit vendable.
   nœuds (network namespaces + underlay veth) : sous-réseaux déterministes, ping
   cross-nœud, handshake. Validé sur l'hôte de dev.
 - **End-to-end** : `tests/integration/run-dind.sh` (root) — un `dockerd` par nœud
-  (dind) + agents par nœud + Consul réel, vérifie qu'un conteneur tourne sur le bon
+  (dind) + agents par nœud + etcd réel, vérifie qu'un conteneur tourne sur le bon
   nœud (placement respecté). `run-all.sh` enchaîne les harnais ; déploiement réel
   3 nœuds : `QUICKSTART-3nodes.md`.
 
@@ -550,21 +553,21 @@ le reste prouvé, et pour que chaque phase soit vendable.
 
 | Risque | Mitigation |
 |---|---|
-| Complexité du consensus distribué (split-brain) | Déléguer le Raft à Consul/etcd ; ne pas l'écrire soi-même ; fencing par bail |
+| Complexité du consensus distribué (split-brain) | Déléguer le Raft à etcd ; ne pas l'écrire soi-même ; fencing par bail |
 | Stateful sans stockage partagé = fausse promesse de HA | Documenter clairement `pinned` (pas de HA) vs `shared` ; ne pas survendre |
-| Dépendance opérationnelle (cluster Consul à exploiter) | Conserver le mode standalone ; fournir un install packagé du quorum |
-| **Install perçue comme « usine à gaz » (effet Kubernetes)** | Composants embarqués + join-token + UI guidée (§1.2) ; **test d'acceptation : ajout d'un nœud en < 2 min, une commande** ; ne jamais exposer Consul/WireGuard |
+| Dépendance opérationnelle (cluster etcd à exploiter) | Conserver le mode standalone ; fournir un install packagé du quorum |
+| **Install perçue comme « usine à gaz » (effet Kubernetes)** | Composants embarqués + join-token + UI guidée (§1.2) ; **test d'acceptation : ajout d'un nœud en < 2 min, une commande** ; ne jamais exposer etcd/WireGuard |
 | Réseau overlay = nouvelle surface de panne/sécurité | mTLS + WireGuard ; tests de partition |
 | Charge d'écriture sur SQLite multi-nœud | Lecture partout / écriture leader ; migrer vers KV/Postgres si nécessaire |
 
 **Décisions actées** (cf. §1.1) :
 
-1. Store de consensus → Consul.
+1. Store de consensus → etcd (Apache-2.0).
 2. Réseau cross-host → maillage WireGuard + sous-réseau conteneurs par nœud.
-3. Topologie controller → 3 controllers co-localisés avec les serveurs Consul, leader
+3. Topologie controller → 3 controllers co-localisés avec les membres etcd, leader
    élu + followers en lecture seule.
 4. Stockage `shared` → NFSv4 en premier backend ; `pinned` par défaut.
-5. Ingress → proxy Caelix existant régénéré depuis Consul.
+5. Ingress → proxy Caelix existant régénéré depuis etcd.
 
 **Questions restant ouvertes (n'engagent pas l'architecture) :**
 

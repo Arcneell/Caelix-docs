@@ -6,12 +6,12 @@ a real cluster (a bootstrap node plus joining nodes), verifying it, deploying a
 cluster service, and failover. For the internals, see
 [Architecture › Cluster](../architecture/cluster.md).
 
-Consul and WireGuard are embedded and driven by Caelix: you only interact with
+etcd and WireGuard are embedded and driven by Caelix: you only interact with
 `caelix` and the console. The installer sets up every prerequisite (Docker, socat,
 `wireguard-tools` with `modprobe wireguard`, `arping` for the VIP), so a cluster
 node is self-contained.
 
-In a cluster, every node is a Consul server (Raft quorum) and a controller
+In a cluster, every node is an etcd member (Raft quorum) and a controller
 (`CAELIX_CONTROLLER=1`), and high availability is automatic. With at least 3
 nodes, losing the leader node is absorbed (the 2/3 quorum survives): another node
 takes over leadership and the VIP within seconds. The WireGuard mesh is mandatory.
@@ -34,14 +34,15 @@ HA clustering ships in 2.0, now published under `:latest`. The examples below pu
 - At least 3 Linux machines or VMs for real automatic failover (the Raft quorum is
   kept when one node is lost). 1 or 2 nodes work, but without a fault-tolerant
   quorum.
-- Private network connectivity between nodes. Private IPs carry Consul (`:8500`),
-  dockerd (`:2375`) and the WireGuard mesh (`:51820`).
+- Private network connectivity between nodes. Private IPs carry etcd (`:2379`
+  client API, `:2380` Raft peers), dockerd (`:2375`) and the WireGuard mesh
+  (`:51820`).
 - A free VIP address on the nodes' subnet (e.g. `10.0.0.10`), which becomes the
   stable address for the console and the ingress.
 - Access to the Caelix registry (`docker login ghcr.io`, see
   [Installation](installation.en.md)).
 
-Everything else (Docker, socat, WireGuard, arping, Consul, Compose) is installed
+Everything else (Docker, socat, WireGuard, arping, etcd, Compose) is installed
 automatically by `install.sh`.
 
 ---
@@ -49,7 +50,7 @@ automatically by `install.sh`.
 ## 2. Install the bootstrap node (controller)
 
 On the first machine, run the installer in `controller` mode. This node bootstraps
-the Consul raft, starts the console and controller loop, and carries the VIP.
+the etcd raft, starts the console and controller loop, and carries the VIP.
 
 ```bash
 docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
@@ -61,18 +62,17 @@ Useful cluster install options:
 
 | Option | Role |
 |---|---|
-| `--mode controller` | Bootstrap node: bootstraps Consul (`-bootstrap-expect=1`), starts the console + controller |
+| `--mode controller` | Bootstrap node: bootstraps etcd (initial single-member cluster), starts the console + controller |
 | `--vip 10.0.0.10/32` | Floating VIP carried by the leader (stable console + ingress address) |
-| `--cluster-size 3` | Number of expected Consul servers (HA quorum, default 3) |
+| `--cluster-size 3` | Number of expected etcd members (HA quorum, default 3) |
 | `--admin-password <pw>` | Initial admin password. The same value on every node gives a consistent admin after failover. Otherwise a strong password is generated and printed once in the console logs |
-| `--consul-token <tok>` | Consul ACL token (production hardening) |
 | `--ui-bind <addr>` | Console listen address (default `0.0.0.0`) |
 
 !!! tip "Admin password"
     Without `--admin-password`, retrieve the generated one once:
     `docker logs caelix-caelix-ui | grep -i password`.
 
-When done, the node exposes Consul (`caelix-consul`), writes
+When done, the node exposes etcd (`caelix-etcd`), writes
 `/etc/caelix-cluster.env` and starts the agent via systemd
 (`caelix-agent.service`). The console is reachable on the VIP:
 **http://10.0.0.10:18100**.
@@ -82,19 +82,20 @@ When done, the node exposes Consul (`caelix-consul`), writes
 ## 3. Join the other nodes
 
 On each additional node, run the installer in `join` mode, pointing at the
-bootstrap node's Consul address (its private IP, port 8500):
+bootstrap node's etcd store address (its private IP, port 2379):
 
 ```bash
 docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
   | bash -s -- --with-systemd --mode join \
-      --consul-addr http://<controller-IP>:8500 \
+      --store-addr http://<controller-IP>:2379 \
       --admin-password 'ChangeMe-Strong'
 ```
 
 Pass the same `--admin-password` as the controller to keep a consistent admin
-after failover. The node joins the Consul gossip (`-retry-join`), grows the Raft
-quorum, becomes controller-eligible too, generates its WireGuard keys and applies
-the mesh automatically.
+after failover. The installer registers the node in the etcd cluster
+(`etcdctl member add`, automatically), grows the Raft quorum, becomes
+controller-eligible too, generates its WireGuard keys and applies the mesh
+automatically.
 
 !!! note "Cluster forces systemd"
     Outside single-host, `--with-systemd` is implicit: the agent runs as a service
@@ -104,7 +105,7 @@ If Caelix is already installed on a machine, you can also have it join without
 re-running the installer:
 
 ```bash
-caelix node join --consul-addr http://<controller-IP>:8500 --start
+caelix node join --store-addr http://<controller-IP>:2379 --start
 ```
 
 ---
@@ -214,14 +215,14 @@ backends.
 
 ## 7. Failover
 
-Every node is controller-eligible and a Consul server. The Consul lock guarantees
+Every node is controller-eligible and an etcd member. The etcd lease guarantees
 a single leader, so there is no split-brain. When the leader is lost:
 
 - with at least 3 nodes, the 2/3 quorum survives and another node is elected
   leader;
 - the new leader takes over the VIP within seconds (adds it to its interface plus
   gratuitous ARP); the outgoing leader releases it;
-- the console state is shared via Consul (login, users, config, stacks, certs), so
+- the console state is shared via etcd (login, users, config, stacks, certs), so
   the console is identical after failover;
 - the WireGuard mesh stays active on the surviving nodes;
 - the ingress (`VIP:80`) keeps serving the still-alive backends.
@@ -249,18 +250,17 @@ caelix node leave     # stops the agent and tears down the mesh
 
 ## 9. Security hardening (production)
 
-At install, dockerd (`:2375`) and the Consul API (`:8500`) are bound to the node's
+At install, dockerd (`:2375`) and the etcd API (`:2379`) are bound to the node's
 private IP (never `0.0.0.0`), and a best-effort firewall restricts 2375 to private
 networks. That is the first barrier, but it is not sufficient on its own in
 production:
 
-- The Consul KV is the control plane: it holds the JWT secret, password hashes and
-  TLS keys. Anyone who reaches the Consul API can read them.
+- The etcd KV is the control plane: it holds the JWT secret, password hashes and
+  TLS keys. Anyone who reaches the etcd API can read them.
 - In production, the operator **must** enable:
-  - Consul ACLs (`default_policy = deny` plus a token via `CAELIX_CONSUL_TOKEN`,
-    passed at install with `--consul-token`);
-  - gossip encryption;
-  - TLS on the Consul API and mTLS on dockerd.
+  - etcd authentication (RBAC: users, roles and `auth enable`);
+  - client TLS and peer TLS (`:2380`) on etcd;
+  - mTLS on dockerd.
 
 ---
 
@@ -271,14 +271,13 @@ For manual or advanced tuning:
 
 | Variable | Role | Example |
 |---|---|---|
-| `CAELIX_CLUSTER_BACKEND` | `file` (single controller) or `consul` (HA) | `consul` |
-| `CAELIX_CONSUL_ADDR` | Consul address (`consul` backend) | `http://127.0.0.1:8500` |
-| `CAELIX_CONSUL_TOKEN` | Consul ACL token (optional) | — |
+| `CAELIX_CLUSTER_BACKEND` | `file` (single controller) or `etcd` (HA) | `etcd` |
+| `CAELIX_ETCD_ADDR` | etcd address (`etcd` backend) | `http://127.0.0.1:2379` |
 | `CAELIX_NODE_ID` | Node identity (generated and persisted otherwise) | `node-a` |
 | `CAELIX_NODE_ADDR` | Node IP on the cluster network | `10.0.0.11` |
 | `CAELIX_NODE_LABELS` | Labels for affinity (`k=v,k=v`) | `zone=eu,disk=ssd` |
 | `CAELIX_DOCKER_ADDR` | Published Docker endpoint (`X-Caelix-Node` targeting) | `tcp://10.0.0.11:2375` |
-| `CAELIX_CONTROLLER` | `1` on all cluster nodes (leader loop elected via Consul) | `1` |
+| `CAELIX_CONTROLLER` | `1` on all cluster nodes (leader loop elected via etcd) | `1` |
 | `CAELIX_INGRESS` | `1` to publish backends / refresh the ingress | `1` |
 | `CAELIX_WG_ENDPOINT` | WireGuard endpoint advertised to peers | `10.0.0.11:51820` |
 | `CAELIX_CLUSTER_VIP` | Floating VIP held by the leader | `10.0.0.10/32` |

@@ -16,61 +16,41 @@ The Caelix frontend is a Single Page Application (SPA) built with Vue 3 and Type
 | **Lucide** | — | Icons |
 | **Vitest** | 4.x | Unit tests (jsdom + Vue Test Utils) |
 
-## View Structure
+## Application Shell
 
-### Dashboard
+v2.0 introduces **flat navigation** (NetBird / Portainer style), built for the cluster. The shell lives in `src/App.vue`:
 
-The home page displays:
+- a **single sidebar** renders the section list (flat buttons, no collapsible groups);
+- a **header** showing the page title, the cluster status strip (`components/cluster/ClusterStatusStrip.vue`), the language toggle, the light/dark theme toggle, the notifications bell, and the user menu;
+- a **tab bar** (`components/layout/SectionTabs.vue`) for multi-facet sections.
 
-- **Daemon status**: indicator based on heartbeat (active, inactive, unknown)
-- **Services**: summary card for each service with state, quick actions
-- **System**: host server CPU, memory, disk
-- **Recent alerts**: latest notifications
+### Section configuration
 
-### Docker
+Sections and their tabs are declared centrally in **`src/config/sections.ts`** (`SECTIONS: NavSection[]`). Each section carries an `id`, an i18n `labelKey`, a Lucide icon, a `to` route, route `prefixes` (active state + tab resolution) and, optionally, `tabs` and a `clusterOnly` flag. The `sectionForPath()` helper does a longest-prefix match to resolve the active section (and keeps the existing view routes — only the chrome is new).
 
-Docker resource management organized in sub-views:
+| Section | Route | Tabs |
+|---|---|---|
+| **Overview** | `/` | — (cluster topology dashboard) |
+| **Nodes** *(`clusterOnly`)* | `/nodes` | — |
+| **Containers** | `/containers` | `/containers` · `/images` · `/volumes` · `/networks` · `/system` |
+| **Services** | `/services` | `/services` · `/autoscale` |
+| **Stacks** | `/stacks` | `/stacks` · `/apps` · `/app-store` |
+| **Ingress** | `/apps/domains` | `/apps/domains` · `/apps/certificates` |
+| **Activity** | `/logs` | `/logs` · `/events` · `/incidents` · `/journal` |
+| **Settings** | `/settings` | `/settings` · `/cluster` |
 
-- **Containers**: table with filters, inline actions, logs in modal, creation assistant access button
-- **Creation Assistant**: guided 6-step wizard to create a group of containers (Docker Hub image search, auto-filled ports/volumes/env from image metadata, dedicated or existing network, Caelix orchestrator with health checks, full autoscale with dedicated proxy)
-- **Images**: gallery with pull, build, removal
-- **Volumes**: list with size and attachments
-- **Networks**: network topology
-- **Stacks**: Docker Compose management
-- **System Info**: Docker version, storage driver, container count
-- **Events**: live Docker events stream
+Sections marked `clusterOnly` (Nodes) are hidden in single-host mode; the console then also drops the "Node" column from lists and the cluster status strip from the header.
 
-### Orchestrator
+### Notable views
 
-Caelix-specific interface:
+- **Overview**: node cards (role / leader / VIP, health, CPU·RAM, per-node resource counts), cluster KPIs, quorum, and recent incidents.
+- **Containers**: table with filters and a "Node" column (cluster), inline actions targeting the row's node, logs in a modal, access to the creation assistant (guided wizard: Docker Hub image search, ports/volumes/env auto-filled from metadata, dedicated or existing network, Caelix orchestrator with health checks, autoscale with dedicated proxy).
+- **Services / Autoscale**: detailed orchestrated-service state, metrics, replicas, thresholds, manual scale.
+- **Stacks**: Compose, deployed applications, and the template catalog (deployment assistant).
+- **Activity**: centralized logs (daemon, real-time container, UI backend), Docker events, filterable incidents, audit journal.
+- **Settings**: user management (admin), notifications, preferences, and cluster settings.
 
-- **Services**: detailed state of each orchestrated service (health, replicas, last action)
-- **Manifest Editor**: syntax-aware INI file editing with live validation
-- **Autoscale Dashboard**: metric graphs, replica count, active thresholds
-- **Incidents**: table filterable by date, service, severity
-- **Audit Journal**: container operation timeline with filtering
-
-### AppStore
-
-Simplified deployment:
-
-- Template catalog (preconfigured services)
-- Remote template sources
-- **WizardModal**: multi-step deployment assistant
-
-### Logs
-
-Centralized log viewer:
-
-- Caelix daemon logs (formatted JSON)
-- Container logs (with real-time streaming)
-- UI backend logs
-
-### Settings
-
-- Authentication token configuration
-- Read/unread notification management
-- Display preferences
+Long lists are **virtualized** and rendered **progressively** (a slow node does not block the display).
 
 ## Reusable Components
 

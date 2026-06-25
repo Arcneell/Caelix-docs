@@ -93,65 +93,39 @@ See [Configuration > Authentication](../configuration/authentication.en.md) for 
 
 ---
 
-## Interface Sections
+## Navigation (v2.0)
 
-### Dashboard
+The console was **completely redesigned** in v2.0: **flat** navigation (NetBird / Portainer style), **cluster-native**, with no nested collapsible menu groups. A **single sidebar** lists ~8 sections, each opening a page; multi-facet sections expose **horizontal tabs**.
 
-Overview of your infrastructure:
+| Section | Tabs | Content |
+|---|---|---|
+| **Overview** | — | Cluster topology dashboard: node cards (role / leader / VIP, health, CPU·RAM, per-node resource counts), cluster KPIs, quorum, recent incidents |
+| **Nodes** *(cluster only)* | — | Node list with drain / undrain and per-node detail |
+| **Containers** | Images · Volumes · Networks · System | Docker resource management (list, guided creation assistant, start/stop/restart, logs, exec, stats, pull/build, prune, connect/disconnect, system info) |
+| **Services** | Services · Autoscale | Detailed orchestrated-service state and autoscale dashboard (metrics, replicas, thresholds, manual scale) |
+| **Stacks** | Compose · Applications · Store | Docker Compose stacks, deployed applications, and the template catalog (deployment assistant) |
+| **Ingress** | Domains · Certificates | Domains and TLS certificates |
+| **Activity** | Logs · Events · Incidents · Journal | Centralized logs, real-time Docker events, filterable incidents, and the audit journal |
+| **Settings** | General · Cluster | Users, notifications, preferences, and cluster settings |
 
-- **Daemon status**: indicator based on heartbeat (active, inactive, unknown)
-- **Service grid**: card for each service with state, uptime, quick actions
-- **System metrics**: host server CPU, memory, disk
-- **Recent alerts**: latest unacknowledged notifications
+### Header
 
-### Docker
+The header shows the **page title**, a **cluster status strip** (leader · VIP · nodes alive · quorum), the **language toggle** (FR/EN), the **light/dark theme toggle**, the **notifications bell**, and the **user menu**. There is **no** global node selector anymore.
 
-Direct management of all Docker resources:
+### Cluster-aware behaviour
 
-| Subsection | Features |
-|---|---|
-| **Containers** | List, creation (multi-step wizard), start/stop/restart, logs, exec, stats, export, commit |
-| **Images** | List, pull, build, remove, prune, registry search |
-| **Volumes** | List, create, remove, prune |
-| **Networks** | List, create, remove, connect/disconnect |
-| **Stacks** | Docker Compose management (deploy, down, status) |
-| **System Info** | Docker version, storage driver, resources |
-| **Events** | Real-time Docker events stream (SSE) |
+The console is cluster-aware everywhere:
 
-### Orchestrator
+- resource lists **aggregate across all nodes** with a **"Node"** column and a per-node filter;
+- every action **targets its row's node**;
+- notifications aggregate alerts from all nodes; an event can target a node;
+- long lists are **virtualized** and rendered **progressively** (a slow node does not block the display).
 
-Caelix-specific interface:
+### Single-host simplification
 
-| Subsection | Features |
-|---|---|
-| **Services** | Detailed state, actions (start/stop/restart), resume |
-| **Manifest Editor** | Syntax-aware INI file editing with validation |
-| **Autoscale Dashboard** | Metrics, replicas, thresholds, manual scale, stress test |
-| **Incidents** | Filterable history by date/service/severity, acknowledgment |
-| **Audit Journal** | Container operation timeline with filtering |
+In single-host mode the console simplifies automatically: **no Nodes section**, **no Node column**, and **no cluster status strip** in the header.
 
-### AppStore
-
-Simplified deployment via preconfigured templates:
-
-- Built-in template catalog
-- Remote template sources
-- Multi-step deployment assistant (WizardModal)
-
-### Logs
-
-Centralized log viewer:
-
-- Caelix daemon logs (formatted JSON)
-- Container logs (with real-time streaming)
-- UI backend logs
-- Log search
-
-### Settings
-
-- User management (admin only)
-- Notification management (Discord config)
-- Display preferences
+The console is **bilingual FR/EN** and ships **light and dark** themes.
 
 ---
 

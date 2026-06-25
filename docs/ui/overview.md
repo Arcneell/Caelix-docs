@@ -93,65 +93,39 @@ Voir [Configuration > Authentification](../configuration/authentication.md) pour
 
 ---
 
-## Sections de l'interface
+## Navigation (v2.0)
 
-### Dashboard
+La console a été **entièrement redessinée** en v2.0 : navigation **plate** (style NetBird / Portainer), **pensée pour le cluster**, sans menus repliables imbriqués. Une **barre latérale unique** liste ~8 sections, chacune ouvrant une page ; les sections à plusieurs facettes exposent des **onglets horizontaux**.
 
-Vue d'ensemble de votre infrastructure :
+| Section | Onglets | Contenu |
+|---|---|---|
+| **Overview** | — | Tableau de bord topologie du cluster : cartes de nœud (rôle / leader / VIP, santé, CPU·RAM, comptes de ressources par nœud), KPI cluster, quorum, incidents récents |
+| **Nodes** *(cluster uniquement)* | — | Liste des nœuds avec drain / undrain et détail par nœud |
+| **Containers** | Images · Volumes · Networks · System | Gestion des ressources Docker (liste, création via assistant guidé, start/stop/restart, logs, exec, stats, pull/build, prune, connect/disconnect, infos système) |
+| **Services** | Services · Autoscale | État détaillé des services orchestrés et tableau de bord autoscale (métriques, replicas, seuils, scale manuel) |
+| **Stacks** | Compose · Applications · Store | Stacks Docker Compose, applications déployées et catalogue de templates (assistant de déploiement) |
+| **Ingress** | Domains · Certificates | Domaines et certificats TLS |
+| **Activity** | Logs · Events · Incidents · Journal | Logs centralisés, événements Docker temps réel, incidents filtrables et journal d'audit |
+| **Settings** | General · Cluster | Utilisateurs, notifications, préférences, et paramètres du cluster |
 
-- **Statut du daemon** : indicateur basé sur le heartbeat (actif, inactif, inconnu)
-- **Grille de services** : carte de chaque service avec état, uptime, actions rapides
-- **Métriques système** : CPU, mémoire, disque du serveur hôte
-- **Alertes récentes** : dernières notifications non acquittées
+### En-tête
 
-### Docker
+L'en-tête affiche le **titre de la page**, une **bande de statut du cluster** (leader · VIP · nœuds vivants · quorum), le **basculement de langue** (FR/EN), le **bascule thème** clair/sombre, la **cloche de notifications** et le **menu utilisateur**. Il n'y a **plus** de sélecteur de nœud global.
 
-Gestion directe de toutes les ressources Docker :
+### Comportement orienté cluster
 
-| Sous-section | Fonctionnalités |
-|---|---|
-| **Containers** | Liste, création (wizard multi-étapes), start/stop/restart, logs, exec, stats, export, commit |
-| **Images** | Liste, pull, build, suppression, prune, recherche registry |
-| **Volumes** | Liste, création, suppression, prune |
-| **Networks** | Liste, création, suppression, connect/disconnect |
-| **Stacks** | Gestion Docker Compose (deploy, down, status) |
-| **System Info** | Version Docker, storage driver, ressources |
-| **Events** | Flux temps réel des événements Docker (SSE) |
+La console est consciente du cluster partout :
 
-### Orchestrator
+- les listes de ressources **agrègent l'ensemble des nœuds** avec une colonne **« Node »** et un filtre par nœud ;
+- chaque action **cible le nœud de sa ligne** ;
+- les notifications agrègent les alertes de tous les nœuds ; un événement peut cibler un nœud ;
+- les longues listes sont **virtualisées** et rendues **progressivement** (un nœud lent ne bloque pas l'affichage).
 
-Interface spécifique Caelix :
+### Simplification mono-hôte
 
-| Sous-section | Fonctionnalités |
-|---|---|
-| **Services** | État détaillé, actions (start/stop/restart), resume |
-| **Manifest Editor** | Édition syntaxique du fichier INI avec validation |
-| **Autoscale Dashboard** | Métriques, replicas, seuils, scale manuel, stress test |
-| **Incidents** | Historique filtrable par date/service/sévérité, acquittement |
-| **Audit Journal** | Timeline des opérations conteneur avec filtrage |
+En mode mono-hôte, la console se simplifie automatiquement : **pas de section Nodes**, **pas de colonne Node**, et **pas de bande de statut cluster** dans l'en-tête.
 
-### AppStore
-
-Déploiement simplifié via templates préconfigurés :
-
-- Catalogue de templates intégrés
-- Sources de templates distantes
-- Assistant de déploiement multi-étapes (WizardModal)
-
-### Logs
-
-Visionneuse centralisée :
-
-- Logs daemon Caelix (JSON formatté)
-- Logs conteneurs (avec streaming temps réel)
-- Logs backend UI
-- Recherche dans les logs
-
-### Settings
-
-- Gestion des utilisateurs (admin uniquement)
-- Gestion des notifications (config Discord)
-- Préférences d'affichage
+La console est **bilingue FR/EN** et propose les thèmes **clair et sombre**.
 
 ---
 

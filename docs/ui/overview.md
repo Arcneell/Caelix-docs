@@ -127,6 +127,19 @@ En mode mono-hôte, la console se simplifie automatiquement : pas de section Nod
 
 La console est bilingue FR/EN et propose les thèmes clair et sombre.
 
+### Conteneurs d'infrastructure
+
+Le conteneur de la console et le conteneur du store etcd font tourner Caelix lui-même : les supprimer coupe le nœud de son plan de contrôle. La liste **Containers** les masque donc par défaut. Un bouton **Système** les révèle (badge dédié) ; toute tentative de suppression ou d'arrêt affiche un avertissement explicite indiquant que l'action peut casser le cluster.
+
+### Animations et retours visuels
+
+Les transitions et états de chargement sont traités comme un signal, pas comme un effet décoratif :
+
+- les tableaux affichent un squelette animé (shimmer) reproduisant la mise en page pendant le chargement, plutôt qu'un écran vide suivi d'une apparition brutale ;
+- les compteurs (conteneurs actifs, images, nœuds vivants…) s'animent jusqu'à leur valeur et pulsent brièvement lorsqu'ils changent lors d'un rafraîchissement ;
+- le changement de page applique un fondu/glissement court et cohérent ;
+- toutes les animations respectent la préférence système `prefers-reduced-motion` et se réduisent à l'instantané pour les utilisateurs sensibles au mouvement.
+
 ---
 
 ## Volumes montés

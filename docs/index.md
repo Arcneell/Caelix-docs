@@ -118,7 +118,7 @@ caelix/
 │   └── Dockerfile              #   Build multi-stage
 ├── scripts/                    # Installation et maintenance
 ├── .caelix/                    # Données runtime
-└── VERSION                     # 2.0.1
+└── VERSION                     # 2.1.1
 ```
 
 ---

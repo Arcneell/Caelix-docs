@@ -127,6 +127,19 @@ In single-host mode the console simplifies automatically: no Nodes section, no N
 
 The console is bilingual FR/EN and ships light and dark themes.
 
+### Infrastructure containers
+
+The console container and the etcd store container run Caelix itself: removing them cuts the node off from its control plane. The **Containers** list therefore hides them by default. A **System** toggle reveals them (with a dedicated badge); any attempt to remove or stop one shows an explicit warning that the action may break the cluster.
+
+### Animations and visual feedback
+
+Transitions and loading states are treated as signal, not decoration:
+
+- tables show an animated shimmer skeleton that mirrors the layout while data loads, instead of a blank screen followed by an abrupt pop-in;
+- counters (running containers, images, live nodes…) tween to their value and pulse briefly when they change on a refresh;
+- navigating between pages applies a short, consistent fade/slide;
+- every animation honours the system `prefers-reduced-motion` preference and collapses to near-instant for motion-sensitive users.
+
 ---
 
 ## Mounted Volumes

@@ -229,7 +229,7 @@ The UI container will be recreated on the next reconciliation cycle with the new
 
 After installation, the web console is available at **http://SERVER_IP:&lt;port&gt;** (port `18100` by default).
 
-- Default login: `admin` / `admin` (password change forced on first login)
+- Login: `admin` / a **random password generated on first start** (no `admin`/`admin` default). Read it from `/opt/caelix/.caelix/initial-admin-password` (or `docker logs caelix-caelix-ui | grep -i password`), then change it and delete the file. Set `CAELIX_ADMIN_PASSWORD` / `--admin-password` to choose your own at install time.
 - **The port and bind address are chosen at install time**: `--ui-port <PORT>` and `--ui-bind <ADDR>` (see [Install Options](#install-options)).
 - By default the UI listens on all interfaces (`0.0.0.0`). To restrict it to local access, install with `--ui-bind 127.0.0.1`.
 

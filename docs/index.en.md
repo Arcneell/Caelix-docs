@@ -1,28 +1,39 @@
-# Caelix — Self-healing Docker orchestration
+# Caelix
 
 <p align="center">
-  <img src="/Caelix-docs/assets/caelix-logo.svg" alt="Caelix Logo" width="100">
+  <img src="/Caelix-docs/assets/caelix-logo.svg" alt="Caelix" width="100">
 </p>
 
-<p align="center"><strong>Self-healing Docker orchestrator — single host or HA cluster</strong></p>
+<p align="center">Self-healing Docker orchestration for a single host or a high-availability cluster.</p>
 
 ---
 
 ## Overview
 
-Caelix is a declarative orchestrator for Docker containers. Services are defined in an INI file. The engine ensures convergence toward the desired state through a continuous reconciliation loop. It runs **single-host** by default, and **as a high-availability cluster** optionally — a cluster that is **HA by design** and managed **like a single host** from the console: every node is a Consul server + controller, a **floating VIP** gives one stable address that **fails over automatically**, console state is shared, and you drive **any node's Docker** from the UI.
+Caelix is a declarative container orchestrator. Services are described in an INI
+file; a continuous reconciliation loop compares that declared state against what
+Docker is actually running and corrects the difference. Caelix runs on a single
+host by default and, optionally, as a high-availability cluster operated from the
+console as though it were one host: every node is a Consul server and a controller,
+a floating VIP provides a stable address that fails over automatically, console
+state is replicated across the nodes, and one interface drives the Docker daemon of
+any node.
 
-**Key capabilities:**
+Key capabilities:
 
-- Declarative reconciliation with drift detection
-- Health checks: HTTP, TCP, memory, OOM, latency, error rate, logs, disk
-- Automatic repair through escalation (restart → recreate → purge)
-- Blue/green deployment with pre-switch validation
-- Horizontal autoscaling with built-in TCP load balancer (socat)
-- **HA cluster (2.0)**: Consul control plane (Raft quorum), **floating VIP** with **automatic failover**, mandatory WireGuard mesh, **shared console state** (users, JWT secret, config, templates, Compose stacks, TLS certs), **per-node Docker** (`X-Caelix-Node`), and horizontal **HPA** on CPU
-- Discord alerts with detailed diagnostics
-- Audit trail in JSONL or SQLite
-- Web console: Vue 3 + FastAPI (~189 REST operations, httpOnly cookie auth)
+- Declarative reconciliation with drift detection.
+- Health checks: HTTP, TCP, memory, OOM, latency, error rate, logs, disk.
+- Automatic repair by escalation (restart, recreate, purge).
+- Blue/green deployment with validation before the cutover.
+- Horizontal autoscaling behind a built-in TCP load balancer (socat).
+- HA cluster: Consul control plane (Raft quorum), floating VIP with automatic
+  failover, WireGuard mesh, shared console state (users, JWT secret, configuration,
+  templates, Compose stacks, TLS certificates), per-node Docker (`X-Caelix-Node`),
+  and CPU-based autoscaling.
+- Multi-channel notifications (Discord, Slack, Teams, Telegram, SMTP).
+- Audit trail in JSONL or SQLite.
+- Vue 3 web console and FastAPI backend (about 189 REST operations, `httpOnly`
+  cookie authentication).
 
 ---
 
@@ -48,7 +59,7 @@ graph LR
     end
 
     subgraph Sorties["Observability"]
-        discord["Discord"]
+        discord["Notifications"]
         incidents["Incidents<br>log + JSONL"]
         audit["Audit<br>JSONL / SQLite"]
     end
@@ -67,64 +78,61 @@ graph LR
 
 ---
 
-## Tech Stack
+## Tech stack
 
 | Component | Technology |
 |---|---|
 | Engine | Bash 5, curl, Docker/Podman |
-| Proxy | socat (TCP round-robin, hot-reload) |
-| UI Backend | Python 3.11+, FastAPI, SSE |
-| UI Frontend | Vue 3, TypeScript, Tailwind CSS, Vite |
-| Notifications | Discord webhooks |
+| Proxy | socat (TCP round-robin, hot reload) |
+| Console backend | Python 3.11+, FastAPI, SSE |
+| Console frontend | Vue 3, TypeScript, Tailwind CSS, Vite |
+| Cluster control | Consul (KV, sessions, leader lock), WireGuard |
+| Notifications | Discord, Slack, Teams, Telegram, SMTP |
 | Audit | JSONL or SQLite |
 
 ---
 
-## Project Structure
+## Project structure
 
 ```
 caelix/
-├── bin/caelix                    # CLI (9 commands)
+├── bin/caelix                  # CLI
 ├── lib/                        # Bash engine
 │   ├── common.sh               #   Logging, state management, port allocation
 │   ├── manifest.sh             #   INI parser
 │   ├── runtime.sh              #   Docker/Podman abstraction
-│   ├── health.sh               #   8 types of health checks
+│   ├── health.sh               #   Health checks
 │   ├── repair.sh               #   Repair escalation, blue/green
-│   ├── autoscale.sh            #   Replica management, metrics, decisions
+│   ├── autoscale.sh            #   Replicas, metrics, decisions
 │   ├── proxy.sh                #   TCP reverse proxy
-│   ├── notify.sh               #   Discord notifications
+│   ├── notify.sh               #   Notifications
 │   ├── incidents.sh            #   Incident journal
-│   ├── audit.sh                #   Bash audit hook
+│   ├── node.sh                 #   Cluster agent (VIP, mesh, registry)
 │   ├── doctor.sh               #   Validation and diagnostics
 │   ├── audit_log.py            #   JSONL/SQLite persistence
-│   └── manifest_doctor.py      #   Advanced Python validation
-├── etc/                        # Configuration
-│   ├── manifest.ini            #   Declared services
-│   └── notify.ini              #   Discord webhook
-├── ui/                         # Web console
+│   └── manifest_doctor.py      #   Advanced validation
+├── etc/                        # Configuration (manifest.ini, notify.ini)
+├── ui/
 │   ├── backend/                #   FastAPI (~27 routers, ~189 operations)
-│   ├── frontend/               #   Vue 3 SPA
+│   ├── frontend/               #   Vue 3
 │   └── Dockerfile              #   Multi-stage build
 ├── scripts/                    # Installation and maintenance
-├── .caelix/                      # Runtime data
-├── caelix.global.service         # systemd unit
-└── VERSION                     # 2.0.0-beta.1
+├── .caelix/                    # Runtime data
+└── VERSION                     # 2.0.1
 ```
 
 ---
 
 ## Quickstart
 
-=== "Automatic installation"
+=== "Image (recommended)"
 
     ```bash
-    git clone https://github.com/Arcneell/Caelix.git
-    cd Caelix
-    ./scripts/install-all.sh
+    echo "YOUR_TOKEN" | docker login ghcr.io -u Arcneell --password-stdin
+    docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh | bash -s -- --with-systemd
     ```
 
-=== "Manual installation"
+=== "From source"
 
     ```bash
     git clone https://github.com/Arcneell/Caelix.git
@@ -135,36 +143,37 @@ caelix/
     bin/caelix run
     ```
 
-=== "HA cluster (2.0, opt-in)"
+=== "HA cluster"
 
-    Pull the beta channel (`:2.0.0-beta.1` or `:beta`); bootstrap one controller with a floating VIP, then join the other nodes:
+    Bootstrap one controller with a floating VIP, then join the other nodes:
 
     ```bash
-    INSTALL="ghcr.io/arcneell/caelix:2.0.0-beta.1"
+    IMAGE="ghcr.io/arcneell/caelix:latest"
 
-    # Controller node — bootstraps Consul + owns the VIP
-    docker run --rm $INSTALL cat /opt/caelix/install.sh | bash -s -- \
+    # Controller: bootstraps Consul and owns the VIP
+    docker run --rm $IMAGE cat /opt/caelix/install.sh | bash -s -- \
       --with-systemd --mode controller --vip 10.0.0.10/32 --admin-password 'SAME_ON_ALL_NODES'
 
-    # Join nodes — point them at an existing controller's Consul API
-    docker run --rm $INSTALL cat /opt/caelix/install.sh | bash -s -- \
+    # Join node: point it at an existing controller's Consul API
+    docker run --rm $IMAGE cat /opt/caelix/install.sh | bash -s -- \
       --with-systemd --mode join --consul-addr http://10.0.0.11:8500 --admin-password 'SAME_ON_ALL_NODES'
     ```
 
-    The console and ingress then answer on the VIP (`http://10.0.0.10:18100`), which follows the leader on failover (`caelix vip-status`).
+    The console and ingress then answer on the VIP (`http://10.0.0.10:18100`), which
+    follows the leader on failover (`caelix vip-status`).
 
 :material-arrow-right: [Full installation guide](getting-started/installation.md)
 
 ---
 
-## Table of Contents
+## Table of contents
 
 | Section | Content |
 |---|---|
-| [Getting Started](getting-started/installation.md) | Installation, first launch, documentation deployment |
+| [Getting started](getting-started/installation.md) | Installation, first launch, documentation deployment |
 | [Architecture](architecture/overview.md) | Components, reconciliation flow, state directory |
-| [Cluster](architecture/cluster.md) | HA cluster: Consul control plane, floating VIP, shared state, HPA |
-| [Configuration](configuration/manifest.md) | INI manifest, Discord notifications, environment variables |
+| [Cluster](architecture/cluster.md) | HA cluster: Consul control plane, floating VIP, shared state, autoscaling |
+| [Configuration](configuration/manifest.md) | INI manifest, notifications, environment variables |
 | [Modules](modules/health.md) | Health, repair, autoscale, proxy, audit, incidents, notifications |
-| [Web Console](ui/overview.md) | UI, REST API, frontend |
-| [Reference](reference/cli.md) | CLI, exhaustive configuration, internal functions, troubleshooting |
+| [Web console](ui/overview.md) | UI, REST API, frontend |
+| [Reference](reference/cli.md) | CLI, complete configuration, internal functions, troubleshooting |

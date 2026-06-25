@@ -6,10 +6,10 @@ Le module de mise à jour automatique (`lib/update.sh`) vérifie périodiquement
 
 À chaque passe de réconciliation, Caelix vérifie pour chaque service ayant `auto_update = 1` :
 
-1. **Vérification de l'intervalle** -- le délai configuré (`auto_update_interval`) est-il écoulé depuis le dernier check ?
-2. **Pull de l'image** -- `docker pull` pour récupérer le dernier digest distant
-3. **Comparaison des digests** -- le digest distant est-il différent du digest local stocké ?
-4. **Application de la stratégie** -- selon `auto_update_strategy` :
+1. Vérification de l'intervalle : le délai configuré (`auto_update_interval`) est-il écoulé depuis le dernier check ?
+2. Pull de l'image : `docker pull` récupère le dernier digest distant.
+3. Comparaison des digests : le digest distant est-il différent du digest local stocké ?
+4. Application de la stratégie, selon `auto_update_strategy` :
    - `immediate` : applique le rollout immédiatement (utilise `rollout_strategy` du service : `recreate` ou `blue_green`)
    - `notify` : enregistre un incident informatif sans toucher au conteneur
 
@@ -73,8 +73,8 @@ Caelix vérifie toutes les heures et enregistre un incident `auto_update_availab
 
 Lorsqu'une mise à jour est en attente (mode `notify`), elle peut être appliquée :
 
-- **Via l'API** : `POST /api/update/apply/{name}`
-- **Via l'UI** : depuis la page Services de l'orchestrateur
+- Via l'API : `POST /api/update/apply/{name}`
+- Via l'UI : depuis la page Services de l'orchestrateur
 
 ## Événements et notifications
 

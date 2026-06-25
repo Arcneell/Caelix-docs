@@ -157,9 +157,9 @@ Types de monitoring disponibles :
 ### Placement cluster et ingress (mode 2.0)
 
 En mode cluster (console 2.0, store `file` ou `consul`), une section de service peut
-porter des clés de **placement** supplémentaires. Ces clés sont interprétées par le
-controller (leader) qui décide sur quels nœuds placer les replicas, puis sont
-**retirées du sous-manifest** poussé à chaque agent (l'agent mono-hôte ne les comprend
+porter des clés de placement supplémentaires. Ces clés sont interprétées par le
+controller (leader), qui décide sur quels nœuds placer les replicas, puis sont
+retirées du sous-manifest poussé à chaque agent (l'agent mono-hôte ne les comprend
 pas). Cf. `PLACEMENT_KEYS` dans `model.py`.
 
 | Clé | Défaut | Description |
@@ -169,9 +169,9 @@ pas). Cf. `PLACEMENT_KEYS` dans `model.py`.
 | `anti_affinity` | — | Évite de co-localiser les replicas (1 par nœud quand possible) |
 | `max_per_node` | — | Plafond de replicas d'un même service par nœud |
 | `storage` | — | Clé de placement uniquement (état/volume), retirée du sous-manifest |
-| `shared_volume` | — | Volume partagé d'une app *stateful* — **conservé** dans le sous-manifest (l'agent en a besoin pour le montage) |
+| `shared_volume` | — | Volume partagé d'une app *stateful*, conservé dans le sous-manifest (l'agent en a besoin pour le montage) |
 
-**Cluster HPA** (autoscaler horizontal cluster, distinct de l'autoscale mono-hôte) — voir le module [Autoscale](../modules/autoscale.md) :
+**Cluster HPA** (autoscaler horizontal cluster, distinct de l'autoscale mono-hôte). Voir le module [Autoscale](../modules/autoscale.md) :
 
 | Clé | Défaut | Description |
 |---|---|---|
@@ -188,7 +188,7 @@ pas). Cf. `PLACEMENT_KEYS` dans `model.py`.
 |---|---|---|
 | `publish` | — | `<hostport>:<containerport>` ; l'adresse du backend publiée à l'ingress devient `<CAELIX_NODE_ADDR>:<hostport>` |
 | `autoscale_route` | (= nom app) | Clé de route ingress. `default` = route catch-all sur `VIP:80`. Formes `domain:<host>` / `port:<n>` également supportées. Plusieurs apps partageant une même clé sont fusionnées derrière la même route. |
-| `health_type` | `none` (en cluster) | **En mode cluster, l'absence de `health_type` explicite vaut `none`** : le conteneur est sain tant qu'il tourne (la reprise sur crash reste assurée par `create_missing`), et l'ingress sonde lui-même chaque backend avant de router. Évite qu'un service sans probe soit « réparé à mort ». Un `health_type` explicite l'emporte toujours. |
+| `health_type` | `none` (en cluster) | En mode cluster, l'absence de `health_type` explicite vaut `none` : le conteneur est sain tant qu'il tourne (la reprise sur crash reste assurée par `create_missing`), et l'ingress sonde lui-même chaque backend avant de router. Cela évite qu'un service sans probe soit « réparé à mort ». Un `health_type` explicite l'emporte toujours. |
 
 #### Exemple de service cluster
 
@@ -209,8 +209,8 @@ hpa_cooldown = 3
 # pas de health_type → défaut `none` en cluster ; l'ingress sonde les backends
 ```
 
-> **Sécurité (cluster)** — en mode cluster, `dockerd:2375` et Consul `:8500` sont liés
-> à l'**IP privée** du nœud. En production, activez impérativement les ACL Consul +
+> **Sécurité (cluster)** : en mode cluster, `dockerd:2375` et Consul `:8500` sont liés
+> à l'IP privée du nœud. En production, activez impérativement les ACL Consul +
 > token + TLS : le KV Consul détient le secret JWT, les hash de mots de passe et les
 > clés TLS.
 

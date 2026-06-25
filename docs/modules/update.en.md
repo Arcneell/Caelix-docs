@@ -6,10 +6,10 @@ The automatic update module (`lib/update.sh`) periodically checks whether new ve
 
 On each reconciliation pass, Caelix checks for each service with `auto_update = 1`:
 
-1. **Interval check** -- has the configured delay (`auto_update_interval`) elapsed since the last check?
-2. **Image pull** -- `docker pull` to fetch the latest remote digest
-3. **Digest comparison** -- is the remote digest different from the stored local digest?
-4. **Strategy application** -- based on `auto_update_strategy`:
+1. Interval check: has the configured delay (`auto_update_interval`) elapsed since the last check?
+2. Image pull: `docker pull` fetches the latest remote digest.
+3. Digest comparison: is the remote digest different from the stored local digest?
+4. Strategy application, based on `auto_update_strategy`:
    - `immediate`: applies the rollout immediately (uses the service's `rollout_strategy`: `recreate` or `blue_green`)
    - `notify`: records an informational incident without touching the container
 
@@ -73,8 +73,8 @@ Caelix checks every hour and records an `auto_update_available` incident if an u
 
 When an update is pending (notify mode), it can be applied:
 
-- **Via the API**: `POST /api/update/apply/{name}`
-- **Via the UI**: from the orchestrator Services page
+- Via the API: `POST /api/update/apply/{name}`
+- Via the UI: from the orchestrator Services page
 
 ## Events and Notifications
 

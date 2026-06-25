@@ -1,17 +1,19 @@
 # Processus — Mise à jour du paquet d'installation
 
-Ce guide décrit **comment publier une nouvelle version** du paquet que vos clients utilisent pour installer et mettre à jour Caelix.
+Ce guide décrit comment publier une nouvelle version du paquet que vos clients
+utilisent pour installer et mettre à jour Caelix.
 
 ## Le paquet client
 
 | Élément | Valeur |
 |---------|--------|
-| **Registry** | `ghcr.io` |
-| **Image** | `ghcr.io/arcneell/caelix` |
-| **Tags** | `:latest`, `:X.Y.Z` (semver depuis `VERSION`) |
-| **Installeur** | `install.sh` embarqué dans l'image (`/opt/caelix/install.sh`) |
+| Registry | `ghcr.io` |
+| Image | `ghcr.io/arcneell/caelix` |
+| Tags | `:latest`, `:X.Y.Z` (semver depuis `VERSION`) |
+| Installeur | `install.sh` embarqué dans l'image (`/opt/caelix/install.sh`) |
 
-Le client **n'a pas besoin du dépôt GitHub** — seulement d'un token registry (fourni avec la licence) et de Docker.
+Le client n'a pas besoin du dépôt GitHub : seulement d'un token registry (fourni
+avec la licence) et de Docker.
 
 ```bash
 # Installation ou mise à jour (même commande)
@@ -47,10 +49,11 @@ flowchart TD
 
 | Secret | Usage | Scopes PAT |
 |--------|-------|------------|
-| **`GHCR_TOKEN`** | Push image vers GHCR | `write:packages`, `read:packages` |
-| **`DOCS_PUSH_TOKEN`** | Sync doc vers Caelix-docs | `public_repo` ou fine-grained write sur Caelix-docs |
+| `GHCR_TOKEN` | Push image vers GHCR | `write:packages`, `read:packages` |
+| `DOCS_PUSH_TOKEN` | Sync doc vers Caelix-docs | `public_repo` ou fine-grained write sur Caelix-docs |
 
-Configuration détaillée : [Distribution & Release](distribution.md), [Déploiement doc](deploy.md).
+Configuration détaillée : [Distribution & Release](distribution.md),
+[Déploiement doc](deploy.md).
 
 ### En local (option `--local`)
 
@@ -59,7 +62,7 @@ Configuration détaillée : [Distribution & Release](distribution.md), [Déploie
 
 ---
 
-## Processus standard (recommandé — CI)
+## Processus standard (recommandé, via CI)
 
 ### 1. Préparer la release
 
@@ -75,12 +78,12 @@ Configuration détaillée : [Distribution & Release](distribution.md), [Déploie
 
 ### 2. Rédiger les notes de release
 
-Créer **deux fichiers** (copier la version précédente comme base) :
+Créez deux fichiers (copiez la version précédente comme base) :
 
 - `docs/getting-started/release-notes/vX.Y.Z.md`
 - `docs/getting-started/release-notes/vX.Y.Z.en.md`
 
-Ajouter l'entrée dans `mkdocs.yml` (section Démarrage) si nouvelle page.
+Ajoutez l'entrée dans `mkdocs.yml` (section Démarrage) si la page est nouvelle.
 
 ### 3. Publier le paquet
 
@@ -99,13 +102,13 @@ Le script :
 
 1. Lance `check-all.sh`
 2. Vérifie que les notes de release existent
-3. Met à jour `VERSION`, badge `README.md`, `main.py` (si version passée)
+3. Met à jour `VERSION`, le badge `README.md`, `main.py` (si version passée)
 4. Crée le tag `vX.Y.Z` et pousse sur GitHub
 5. Déclenche le workflow **Release** (build + push GHCR + GitHub Release)
 
 ### 4. Vérifier post-release
 
-- [ ] [Workflow Release](https://github.com/Arcneell/Caelix/actions/workflows/release.yml) **vert**
+- [ ] [Workflow Release](https://github.com/Arcneell/Caelix/actions/workflows/release.yml) vert
 - [ ] Image disponible : `docker pull ghcr.io/arcneell/caelix:X.Y.Z`
 - [ ] [GitHub Release](https://github.com/Arcneell/Caelix/releases) créée
 - [ ] Notes en ligne : `https://arcneell.github.io/Caelix-docs/getting-started/release-notes/vX.Y.Z/`
@@ -129,7 +132,7 @@ docker login ghcr.io -u Arcneell
 git tag v1.3.1 && git push origin v1.3.1
 ```
 
-Créer la GitHub Release manuellement si le workflow n'a pas tourné.
+Créez la GitHub Release manuellement si le workflow n'a pas tourné.
 
 ---
 
@@ -139,14 +142,15 @@ Quand un client relance l'installeur (ou `:latest`) :
 
 | Composant | Comportement |
 |-----------|--------------|
-| **Moteur** (`bin/`, `lib/`) | Écrasé avec la nouvelle version |
-| **Image UI** | Re-pullée depuis le manifest |
-| **systemd** | Service mis à jour / redémarré |
-| **`manifest.ini`** | **Jamais écrasé** |
-| **`notify.ini`** | **Jamais écrasé** |
-| **`.caelix/`** | État runtime conservé |
+| Moteur (`bin/`, `lib/`) | Écrasé avec la nouvelle version |
+| Image UI | Re-pullée depuis le manifest |
+| systemd | Service mis à jour / redémarré |
+| `manifest.ini` | **Jamais écrasé** |
+| `notify.ini` | **Jamais écrasé** |
+| `.caelix/` | État runtime conservé |
 
-Documenter dans les notes de release toute **nouvelle clé manifeste** à ajouter manuellement.
+Documentez dans les notes de release toute nouvelle clé manifeste à ajouter
+manuellement.
 
 ---
 

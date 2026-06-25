@@ -4,7 +4,7 @@ This guide explains how to build, publish, and distribute Caelix as a pre-compil
 
 ## Distribution Architecture
 
-Caelix is distributed as a **single Docker image** containing:
+Caelix is distributed as a single Docker image containing:
 
 | Component | Contents | Protection |
 |-----------|----------|------------|
@@ -39,11 +39,11 @@ After the first push:
 3. **Package settings** > **Danger Zone** > **Change visibility**
 4. Choose **Public** (or configure access for specific users)
 
-### 4. GitHub Actions CI — `GHCR_TOKEN` secret (required on 403)
+### 4. GitHub Actions CI: `GHCR_TOKEN` secret (required on 403)
 
 The Release workflow (`.github/workflows/release.yml`) pushes to GHCR. If `build-and-push` fails with **`403 Forbidden`**, the built-in `GITHUB_TOKEN` cannot write to the package.
 
-**Option A — Dedicated PAT (recommended)**
+**Option A: dedicated PAT (recommended)**
 
 1. [github.com/settings/tokens](https://github.com/settings/tokens) → **Generate new token (classic)**
 2. Scopes: `write:packages`, `read:packages`
@@ -52,7 +52,7 @@ The Release workflow (`.github/workflows/release.yml`) pushes to GHCR. If `build
 5. Name: `GHCR_TOKEN`, value: the PAT
 6. Re-run the Release workflow (Actions → Release → Re-run, or re-push tag `v1.4.3`)
 
-**Option B — Workflow permissions**
+**Option B: workflow permissions**
 
 1. Repo **Caelix** → **Settings** → **Actions** → **General**
 2. **Workflow permissions** → enable **Read and write permissions**
@@ -111,7 +111,7 @@ The script:
 
 ## Client-Side Installation
 
-The client authenticates to the registry then extracts and runs the installer from the image:
+The client authenticates to the registry, then extracts and runs the installer from the image:
 
 ```bash
 # 1. Authenticate (token provided with the license)
@@ -121,7 +121,7 @@ echo "CLIENT_TOKEN" | docker login ghcr.io -u Arcneell --password-stdin
 docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh | bash -s -- --with-systemd
 ```
 
-The install script is embedded in the image — no access to the source code or GitHub repository is needed.
+The install script is embedded in the image. No access to the source code or GitHub repository is needed.
 
 See [Installation](installation.en.md) for all options.
 
@@ -168,4 +168,4 @@ ghcr.io/arcneell/caelix:<version>
 ```
 
 !!! note "Code Security"
-    The Python backend is compiled to bytecode and `.py` source files are removed from the image. The frontend is minified by Vite. The code is not directly readable, but no software protection is unbreakable. The real protection lies in the **license** and the **service value** (updates, support, documentation).
+    The Python backend is compiled to bytecode and `.py` source files are removed from the image. The frontend is minified by Vite. The code is not directly readable, but no software protection is unbreakable. The real protection lies in the **license** and the service value: updates, support, documentation.

@@ -2,12 +2,12 @@
 
 The `autoscale.sh` module implements horizontal scaling: replica management, metric collection, scaling decisions with cooldown, and built-in load balancer control.
 
-Caelix ships **two** distinct autoscalers, which coexist:
+Caelix ships two distinct autoscalers, which coexist:
 
-- **Single-host autoscale** (`autoscale.sh`, key `autoscale = 1`) — covered by most of
+- **Single-host autoscale** (`autoscale.sh`, key `autoscale = 1`). Covered by most of
   this page. Creates `caelix-<app>-rN` replicas on a single host, behind the per-app
   socat load balancer.
-- **Cluster HPA** (key `hpa = 1`, 2.0 mode) — covered in the
+- **Cluster HPA** (key `hpa = 1`, 2.0 mode). Covered in the
   [Cluster HPA](#cluster-hpa-mode-20) section below. The leader adjusts a service's
   `total_replicas` and the scheduler/ingress spread the replicas across nodes.
 
@@ -76,7 +76,7 @@ Each replica needs a unique host port to expose its service.
 
 Allocation is persisted in `.caelix/autoscale/port_allocations` with a `flock` lock for atomicity.
 
-**Involved functions:**
+Involved functions:
 
 | Function | Description |
 |---|---|
@@ -148,7 +148,7 @@ When multiple metrics are defined, the decision uses the most critical one.
 
 ## Streak and Cooldown System
 
-Scaling is not reactive — Caelix waits for multiple consecutive cycles above/below the threshold before acting. This prevents oscillations.
+Scaling is not reactive. Caelix waits for several consecutive cycles above or below the threshold before acting, which prevents oscillations.
 
 ```mermaid
 sequenceDiagram
@@ -181,7 +181,7 @@ sequenceDiagram
 autoscale_cooldown = 3   # Number of consecutive passes before action
 ```
 
-**`autoscale_decision()` logic:**
+`autoscale_decision()` logic:
 
 | Condition | Streak action | Decision |
 |---|---|---|
@@ -332,11 +332,11 @@ memory_limit_mb = 512
 
 ## Cluster HPA (2.0 mode) {#cluster-hpa-mode-20}
 
-The **cluster HPA** (`ui/backend/app/core/cluster/hpa.py`) is the multi-node horizontal
-autoscaler. It is **distinct** from the single-host autoscale above: instead of managing
+The cluster HPA (`ui/backend/app/core/cluster/hpa.py`) is the multi-node horizontal
+autoscaler. It is distinct from the single-host autoscale above: instead of managing
 `caelix-<app>-rN` replicas on one host, it adjusts a service's `total_replicas` in the
-cluster manifest, and the scheduler + ingress then place and load-balance the replicas
-across nodes — exactly like changing `total_replicas` by hand, but automatically.
+cluster manifest, and the scheduler and ingress then place and load-balance the replicas
+across nodes, exactly like changing `total_replicas` by hand, but automatically.
 
 ### Activation
 
@@ -367,18 +367,18 @@ to agents (the agent only sees the `total_replicas` the leader decided).
 
 ### How it works
 
-On each pass (`hpa_tick`), run by the **leader** only:
+On each pass (`hpa_tick`), run by the leader only:
 
 1. For each replica of an `hpa = 1` service, the leader reads the `caelix-<app>`
-   container's **CPU%** via `docker stats --no-stream`, targeting each node's Docker
+   container's CPU% via `docker stats --no-stream`, targeting each node's Docker
    daemon (the same `docker_addr`/`X-Caelix-Node` the console uses). Samples are
    averaged (`_avg_cpu`).
-2. The decision applies **asymmetric hysteresis**:
-   - **scale up** when `average > hpa_target` and `total_replicas < hpa_max`;
-   - **scale down** when `average < hpa_target × 0.5` and `total_replicas > hpa_min`.
-   - In between, the counters reset (no flapping around the target).
+2. The decision applies asymmetric hysteresis:
+   - scale up when `average > hpa_target` and `total_replicas < hpa_max`;
+   - scale down when `average < hpa_target × 0.5` and `total_replicas > hpa_min`;
+   - in between, the counters reset (no flapping around the target).
 3. The action only fires after `hpa_cooldown` consecutive ticks in the same direction,
-   and changes `total_replicas` by **one** at a time (clamped to `[hpa_min, hpa_max]`).
+   and changes `total_replicas` by one at a time (clamped to `[hpa_min, hpa_max]`).
 4. If the manifest changes, it is rewritten to the store; the scheduler re-places the
    replicas and the ingress updates its backends.
 

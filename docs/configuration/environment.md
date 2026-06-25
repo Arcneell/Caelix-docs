@@ -16,10 +16,10 @@ Caelix peut être configuré via des variables d'environnement en complément du
 
 ## Runtime conteneur (démon local ou distant)
 
-Par défaut, Caelix pilote le démon Docker (ou Podman) **local** via son socket. Ces
-variables permettent de cibler un démon **distant**, y compris en TLS — première
-brique de la prise en charge multi-nœud. **Non définies, le comportement single-node
-est strictement inchangé.**
+Par défaut, Caelix pilote le démon Docker (ou Podman) local via son socket. Ces
+variables permettent de cibler un démon distant, y compris en TLS : c'est la première
+brique de la prise en charge multi-nœud. Non définies, le comportement single-node
+est strictement inchangé.
 
 | Variable | Défaut | Description |
 |---|---|---|
@@ -59,14 +59,14 @@ nœud **leader**. Voir le module [Proxy](../modules/proxy.md) et `node_vip_*` (l
 | `CAELIX_VIP_ARP` | `1` | Si `1`, émet un ARP gratuit (`arping`) lors de la prise de la VIP, pour que le LAN reroute immédiatement vers le nouveau leader. |
 | `CAELIX_ADMIN_PASSWORD` | _(vide)_ | Mot de passe admin initial de la console, à fixer identique sur tous les nœuds (le hash est stocké dans le store cluster). Aussi posable via `install.sh --admin-password`. |
 
-> **Sécurité (cluster)** — en mode cluster, `dockerd:2375` (cf. `CAELIX_DOCKER_ADDR`) et
-> Consul `:8500` sont liés à l'**IP privée** du nœud. En production, activez les ACL
+> **Sécurité (cluster)** : en mode cluster, `dockerd:2375` (cf. `CAELIX_DOCKER_ADDR`) et
+> Consul `:8500` sont liés à l'IP privée du nœud. En production, activez les ACL
 > Consul + token (`CAELIX_CONSUL_TOKEN`) + TLS : le KV Consul détient le secret JWT, les
 > hash de mots de passe et les clés TLS.
 
-> Exemple — piloter un démon distant en TLS :
+> Exemple, piloter un démon distant en TLS :
 > `-e CAELIX_DOCKER_HOST=tcp://node-b:2376 -e CAELIX_DOCKER_TLS_VERIFY=1 -e CAELIX_DOCKER_CERT_PATH=/etc/caelix/certs`.
-> La même cible est honorée par le moteur Bash **et** par les appels Docker de la console web.
+> La même cible est honorée par le moteur Bash et par les appels Docker de la console web.
 
 ## Console web et reverse proxy
 

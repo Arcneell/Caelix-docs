@@ -1,17 +1,19 @@
 # Process — Updating the Installation Package
 
-This guide explains **how to publish a new version** of the package your clients use to install and update Caelix.
+This guide explains how to publish a new version of the package your clients use
+to install and update Caelix.
 
 ## Client package
 
 | Item | Value |
 |------|-------|
-| **Registry** | `ghcr.io` |
-| **Image** | `ghcr.io/arcneell/caelix` |
-| **Tags** | `:latest`, `:X.Y.Z` (semver from `VERSION`) |
-| **Installer** | `install.sh` embedded in the image (`/opt/caelix/install.sh`) |
+| Registry | `ghcr.io` |
+| Image | `ghcr.io/arcneell/caelix` |
+| Tags | `:latest`, `:X.Y.Z` (semver from `VERSION`) |
+| Installer | `install.sh` embedded in the image (`/opt/caelix/install.sh`) |
 
-Clients **do not need the GitHub repository** — only a registry token (provided with the license) and Docker.
+Clients do not need the GitHub repository: only a registry token (provided with
+the license) and Docker.
 
 ```bash
 # Install or upgrade (same command)
@@ -47,10 +49,11 @@ flowchart TD
 
 | Secret | Purpose | PAT scopes |
 |--------|---------|------------|
-| **`GHCR_TOKEN`** | Push image to GHCR | `write:packages`, `read:packages` |
-| **`DOCS_PUSH_TOKEN`** | Sync docs to Caelix-docs | `public_repo` or fine-grained write on Caelix-docs |
+| `GHCR_TOKEN` | Push image to GHCR | `write:packages`, `read:packages` |
+| `DOCS_PUSH_TOKEN` | Sync docs to Caelix-docs | `public_repo` or fine-grained write on Caelix-docs |
 
-Detailed setup: [Distribution & Release](distribution.en.md), [Deploy documentation](deploy.en.md).
+Detailed setup: [Distribution & Release](distribution.en.md),
+[Deploy documentation](deploy.en.md).
 
 ### Local (optional `--local`)
 
@@ -59,7 +62,7 @@ Detailed setup: [Distribution & Release](distribution.en.md), [Deploy documentat
 
 ---
 
-## Standard process (recommended — CI)
+## Standard process (recommended, via CI)
 
 ### 1. Prepare the release
 
@@ -75,7 +78,7 @@ Detailed setup: [Distribution & Release](distribution.en.md), [Deploy documentat
 
 ### 2. Write release notes
 
-Create **two files** (copy previous version as a template):
+Create two files (copy the previous version as a template):
 
 - `docs/getting-started/release-notes/vX.Y.Z.md`
 - `docs/getting-started/release-notes/vX.Y.Z.en.md`
@@ -99,13 +102,13 @@ The script:
 
 1. Runs `check-all.sh`
 2. Verifies release notes exist
-3. Updates `VERSION`, `README.md` badge, `main.py` (if version argument given)
+3. Updates `VERSION`, the `README.md` badge, `main.py` (if a version argument is given)
 4. Creates tag `vX.Y.Z` and pushes to GitHub
 5. Triggers the **Release** workflow (build + GHCR push + GitHub Release)
 
 ### 4. Post-release verification
 
-- [ ] [Release workflow](https://github.com/Arcneell/Caelix/actions/workflows/release.yml) **green**
+- [ ] [Release workflow](https://github.com/Arcneell/Caelix/actions/workflows/release.yml) green
 - [ ] Image available: `docker pull ghcr.io/arcneell/caelix:X.Y.Z`
 - [ ] [GitHub Release](https://github.com/Arcneell/Caelix/releases) created
 - [ ] Notes online: `https://arcneell.github.io/Caelix-docs/getting-started/release-notes/vX.Y.Z/`
@@ -139,14 +142,14 @@ When a client re-runs the installer (or uses `:latest`):
 
 | Component | Behavior |
 |-----------|----------|
-| **Engine** (`bin/`, `lib/`) | Overwritten with new version |
-| **UI image** | Re-pulled per manifest |
-| **systemd** | Service updated / restarted |
-| **`manifest.ini`** | **Never overwritten** |
-| **`notify.ini`** | **Never overwritten** |
-| **`.caelix/`** | Runtime state preserved |
+| Engine (`bin/`, `lib/`) | Overwritten with new version |
+| UI image | Re-pulled per manifest |
+| systemd | Service updated / restarted |
+| `manifest.ini` | **Never overwritten** |
+| `notify.ini` | **Never overwritten** |
+| `.caelix/` | Runtime state preserved |
 
-Document any **new manifest keys** in release notes for manual addition.
+Document any new manifest keys in the release notes for manual addition.
 
 ---
 

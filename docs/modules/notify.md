@@ -1,6 +1,6 @@
 # Notifications
 
-Le module `notify.sh` émet des alertes sur plusieurs canaux (Discord, Slack, Teams, Telegram, SMTP). Chaque notification est un message structuré contenant le diagnostic, la cause et les actions correctives.
+Le module `notify.sh` émet des alertes sur plusieurs canaux : Discord, Slack, Teams, Telegram et SMTP. Chaque notification est un message structuré qui contient le diagnostic, la cause et les actions correctives.
 
 ---
 
@@ -59,7 +59,7 @@ curl -X POST "https://discord.com/api/webhooks/ID/TOKEN" \
 
 ## Structure d'un message Discord
 
-Chaque notification est un **embed Discord** avec :
+Chaque notification est un embed Discord composé de :
 
 ```mermaid
 graph TD
@@ -140,7 +140,7 @@ graph TD
 
 ### Descriptions détaillées (`_notify_detection_fr`)
 
-Chaque événement génère une description Markdown détaillée expliquant **ce qui a été détecté** avec les valeurs spécifiques extraites du detail.
+Chaque événement génère une description Markdown détaillée qui explique ce qui a été détecté, avec les valeurs spécifiques extraites du detail.
 
 ### Actions Caelix (`_notify_actions_fr`)
 
@@ -169,10 +169,10 @@ En parallèle des canaux externes, le backend Python maintient un système de no
 
 | Caractéristique | Détail |
 |---|---|
-| **Buffer** | 200 entrées max (circulaire) |
-| **Persistence** | `.caelix/notifications.json` |
-| **Types** | info, warning, error, success |
-| **Temps réel** | SSE (Server-Sent Events) |
+| Buffer | 200 entrées max (circulaire) |
+| Persistence | `.caelix/notifications.json` |
+| Types | info, warning, error, success |
+| Temps réel | SSE (Server-Sent Events) |
 
 API :
 

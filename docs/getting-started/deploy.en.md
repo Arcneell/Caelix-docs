@@ -4,7 +4,7 @@ Public documentation is hosted in the **[Caelix-docs](https://github.com/Arcneel
 
 **https://arcneell.github.io/Caelix-docs/**
 
-The **Caelix** repository (private) is the source; a CI workflow syncs `docs/` and `mkdocs.yml` to Caelix-docs on every push to `master`.
+The **Caelix** repository (private) is the source. A CI workflow syncs `docs/` and `mkdocs.yml` to Caelix-docs on every push to `master`.
 
 ---
 
@@ -37,7 +37,7 @@ Output in `site/`.
 
 ---
 
-## CI — automatic sync (Caelix → Caelix-docs)
+## CI: automatic sync (Caelix → Caelix-docs)
 
 Workflow: `.github/workflows/sync-docs.yml`
 
@@ -45,7 +45,7 @@ Triggered when `docs/**` or `mkdocs.yml` changes on `master`.
 
 ### Required secret: `DOCS_PUSH_TOKEN`
 
-The Caelix `GITHUB_TOKEN` **cannot** push to Caelix-docs (separate repository). A dedicated PAT is required.
+The Caelix `GITHUB_TOKEN` cannot push to Caelix-docs, which is a separate repository. A dedicated PAT is required.
 
 **Create the token**
 
@@ -65,9 +65,9 @@ The Caelix `GITHUB_TOKEN` **cannot** push to Caelix-docs (separate repository). 
 2. **New repository secret** → name: **`DOCS_PUSH_TOKEN`**, value: the PAT
 3. Re-run the workflow: **Actions** → **Sync docs to Caelix-docs** → **Run workflow**
 
-### Error « Invalid username or token »
+### Error "Invalid username or token"
 
-The `DOCS_PUSH_TOKEN` secret is **expired, revoked, or incorrect**. Regenerate a PAT, update the secret, then re-run the workflow.
+The `DOCS_PUSH_TOKEN` secret is expired, revoked, or incorrect. Regenerate a PAT, update the secret, then re-run the workflow.
 
 ---
 
@@ -75,11 +75,11 @@ The `DOCS_PUSH_TOKEN` secret is **expired, revoked, or incorrect**. Regenerate a
 
 The **Caelix-docs** repository has its own `deploy-docs.yml` workflow:
 
-1. Push to `main` on Caelix-docs (via sync above)
+1. Push to `main` on Caelix-docs (via the sync above)
 2. MkDocs build `--strict`
 3. GitHub Pages deployment
 
-No manual action required after a successful sync.
+No manual action is required after a successful sync.
 
 ---
 

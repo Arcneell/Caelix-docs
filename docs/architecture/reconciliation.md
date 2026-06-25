@@ -97,8 +97,8 @@ graph LR
 
 La fonction `ensure_desired_revision()` vérifie deux choses :
 
-1. **L'image** — L'image du conteneur correspond-elle au manifest ?
-2. **La config_version** — Le label `caelix.config_version` correspond-il au manifest ?
+1. L'image du conteneur correspond-elle à celle du manifest ?
+2. Le label `caelix.config_version` correspond-il au manifest ?
 
 ```mermaid
 flowchart LR
@@ -110,7 +110,7 @@ flowchart LR
     E -->|blue_green| G["rollout_blue_green()"]
 ```
 
-La comparaison d'images est intelligente : `nginx` est équivalent à `docker.io/library/nginx:latest`.
+La comparaison d'images normalise les noms avant de comparer : `nginx` est équivalent à `docker.io/library/nginx:latest`.
 
 ---
 

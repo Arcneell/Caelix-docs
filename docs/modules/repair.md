@@ -84,7 +84,7 @@ post_repair_grace = 5            # Secondes d'attente après réparation (défau
 
 La phase est déterminée par le compteur d'échecs `fail_count` :
 
-**Mode `auto` — escalade selon `fail_count` :**
+En mode `auto`, l'escalade suit le `fail_count` :
 
 ```mermaid
 graph LR

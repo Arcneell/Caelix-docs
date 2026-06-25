@@ -4,7 +4,7 @@ Ce guide explique comment construire, publier et distribuer Caelix sous forme d'
 
 ## Architecture de distribution
 
-Caelix est distribué sous forme d'une **image Docker unique** qui contient :
+Caelix est distribué sous forme d'une image Docker unique qui contient :
 
 | Composant | Contenu | Protection |
 |-----------|---------|------------|
@@ -39,11 +39,11 @@ Après le premier push :
 3. **Package settings** > **Danger Zone** > **Change visibility**
 4. Choisir **Public** (ou configurer l'accès pour des utilisateurs spécifiques)
 
-### 4. CI GitHub Actions — secret `GHCR_TOKEN` (requis si push 403)
+### 4. CI GitHub Actions : secret `GHCR_TOKEN` (requis si push 403)
 
 Le workflow Release (`.github/workflows/release.yml`) pousse l'image vers GHCR. Si le job `build-and-push` échoue avec **`403 Forbidden`**, le `GITHUB_TOKEN` intégré n'a pas le droit d'écrire sur le package.
 
-**Option A — PAT dédié (recommandé)**
+**Option A : PAT dédié (recommandé)**
 
 1. [github.com/settings/tokens](https://github.com/settings/tokens) → **Generate new token (classic)**
 2. Scopes : `write:packages`, `read:packages`
@@ -52,7 +52,7 @@ Le workflow Release (`.github/workflows/release.yml`) pousse l'image vers GHCR. 
 5. Nom : `GHCR_TOKEN`, valeur : le PAT
 6. Relancer le workflow Release (Actions → Release → Re-run, ou re-push du tag `v1.4.3`)
 
-**Option B — Permissions workflow**
+**Option B : permissions workflow**
 
 1. Repo **Caelix** → **Settings** → **Actions** → **General**
 2. **Workflow permissions** → cocher **Read and write permissions**
@@ -112,7 +112,7 @@ Le script :
 
 ## Installation côté client
 
-Le client s'authentifie au registry puis extrait et lance l'installeur depuis l'image :
+Le client s'authentifie au registry, puis extrait et lance l'installeur depuis l'image :
 
 ```bash
 # 1. Authentification (token fourni avec la licence)
@@ -122,7 +122,7 @@ echo "TOKEN_CLIENT" | docker login ghcr.io -u Arcneell --password-stdin
 docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh | bash -s -- --with-systemd
 ```
 
-Le script d'installation est embarqué dans l'image — aucun accès au code source ni au dépôt GitHub n'est nécessaire.
+Le script d'installation est embarqué dans l'image. Aucun accès au code source ni au dépôt GitHub n'est nécessaire.
 
 Voir [Installation](installation.md) pour toutes les options.
 
@@ -169,4 +169,4 @@ ghcr.io/arcneell/caelix:<version>
 ```
 
 !!! note "Sécurité du code"
-    Le backend Python est compilé en bytecode et les fichiers `.py` source sont supprimés de l'image. Le frontend est minifié par Vite. Le code n'est pas directement lisible, mais aucune protection logicielle n'est inviolable. La vraie protection réside dans la **licence** et la **valeur du service** (mises à jour, support, documentation).
+    Le backend Python est compilé en bytecode et les fichiers `.py` source sont supprimés de l'image. Le frontend est minifié par Vite. Le code n'est pas directement lisible, mais aucune protection logicielle n'est inviolable. La vraie protection réside dans la **licence** et la valeur du service : mises à jour, support, documentation.

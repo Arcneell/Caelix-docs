@@ -6,10 +6,10 @@ Le module de sauvegarde (`lib/backup.sh`) archive automatiquement les volumes bi
 
 À chaque passe de réconciliation, Caelix vérifie pour chaque service ayant `backup = 1` :
 
-1. **Vérification du planning** -- le délai configuré (`backup_schedule`) est-il écoulé depuis la dernière sauvegarde ?
-2. **Archivage** -- création d'un `tar.gz` des chemins bind-mount (`volumes_bind`)
-3. **Rotation** -- suppression des archives les plus anciennes au-delà de `backup_retention`
-4. **Envoi distant** -- si `backup_target` est `ftp`, `rsync` ou `s3`, envoi de l'archive
+1. **Vérification du planning** : le délai configuré (`backup_schedule`) est-il écoulé depuis la dernière sauvegarde ?
+2. **Archivage** : création d'un `tar.gz` des chemins bind-mount (`volumes_bind`).
+3. **Rotation** : suppression des archives les plus anciennes au-delà de `backup_retention`.
+4. **Envoi distant** : si `backup_target` est `ftp`, `rsync` ou `s3`, envoi de l'archive.
 
 ```mermaid
 flowchart TD

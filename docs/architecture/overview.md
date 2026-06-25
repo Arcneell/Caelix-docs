@@ -17,7 +17,7 @@
 | Mode | Activation | Description |
 |---|---|---|
 | **Mono-hôte** (défaut) | aucune | Le moteur réconcilie le manifeste local sur un seul hôte. Tout le reste de cette page décrit ce mode. |
-| **Cluster multi-nœud (HA)** | `CAELIX_CLUSTER_BACKEND=consul` | Un **plan de contrôle verrouillé par leader** (chaque nœud exécute le backend FastAPI ; seul le leader agit) planifie le placement sur plusieurs nœuds, ajuste les répliques (HPA), porte une **VIP flottante** et un **ingress global**, le tout coordonné via **Consul KV**. Le moteur ci-dessous reste l'**exécuteur local** inchangé de chaque nœud. Voir [Cluster multi-nœud](cluster.md). |
+| **Cluster multi-nœud (HA)** | `CAELIX_CLUSTER_BACKEND=consul` | Un plan de contrôle verrouillé par leader (chaque nœud exécute le backend FastAPI, seul le leader agit) planifie le placement sur plusieurs nœuds, ajuste les répliques (HPA) et porte une VIP flottante ainsi qu'un ingress global. La coordination passe par Consul KV. Le moteur décrit ci-dessous reste l'exécuteur local de chaque nœud, inchangé. Voir [Cluster multi-nœud](cluster.md). |
 
 ---
 

@@ -1,6 +1,6 @@
 # Authentication
 
-Caelix includes a multi-user authentication system based on **SQLite** and **JWT**. No external database is required: everything is stored in a single file within the container.
+Caelix includes a multi-user authentication system based on SQLite and JWT. No external database is required: everything is stored in a single file within the container.
 
 ## Overview
 
@@ -14,7 +14,7 @@ Caelix includes a multi-user authentication system based on **SQLite** and **JWT
 
 ## Web console session (httpOnly cookie)
 
-To harden the interface against XSS, the session JWT is **never stored in `localStorage`**. On login, the backend sets an httpOnly cookie:
+To harden the interface against XSS, the session JWT is never stored in `localStorage`. On login, the backend sets an httpOnly cookie:
 
 | Attribute | Value |
 |-----------|-------|
@@ -31,7 +31,7 @@ The backend resolves the token in this priority order: `Authorization: Bearer` h
 
 ## Roles
 
-Caelix defines two roles:
+Caelix defines two roles.
 
 ### Administrator (`admin`)
 
@@ -56,18 +56,14 @@ Read access and limited operational actions:
 - Read stack environment variables
 - Browse volumes (read-only)
 
-Destructive actions (delete, kill, prune, exec, deploy, backup/restore, manifest editing) are **forbidden** for technicians — the backend returns `403 Forbidden`.
+Destructive actions (delete, kill, prune, exec, deploy, backup/restore, manifest editing) are forbidden for technicians: the backend returns `403 Forbidden`.
 
-## Default Account
+## Initial account
 
-On first startup, if no users exist in the database, Caelix automatically creates:
+On first startup, if no users exist, Caelix creates an `admin` account (role `admin`). There is no default `admin`/`admin` password: a random password is generated, printed once in the logs, and written to `/opt/caelix/.caelix/initial-admin-password` (mode 0600). To choose your own, set `CAELIX_ADMIN_PASSWORD` (or `--admin-password`) at install time.
 
-- **Username**: `admin`
-- **Password**: `admin` (or the value of `CAELIX_ADMIN_PASSWORD`)
-- **Role**: `admin`
-
-!!! warning "Mandatory password change"
-    After the first login with `admin/admin`, the interface forces a password change before allowing access to the dashboard.
+!!! note "First login"
+    Read the password from `initial-admin-password`, log in, change it, then delete the file. It is also removed automatically when the admin first changes the password.
 
 ## Environment Variables
 
@@ -84,8 +80,8 @@ On first startup, if no users exist in the database, Caelix automatically create
 
 The login endpoint includes a rate limiter:
 
-- **5 failed attempts** within a **5-minute** window trigger a lockout
-- The lockout lasts **10 minutes** for the concerned IP address
+- 5 failed attempts within a 5-minute window trigger a lockout
+- The lockout lasts 10 minutes for the concerned IP address
 - Failed attempts are logged in the audit trail
 
 ### Token Invalidation
@@ -155,11 +151,11 @@ curl http://localhost:8080/api/state \
 
 ## SSE stream authentication (single-use tickets)
 
-`EventSource` cannot send custom headers. To avoid passing the long-lived JWT in the URL (where it would leak into proxy logs and browser history), SSE streams use **single-use tickets**:
+`EventSource` cannot send custom headers. To avoid passing the long-lived JWT in the URL (where it would leak into proxy logs and browser history), SSE streams use single-use tickets:
 
 1. The authenticated client calls `POST /api/auth/sse-ticket` → receives `{"ok": true, "ticket": "..."}`
 2. It opens the stream with `?ticket=<ticket>` (not `?token=`)
-3. The backend consumes the ticket atomically: it is valid **once** and expires after **30 seconds**
+3. The backend consumes the ticket atomically: it is valid once and expires after 30 seconds
 
 ```javascript
 // 1. Get a ticket

@@ -206,4 +206,4 @@ Index of all configuration keys available in Caelix.
 | `CAELIX_METRICS_PROTECT` | `0` | Require authentication on `/metrics` |
 | `CAELIX_UI_TLS_CERT` | — | TLS certificate path (HTTPS) |
 | `CAELIX_UI_TLS_KEY` | — | TLS key path (HTTPS) |
-| `CAELIX_UI_TOKEN` | — | Legacy shared token. **Deprecated** — migrate to user accounts |
+| `CAELIX_UI_TOKEN` | — | Legacy shared token. **Deprecated**: migrate to user accounts |

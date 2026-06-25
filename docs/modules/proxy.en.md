@@ -1,6 +1,6 @@
 # Proxy & Load Balancer
 
-The `proxy.sh` module implements a TCP reverse proxy based on **socat**: health-aware round-robin, hot-reload of backends, and introspection endpoints (health, state, Prometheus metrics, routes).
+The `proxy.sh` module implements a TCP reverse proxy based on socat. It provides health-aware round-robin, hot-reload of backends, and introspection endpoints (health, state, Prometheus metrics, routes).
 
 ---
 
@@ -29,10 +29,10 @@ graph LR
 
 The proxy:
 
-- Distributes traffic in **round-robin** across healthy backends only
-- **Automatically ignores** unhealthy backends
-- **Hot-reloads** when backend or route files change
-- Writes **events** to `events.queue` when a backend changes state
+- Distributes traffic in round-robin across healthy backends only.
+- Automatically ignores unhealthy backends.
+- Hot-reloads when backend or route files change.
+- Writes an event to `events.queue` when a backend changes state.
 
 ---
 
@@ -105,9 +105,9 @@ The `_proxy_route_lookup()` function performs matching in order: host → path �
 
 ### Cluster Ingress / VIP (2.0 mode)
 
-In cluster mode, the **global proxy runs on the leader node** and serves the ingress on
+In cluster mode, the global proxy runs on the leader node and serves the ingress on
 `VIP:80` (the floating VIP, cf. [environment variables](../configuration/environment.en.md#cluster-vip-floating-ingress) `CAELIX_CLUSTER_VIP` / `CAELIX_VIP_IFACE`). It
-load-balances traffic across the backends of the **cluster services** published per node.
+load-balances traffic across the backends of the cluster services published per node.
 
 End-to-end mechanics:
 
@@ -115,17 +115,17 @@ End-to-end mechanics:
    `<CAELIX_NODE_ADDR>:<hostport>` into the service registry (the `publish` key of the
    cluster manifest).
 2. On an ingress node (`CAELIX_INGRESS=1`), `build_routes` reads the registry and groups,
-   by **route key** (`autoscale_route`, or the app name), the de-duplicated, sorted list
+   by route key (`autoscale_route`, or the app name), the de-duplicated, sorted list
    of backend addresses across all nodes. Several apps sharing a key are merged behind a
    single route. `default` is the catch-all route served on `VIP:80`.
-3. On each pass, `routes.conf` is **regenerated** from the registry and **read
-   per-connection**: a route change (replica added/removed, node gone) needs **no
-   restart** of the proxy.
-4. Dead backends are **dropped**: the proxy's health loop probes each backend and the
+3. On each pass, `routes.conf` is regenerated from the registry and read
+   per-connection. A route change (replica added or removed, node gone) needs no
+   restart of the proxy.
+4. Dead backends are dropped: the proxy's health loop probes each backend and the
    round-robin only sends traffic to healthy ones.
 
 As in single-host mode, this global proxy also drives the per-app autoscale LB and the
-domain/TLS routing — the cluster ingress reuses the same `proxy.sh` engine.
+domain/TLS routing. The cluster ingress reuses the same `proxy.sh` engine.
 
 ---
 
@@ -155,7 +155,7 @@ In global mode, includes all routes and their respective backends.
 
 ### GET /caelix-proxy/metrics
 
-Metrics in **Prometheus** format:
+Metrics in Prometheus format:
 
 ```
 caelix_proxy_requests_total{backend="caelix-web-r1"} 1523
@@ -213,7 +213,7 @@ The proxy monitors its configuration files:
 | `.caelix/autoscale/<app>.backends` | Scale up/down, replica recreated | Backends updated without interruption |
 | `.caelix/autoscale/routes.conf` | Manifest modified, service added/removed | Routes updated |
 
-Reloading is done by simply re-reading the file — no need to restart the proxy process.
+Reloading happens by re-reading the file, without restarting the proxy process.
 
 ---
 

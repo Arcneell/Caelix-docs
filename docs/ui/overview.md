@@ -69,11 +69,11 @@ CAELIX_UI_PUBLISH_BIND=0.0.0.0 ./scripts/deploy-ui.sh
 
 ## Authentification
 
-L'authentification est **obligatoire**. Caelix utilise un systeme multi-utilisateurs avec JWT et deux roles (`admin` / `technicien`).
+L'authentification est obligatoire. Caelix utilise un systeme multi-utilisateurs avec JWT et deux roles (`admin` / `technicien`).
 
-Au premier lancement, un compte `admin` / `admin` est créé automatiquement. L'interface force le changement du mot de passe par défaut.
+Au premier lancement, un compte `admin` est créé avec un mot de passe aléatoire, écrit dans `/opt/caelix/.caelix/initial-admin-password`. Définissez `CAELIX_ADMIN_PASSWORD` pour choisir le vôtre. Il n'y a pas de compte `admin`/`admin` par défaut.
 
-La **SPA** s'authentifie via un cookie de session **httpOnly** (`caelix_session`, `SameSite=strict`) posé à la connexion — le token n'est jamais stocké dans `localStorage`. Les **clients CLI/API** utilisent l'en-tête `Authorization: Bearer`.
+La SPA s'authentifie via un cookie de session httpOnly (`caelix_session`, `SameSite=strict`) posé à la connexion ; le token n'est jamais stocké dans `localStorage`. Les clients CLI/API utilisent l'en-tête `Authorization: Bearer`.
 
 ### Connexion API (CLI / scripts)
 
@@ -87,7 +87,7 @@ curl -X POST http://localhost:8080/api/auth/login \
 curl -H "Authorization: Bearer eyJ..." http://localhost:8080/api/containers/
 ```
 
-Les flux SSE utilisent un **ticket à usage unique** (`EventSource` ne supporte pas les en-têtes) : appeler `POST /api/auth/sse-ticket`, puis ouvrir le flux avec `?ticket=<ticket>`.
+Les flux SSE utilisent un ticket à usage unique (`EventSource` ne supporte pas les en-têtes) : appeler `POST /api/auth/sse-ticket`, puis ouvrir le flux avec `?ticket=<ticket>`.
 
 Voir [Configuration > Authentification](../configuration/authentication.md) pour les détails complets (cookie de session, tickets SSE, rôles, sécurité, API utilisateurs).
 
@@ -95,7 +95,7 @@ Voir [Configuration > Authentification](../configuration/authentication.md) pour
 
 ## Navigation (v2.0)
 
-La console a été **entièrement redessinée** en v2.0 : navigation **plate** (style NetBird / Portainer), **pensée pour le cluster**, sans menus repliables imbriqués. Une **barre latérale unique** liste ~8 sections, chacune ouvrant une page ; les sections à plusieurs facettes exposent des **onglets horizontaux**.
+La console a été redessinée en v2.0 : navigation plate (style NetBird / Portainer), pensée pour le cluster, sans menus repliables imbriqués. Une barre latérale unique liste ~8 sections, chacune ouvrant une page ; les sections à plusieurs facettes exposent des onglets horizontaux.
 
 | Section | Onglets | Contenu |
 |---|---|---|
@@ -110,22 +110,22 @@ La console a été **entièrement redessinée** en v2.0 : navigation **plate** (
 
 ### En-tête
 
-L'en-tête affiche le **titre de la page**, une **bande de statut du cluster** (leader · VIP · nœuds vivants · quorum), le **basculement de langue** (FR/EN), le **bascule thème** clair/sombre, la **cloche de notifications** et le **menu utilisateur**. Il n'y a **plus** de sélecteur de nœud global.
+L'en-tête affiche le titre de la page, une bande de statut du cluster (leader · VIP · nœuds vivants · quorum), le basculement de langue (FR/EN), le bascule thème clair/sombre, la cloche de notifications et le menu utilisateur. Il n'y a plus de sélecteur de nœud global.
 
 ### Comportement orienté cluster
 
 La console est consciente du cluster partout :
 
-- les listes de ressources **agrègent l'ensemble des nœuds** avec une colonne **« Node »** et un filtre par nœud ;
-- chaque action **cible le nœud de sa ligne** ;
+- les listes de ressources agrègent l'ensemble des nœuds avec une colonne **Node** et un filtre par nœud ;
+- chaque action cible le nœud de sa ligne ;
 - les notifications agrègent les alertes de tous les nœuds ; un événement peut cibler un nœud ;
-- les longues listes sont **virtualisées** et rendues **progressivement** (un nœud lent ne bloque pas l'affichage).
+- les longues listes sont virtualisées et rendues progressivement : un nœud lent ne bloque pas l'affichage.
 
 ### Simplification mono-hôte
 
-En mode mono-hôte, la console se simplifie automatiquement : **pas de section Nodes**, **pas de colonne Node**, et **pas de bande de statut cluster** dans l'en-tête.
+En mode mono-hôte, la console se simplifie automatiquement : pas de section Nodes, pas de colonne Node, et pas de bande de statut cluster dans l'en-tête.
 
-La console est **bilingue FR/EN** et propose les thèmes **clair et sombre**.
+La console est bilingue FR/EN et propose les thèmes clair et sombre.
 
 ---
 
@@ -146,7 +146,7 @@ Le conteneur UI nécessite deux volumes :
 |---|---|---|
 | `PORT` | `8080` | Port d'écoute du backend |
 | `CAELIX_UI_BIND` | `0.0.0.0` | Adresse de bind |
-| `CAELIX_ADMIN_PASSWORD` | `admin` | Mot de passe initial du compte admin |
+| `CAELIX_ADMIN_PASSWORD` | (généré) | Mot de passe initial du compte admin (aléatoire si non défini) |
 | `CAELIX_JWT_SECRET` | (auto) | Clé de signature JWT (auto-générée si absent) |
 | `CAELIX_JWT_EXPIRE_MINUTES` | `480` | Durée de validité des tokens JWT (minutes) |
 | `CAELIX_RUNTIME` | (auto) | `docker` ou `podman` |

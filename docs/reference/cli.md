@@ -37,16 +37,16 @@ C'est la commande principale pour le fonctionnement en production.
 bin/caelix agent
 ```
 
-Identique à `run`, plus la publication du **statut de nœud** à chaque cycle
+Identique à `run`, plus la publication du statut de nœud à chaque cycle
 (multi-nœud, phase 1). L'agent :
 
-- possède une **identité de nœud** stable (`node-info`) ;
+- possède une identité de nœud stable (`node-info`) ;
 - réconcilie son manifeste local comme en mode mono-hôte ;
 - écrit `.caelix/agent/status.json` (méta + état observé) à chaque cycle.
 
 Si un store cluster est configuré (`CAELIX_CLUSTER_BACKEND` = `file` via
 `CAELIX_CLUSTER_STORE`, ou `consul`), l'agent publie sa méta dans le store et
-**adopte le sous-manifest poussé par le controller** comme source d'état désiré ;
+adopte le sous-manifest poussé par le controller comme source d'état désiré ;
 sinon il réconcilie son manifeste local (mono-hôte). Voir la
 [RFC multi-nœud](../architecture/multi-node-rfc.md).
 
@@ -80,10 +80,10 @@ sudo bin/caelix mesh-down
 ```
 
 Couche réseau cross-host (multi-nœud, RFC §6.2). `mesh-keygen` crée la paire de
-clés locale (clé privée jamais publiée) et affiche la clé publique — publiée
-ensuite dans la méta du nœud. `mesh-up` applique les **directives sans secret**
+clés locale (clé privée jamais publiée) et affiche la clé publique, publiée
+ensuite dans la méta du nœud. `mesh-up` applique les directives sans secret
 poussées par le controller (`address` + table de pairs) avec la clé privée locale,
-via `wg`/`ip` (**root requis**). `mesh-down` démonte l'interface. Voir la
+via `wg`/`ip` (root requis). `mesh-down` démonte l'interface. Voir la
 [RFC multi-nœud](../architecture/multi-node-rfc.md).
 
 ### vip-status
@@ -92,7 +92,7 @@ via `wg`/`ip` (**root requis**). `mesh-down` démonte l'interface. Voir la
 bin/caelix vip-status
 ```
 
-Affiche l'état de la **VIP de cluster** (ingress flottante) du point de vue du nœud
+Affiche l'état de la VIP de cluster (ingress flottante) du point de vue du nœud
 courant :
 
 - `node` — identité du nœud local

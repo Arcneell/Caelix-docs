@@ -81,7 +81,7 @@ Each event is a JSON object on a single line:
 {"ts":"2025-01-15T11:00:00Z","app":"web","container":"caelix-web","event":"restart","source":"repair","detail":"health_fail_count=3"}
 ```
 
-**Advantages:** simple, append-only, easy to parse with `jq`.
+Advantages: simple, append-only, easy to parse with `jq`.
 
 ### SQLite
 
@@ -106,7 +106,7 @@ CREATE TABLE audit_events (
 );
 ```
 
-**Advantages:** powerful SQL queries, filtering, aggregation.
+Advantages: SQL queries, filtering, and aggregation.
 
 #### Query Examples
 

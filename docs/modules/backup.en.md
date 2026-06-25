@@ -6,10 +6,10 @@ The backup module (`lib/backup.sh`) automatically archives bind-mounted volumes 
 
 On each reconciliation pass, Caelix checks for each service with `backup = 1`:
 
-1. **Schedule check** -- has the configured delay (`backup_schedule`) elapsed since the last backup?
-2. **Archival** -- creation of a `tar.gz` of bind-mount paths (`volumes_bind`)
-3. **Rotation** -- deletion of oldest archives beyond `backup_retention`
-4. **Remote upload** -- if `backup_target` is `ftp`, `rsync`, or `s3`, upload the archive
+1. **Schedule check**: has the configured delay (`backup_schedule`) elapsed since the last backup?
+2. **Archival**: creation of a `tar.gz` of bind-mount paths (`volumes_bind`).
+3. **Rotation**: deletion of the oldest archives beyond `backup_retention`.
+4. **Remote upload**: if `backup_target` is `ftp`, `rsync`, or `s3`, upload the archive.
 
 ```mermaid
 flowchart TD

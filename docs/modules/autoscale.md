@@ -2,12 +2,12 @@
 
 Le module `autoscale.sh` implémente le scaling horizontal : gestion de replicas, collecte de métriques, décisions de scaling avec cooldown, et pilotage du load balancer intégré.
 
-Caelix propose **deux** autoscalers distincts, qui coexistent :
+Caelix propose deux autoscalers distincts, qui coexistent :
 
-- **Autoscale mono-hôte** (`autoscale.sh`, clé `autoscale = 1`) — décrit dans la
+- **Autoscale mono-hôte** (`autoscale.sh`, clé `autoscale = 1`). Décrit dans la
   majeure partie de cette page. Crée des replicas `caelix-<app>-rN` sur un seul hôte,
   derrière le load balancer socat par application.
-- **HPA cluster** (clé `hpa = 1`, mode 2.0) — décrit dans la section
+- **HPA cluster** (clé `hpa = 1`, mode 2.0). Décrit dans la section
   [HPA cluster](#hpa-cluster-mode-20) ci-dessous. Le leader ajuste le `total_replicas`
   d'un service et le scheduler/ingress répartissent les replicas sur les nœuds.
 
@@ -76,7 +76,7 @@ Chaque replica a besoin d'un port hôte unique pour exposer son service.
 
 L'allocation est persistée dans `.caelix/autoscale/port_allocations` avec un verrou `flock` pour l'atomicité.
 
-**Fonctions impliquées :**
+Fonctions impliquées :
 
 | Fonction | Description |
 |---|---|
@@ -148,7 +148,7 @@ Quand plusieurs métriques sont définies, la décision utilise la plus critique
 
 ## Système de streak et cooldown
 
-Le scaling n'est pas réactif — Caelix attend plusieurs cycles consécutifs au-dessus/en-dessous du seuil avant d'agir. Ça évite les oscillations.
+Le scaling n'est pas réactif. Caelix attend plusieurs cycles consécutifs au-dessus ou en-dessous du seuil avant d'agir, ce qui évite les oscillations.
 
 ```mermaid
 sequenceDiagram
@@ -181,7 +181,7 @@ sequenceDiagram
 autoscale_cooldown = 3   # Nombre de passages consécutifs avant action
 ```
 
-**Logique de `autoscale_decision()` :**
+Logique de `autoscale_decision()` :
 
 | Condition | Action sur streak | Décision |
 |---|---|---|
@@ -332,11 +332,11 @@ memory_limit_mb = 512
 
 ## HPA cluster (mode 2.0) {#hpa-cluster-mode-20}
 
-Le **HPA cluster** (`ui/backend/app/core/cluster/hpa.py`) est l'autoscaler horizontal
-du mode multi-nœud. Il est **distinct** de l'autoscale mono-hôte ci-dessus : au lieu
+Le HPA cluster (`ui/backend/app/core/cluster/hpa.py`) est l'autoscaler horizontal
+du mode multi-nœud. Il est distinct de l'autoscale mono-hôte ci-dessus : au lieu
 de gérer des replicas `caelix-<app>-rN` sur un hôte, il ajuste le `total_replicas` d'un
-service dans le manifest cluster, et le scheduler + l'ingress se chargent ensuite de
-placer et de load-balancer les replicas sur les nœuds — exactement comme si on changeait
+service dans le manifest cluster, et le scheduler et l'ingress se chargent ensuite de
+placer et de load-balancer les replicas sur les nœuds, exactement comme si on changeait
 `total_replicas` à la main, mais automatiquement.
 
 ### Activation
@@ -368,18 +368,18 @@ aux agents (l'agent ne voit que le `total_replicas` décidé par le leader).
 
 ### Fonctionnement
 
-À chaque passe (`hpa_tick`), exécutée par le **leader** uniquement :
+À chaque passe (`hpa_tick`), exécutée par le leader uniquement :
 
-1. Pour chaque replica d'un service `hpa = 1`, le leader lit le **CPU%** du conteneur
+1. Pour chaque replica d'un service `hpa = 1`, le leader lit le CPU% du conteneur
    `caelix-<app>` via `docker stats --no-stream` en ciblant le démon Docker de chaque
    nœud (le même `docker_addr`/`X-Caelix-Node` que la console). Les échantillons sont
    moyennés (`_avg_cpu`).
-2. La décision applique une **hystérésis asymétrique** :
-   - **scale up** quand `moyenne > hpa_target` et `total_replicas < hpa_max` ;
-   - **scale down** quand `moyenne < hpa_target × 0.5` et `total_replicas > hpa_min`.
-   - Entre les deux, les compteurs sont remis à zéro (pas d'oscillation autour de la cible).
+2. La décision applique une hystérésis asymétrique :
+   - scale up quand `moyenne > hpa_target` et `total_replicas < hpa_max` ;
+   - scale down quand `moyenne < hpa_target × 0.5` et `total_replicas > hpa_min` ;
+   - entre les deux, les compteurs sont remis à zéro (pas d'oscillation autour de la cible).
 3. L'action n'a lieu qu'après `hpa_cooldown` ticks consécutifs dans le même sens, et
-   modifie `total_replicas` d'**une unité** à la fois (borné par `[hpa_min, hpa_max]`).
+   modifie `total_replicas` d'une unité à la fois (borné par `[hpa_min, hpa_max]`).
 4. Si le manifest change, il est réécrit dans le store ; le scheduler replace les
    replicas et l'ingress met à jour ses backends.
 

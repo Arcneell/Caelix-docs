@@ -2,7 +2,7 @@
 
 ## Quick Install (recommended)
 
-Install Caelix on any Linux server in two steps:
+Install Caelix on any Linux server in two steps.
 
 **1. Authenticate to the Caelix registry** (credentials provided with your license):
 
@@ -16,12 +16,11 @@ echo "YOUR_TOKEN" | docker login ghcr.io -u Arcneell --password-stdin
 docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh | bash -s -- --with-systemd
 ```
 
-!!! tip "High-availability cluster (2.0)"
-    The installer also supports **cluster mode** via `--mode controller|join` and the
-    floating **VIP** via `--vip`. HA clustering ships in the **2.0** image
-    (`ghcr.io/arcneell/caelix:2.0.0-beta.1` or the `:beta` channel; `:latest` stays on
-    stable 1.x). The single-host install above stays the **default** and is unchanged.
-    See [Multi-node cluster](cluster.en.md) for the full guide, and
+!!! tip "High-availability cluster"
+    The installer also supports cluster mode via `--mode controller|join` and the
+    floating VIP via `--vip`. These options are available in the `:latest` image. The
+    single-host install above stays the default and is unchanged. See
+    [Multi-node cluster](cluster.en.md) for the full guide, and
     [Cluster mode](#cluster-mode-high-availability) below for the flags.
 
 ### What the Script Does
@@ -31,7 +30,7 @@ docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh | bash
 3. Creates default configuration files
 4. Runs an initial reconciliation (`caelix once`)
 5. Installs the systemd service (if `--with-systemd`)
-6. In cluster mode: also installs `wireguard-tools` (+ `modprobe wireguard`), `arping`,
+6. In cluster mode: also installs `wireguard-tools` (+ `modprobe wireguard`) and `arping`,
    starts an HA Consul server and writes `/etc/caelix-cluster.env`
 
 ### Prerequisites
@@ -44,7 +43,7 @@ docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh | bash
 | **socat** | 1.7+ | No (optional, for autoscale) |
 
 !!! note "Python not required"
-    Unlike the source installation, the image-based installation does **not** require Python or Node.js on the host. The Python backend is compiled and embedded in the Docker image.
+    Unlike the source installation, the image-based installation requires neither Python nor Node.js on the host. The Python backend is compiled and embedded in the Docker image.
 
 ### Install Options
 
@@ -89,24 +88,23 @@ Every option also has an environment-variable equivalent:
 
 ### Cluster mode (high availability)
 
-As of **2.0**, the installer brings up an HA cluster. Use the 2.0 image
-(`ghcr.io/arcneell/caelix:2.0.0-beta.1` or the `:beta` channel). Cluster mode forces
+The installer can bring up an HA cluster from the `:latest` image. Cluster mode forces
 `--with-systemd` and automatically installs WireGuard, arping and a Consul server.
 
 ```bash
-# Bootstrap node (controller) — carries the VIP, starts Consul + console
-docker run --rm ghcr.io/arcneell/caelix:2.0.0-beta.1 cat /opt/caelix/install.sh \
+# Bootstrap node (controller): carries the VIP, starts Consul + console
+docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
   | bash -s -- --with-systemd --mode controller --vip 10.0.0.10/32 \
       --cluster-size 3 --admin-password 'ChangeMe-Strong'
 
-# Additional nodes — join the cluster
-docker run --rm ghcr.io/arcneell/caelix:2.0.0-beta.1 cat /opt/caelix/install.sh \
+# Additional nodes: join the cluster
+docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
   | bash -s -- --with-systemd --mode join \
       --consul-addr http://<controller-IP>:8500 --admin-password 'ChangeMe-Strong'
 ```
 
-The console is then reachable on the **VIP** (`http://10.0.0.10:18100`). Full guide
-(verification, deploying a cluster service, HPA, failover, hardening):
+The console is then reachable on the VIP (`http://10.0.0.10:18100`). For the full guide
+(verification, deploying a cluster service, HPA, failover, hardening), see
 [Multi-node cluster](cluster.en.md).
 
 ### Environment Variables
@@ -214,26 +212,26 @@ To update Caelix to the latest version:
 docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh | bash -s -- --with-systemd
 ```
 
-The script updates:
+The script updates three things:
 
-- The **engine** (bin/caelix, lib/) — always overwritten with the latest version
-- The **UI Docker image** — re-pulled automatically
-- The **systemd service** — restarted
+- The engine (bin/caelix, lib/), always overwritten with the latest version.
+- The UI Docker image, re-pulled automatically.
+- The systemd service, restarted.
 
 !!! warning "Configuration preserved"
-    The files `etc/manifest.ini` and `etc/notify.ini` are **never overwritten**. Your configuration is preserved. If a new version introduces new configuration keys, check the release notes to add them manually.
+    The files `etc/manifest.ini` and `etc/notify.ini` are never overwritten. Your configuration is preserved. If a new version introduces new configuration keys, check the release notes to add them manually.
 
-The UI container will be recreated on the next reconciliation cycle with the new image.
+The UI container is recreated on the next reconciliation cycle with the new image.
 
 ## Web Console
 
 After installation, the web console is available at **http://SERVER_IP:&lt;port&gt;** (port `18100` by default).
 
-- Login: `admin` / a **random password generated on first start** (no `admin`/`admin` default). Read it from `/opt/caelix/.caelix/initial-admin-password` (or `docker logs caelix-caelix-ui | grep -i password`), then change it and delete the file. Set `CAELIX_ADMIN_PASSWORD` / `--admin-password` to choose your own at install time.
-- **The port and bind address are chosen at install time**: `--ui-port <PORT>` and `--ui-bind <ADDR>` (see [Install Options](#install-options)).
+- Login: `admin` / a random password generated on first start (no `admin`/`admin` default). Read it from `/opt/caelix/.caelix/initial-admin-password` (or `docker logs caelix-caelix-ui | grep -i password`), then change it and delete the file. Set `CAELIX_ADMIN_PASSWORD` / `--admin-password` to choose your own at install time.
+- The port and bind address are chosen at install time, via `--ui-port <PORT>` and `--ui-bind <ADDR>` (see [Install Options](#install-options)).
 - By default the UI listens on all interfaces (`0.0.0.0`). To restrict it to local access, install with `--ui-bind 127.0.0.1`.
 
-To change the port **afterwards**, edit `publish` (and `health_url`) in the manifest, increment `config_version`, then run `caelix once`:
+To change the port afterwards, edit `publish` (and `health_url`) in the manifest, increment `config_version`, then run `caelix once`:
 
 ```ini
 [caelix-ui]
@@ -245,7 +243,7 @@ health_url = http://127.0.0.1:9000/api/ping
 
 ## Source Installation (developers)
 
-For contributors and developers:
+For contributors and developers.
 
 ### Additional Prerequisites
 

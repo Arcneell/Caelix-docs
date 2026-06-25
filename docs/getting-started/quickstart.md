@@ -1,9 +1,9 @@
 # Premier lancement
 
 Ce guide vous accompagne pour lancer Caelix avec un premier service. Deux chemins
-rapides selon votre cible : **mono-hôte** (défaut) ou **cluster** HA (2.0).
+rapides selon votre cible : mono-hôte (défaut) ou cluster HA.
 
-## Chemin rapide — mono-hôte
+## Chemin rapide : mono-hôte
 
 Installez Caelix sur un serveur Linux (voir [Installation](installation.md) pour le
 `docker login` au registry) :
@@ -18,25 +18,25 @@ affiché dans `docker logs caelix-caelix-ui | grep -i password`, ou fixé via
 `--admin-password`). Depuis la console, ajoutez vos services. En CLI, le flux manifeste
 ci-dessous fait la même chose.
 
-## Chemin rapide — cluster HA (2.0)
+## Chemin rapide : cluster HA
 
-Trois nœuds, image 2.0 (`:2.0.0-beta.1`). Sur le **nœud d'amorçage** :
+Trois nœuds, image `:latest`. Sur le nœud d'amorçage :
 
 ```bash
-docker run --rm ghcr.io/arcneell/caelix:2.0.0-beta.1 cat /opt/caelix/install.sh \
+docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
   | bash -s -- --with-systemd --mode controller --vip 10.0.0.10/32 \
       --cluster-size 3 --admin-password 'ChangeMoi-Fort'
 ```
 
-Sur **chaque autre nœud** :
+Sur chaque autre nœud :
 
 ```bash
-docker run --rm ghcr.io/arcneell/caelix:2.0.0-beta.1 cat /opt/caelix/install.sh \
+docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh \
   | bash -s -- --with-systemd --mode join \
       --consul-addr http://<IP-controller>:8500 --admin-password 'ChangeMoi-Fort'
 ```
 
-Ouvrez la console sur la **VIP** (`http://10.0.0.10:18100`), vérifiez les 3 nœuds dans
+Ouvrez la console sur la VIP (`http://10.0.0.10:18100`), vérifiez les 3 nœuds dans
 la vue **Cluster**, puis déployez un service cluster. Exemple nginx servi sur la VIP :
 
 ```ini
@@ -48,8 +48,8 @@ autoscale_route = default
 anti_affinity = web
 ```
 
-Le service est joignable sur `http://10.0.0.10/`. Le guide complet (vérification,
-`caelix vip-status`, HPA, bascule, durcissement) :
+Le service est joignable sur `http://10.0.0.10/`. Pour le guide complet (vérification,
+`caelix vip-status`, HPA, bascule, durcissement), voir
 [Cluster multi-nœud](cluster.md).
 
 ---
@@ -58,8 +58,8 @@ Le service est joignable sur `http://10.0.0.10/`. Le guide complet (vérificatio
 
 Les étapes ci-dessous montrent le flux mono-hôte piloté par le manifeste (équivalent
 CLI de l'ajout d'un service). Depuis une installation par image, le manifeste est dans
-`/opt/caelix/etc/manifest.ini` et la commande globale est `caelix` (les exemples
-`bin/caelix` ci-dessous valent pour une checkout des sources).
+`/opt/caelix/etc/manifest.ini` et la commande globale est `caelix` ; les exemples
+`bin/caelix` ci-dessous valent pour une checkout des sources.
 
 ## 1. Créer le manifest
 
@@ -134,7 +134,7 @@ Pour que Caelix surveille vos services en continu :
 bin/caelix run
 ```
 
-La boucle de réconciliation va s'exécuter toutes les 10 secondes (configurable via `interval`).
+La boucle de réconciliation s'exécute toutes les 10 secondes (configurable via `interval`).
 
 !!! tip "Arrêter le daemon"
     `Ctrl+C` pour arrêter. En mode systemd : `sudo systemctl stop caelix`.
@@ -147,10 +147,10 @@ Simulez une panne en arrêtant manuellement le conteneur :
 docker stop caelix-web
 ```
 
-Au prochain cycle de réconciliation, Caelix détectera que le conteneur est arrêté et le redémarrera automatiquement.
+Au prochain cycle de réconciliation, Caelix détecte que le conteneur est arrêté et le redémarre automatiquement.
 
 !!! note "Pause manuelle"
-    Si `manual_stop_pause = 1` (défaut), Caelix ne redémarrera pas un conteneur arrêté manuellement. Utilisez `bin/caelix resume web` pour reprendre la réconciliation.
+    Si `manual_stop_pause = 1` (défaut), Caelix ne redémarre pas un conteneur arrêté manuellement. Utilisez `bin/caelix resume web` pour reprendre la réconciliation.
 
 ## Étape suivante
 

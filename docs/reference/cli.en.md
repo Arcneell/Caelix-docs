@@ -37,16 +37,16 @@ This is the primary command for production operation.
 bin/caelix agent
 ```
 
-Same as `run`, plus publishing the **node status** on each cycle (multi-node,
+Same as `run`, plus publishing the node status on each cycle (multi-node,
 phase 1). The agent:
 
-- has a stable **node identity** (`node-info`);
+- has a stable node identity (`node-info`);
 - reconciles its local manifest just like single-host mode;
 - writes `.caelix/agent/status.json` (meta + observed state) on each cycle.
 
 If a cluster store is configured (`CAELIX_CLUSTER_BACKEND` = `file` via
 `CAELIX_CLUSTER_STORE`, or `consul`), the agent publishes its meta to the store and
-**adopts the sub-manifest pushed by the controller** as its desired-state source;
+adopts the sub-manifest pushed by the controller as its desired-state source;
 otherwise it reconciles its local manifest (single-host). See the
 [multi-node RFC](../architecture/multi-node-rfc.md).
 
@@ -80,10 +80,10 @@ sudo bin/caelix mesh-down
 ```
 
 Cross-host network layer (multi-node, RFC §6.2). `mesh-keygen` creates the local
-keypair (the private key is never published) and prints the public key — then
-published in the node meta. `mesh-up` applies the **secret-free directives**
+keypair (the private key is never published) and prints the public key, then
+published in the node meta. `mesh-up` applies the secret-free directives
 pushed by the controller (`address` + peer table) with the local private key, via
-`wg`/`ip` (**root required**). `mesh-down` tears the interface down. See the
+`wg`/`ip` (root required). `mesh-down` tears the interface down. See the
 [multi-node RFC](../architecture/multi-node-rfc.md).
 
 ### vip-status
@@ -92,7 +92,7 @@ pushed by the controller (`address` + peer table) with the local private key, vi
 bin/caelix vip-status
 ```
 
-Prints the state of the **cluster VIP** (floating ingress) from the current node's
+Prints the state of the cluster VIP (floating ingress) from the current node's
 point of view:
 
 - `node` — the local node identity

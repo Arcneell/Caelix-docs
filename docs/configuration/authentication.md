@@ -1,6 +1,6 @@
 # Authentification
 
-Caelix intègre un système d'authentification multi-utilisateurs basé sur **SQLite** et **JWT**. Aucune base de données externe n'est requise : tout est stocké dans un fichier unique au sein du container.
+Caelix intègre un système d'authentification multi-utilisateurs basé sur SQLite et JWT. Aucune base de données externe n'est requise : tout est stocké dans un fichier unique au sein du container.
 
 ## Vue d'ensemble
 
@@ -14,7 +14,7 @@ Caelix intègre un système d'authentification multi-utilisateurs basé sur **SQ
 
 ## Session de la console web (cookie httpOnly)
 
-Pour durcir l'interface contre les attaques XSS, le JWT de session **n'est jamais stocké dans `localStorage`**. À la connexion, le backend pose un cookie httpOnly :
+Pour durcir l'interface contre les attaques XSS, le JWT de session n'est jamais stocké dans `localStorage`. À la connexion, le backend pose un cookie httpOnly :
 
 | Attribut | Valeur |
 |----------|--------|
@@ -27,11 +27,11 @@ Pour durcir l'interface contre les attaques XSS, le JWT de session **n'est jamai
 
 La SPA conserve le token en mémoire pour le cycle de vie de l'onglet et s'appuie sur le cookie httpOnly pour ré-authentifier après un rafraîchissement de page (appel à `/api/auth/me`). La déconnexion (`POST /api/auth/logout`) efface le cookie.
 
-Le token est résolu dans cet ordre de priorité par le backend : en-tête `Authorization: Bearer`, puis `X-Caelix-Token`, puis le cookie `caelix_session`, puis (legacy) le paramètre `?token=`. Les clients CLI/API utilisent donc l'en-tête `Bearer`, la SPA utilise le cookie.
+Le backend résout le token selon cet ordre de priorité : en-tête `Authorization: Bearer`, puis `X-Caelix-Token`, puis le cookie `caelix_session`, puis (legacy) le paramètre `?token=`. Les clients CLI/API utilisent donc l'en-tête `Bearer` ; la SPA utilise le cookie.
 
 ## Rôles
 
-Caelix définit deux rôles :
+Caelix définit deux rôles.
 
 ### Administrateur (`admin`)
 
@@ -56,18 +56,14 @@ Accès en lecture et actions opérationnelles limitées :
 - Lecture des variables d'environnement des stacks
 - Navigation dans les volumes (lecture seule)
 
-Les actions destructives (suppression, kill, prune, exec, deploy, backup/restore, édition manifeste) sont **interdites** aux techniciens — le backend retourne `403 Forbidden`.
+Les actions destructives (suppression, kill, prune, exec, deploy, backup/restore, édition manifeste) sont interdites aux techniciens : le backend retourne `403 Forbidden`.
 
-## Compte par défaut
+## Compte initial
 
-Au premier démarrage, si aucun utilisateur n'existe dans la base, Caelix crée automatiquement :
+Au premier démarrage, si aucun utilisateur n'existe, Caelix crée un compte `admin` (rôle `admin`). Il n'y a pas de mot de passe `admin`/`admin` par défaut : un mot de passe aléatoire est généré, affiché une fois dans les logs et écrit dans `/opt/caelix/.caelix/initial-admin-password` (mode 0600). Pour choisir le vôtre, définissez `CAELIX_ADMIN_PASSWORD` (ou `--admin-password`) à l'installation.
 
-- **Nom d'utilisateur** : `admin`
-- **Mot de passe** : `admin` (ou la valeur de `CAELIX_ADMIN_PASSWORD`)
-- **Rôle** : `admin`
-
-!!! warning "Changement obligatoire"
-    Après la première connexion avec `admin/admin`, l'interface force le changement de mot de passe avant de pouvoir accéder au tableau de bord.
+!!! note "Première connexion"
+    Lisez le mot de passe dans `initial-admin-password`, connectez-vous, changez-le, puis supprimez le fichier. Il est aussi supprimé automatiquement au premier changement de mot de passe de l'admin.
 
 ## Variables d'environnement
 
@@ -76,7 +72,7 @@ Au premier démarrage, si aucun utilisateur n'existe dans la base, Caelix crée 
 | `CAELIX_ADMIN_PASSWORD` | Mot de passe initial du compte admin | `admin` |
 | `CAELIX_JWT_SECRET` | Clé secrète pour signer les tokens JWT. Si non défini, une clé est auto-générée et persistée | Auto-généré |
 | `CAELIX_JWT_EXPIRE_MINUTES` | Durée de validité des tokens JWT en minutes | `480` (8 heures) |
-| `CAELIX_UI_TOKEN` | Token legacy (rétro-compatibilité). **Déprécié** — migrer vers les comptes utilisateurs | - |
+| `CAELIX_UI_TOKEN` | Token legacy (rétro-compatibilité). **Déprécié** : migrer vers les comptes utilisateurs | - |
 
 ## Sécurité
 
@@ -84,8 +80,8 @@ Au premier démarrage, si aucun utilisateur n'existe dans la base, Caelix crée 
 
 Le endpoint de connexion intègre un rate limiter :
 
-- **5 tentatives échouées** dans une fenêtre de **5 minutes** déclenchent un blocage
-- Le blocage dure **10 minutes** pour l'adresse IP concernée
+- 5 tentatives échouées dans une fenêtre de 5 minutes déclenchent un blocage
+- Le blocage dure 10 minutes pour l'adresse IP concernée
 - Les tentatives échouées sont journalisées dans l'audit
 
 ### Invalidation des tokens
@@ -155,11 +151,11 @@ curl http://localhost:8080/api/state \
 
 ## Authentification des flux SSE (tickets à usage unique)
 
-`EventSource` ne permet pas d'envoyer d'en-têtes personnalisés. Pour éviter de faire transiter le JWT long-terme dans l'URL (où il fuirait dans les logs de proxy et l'historique du navigateur), les flux SSE utilisent des **tickets à usage unique** :
+`EventSource` ne permet pas d'envoyer d'en-têtes personnalisés. Pour éviter de faire transiter le JWT long-terme dans l'URL (où il fuirait dans les logs de proxy et l'historique du navigateur), les flux SSE utilisent des tickets à usage unique :
 
 1. Le client authentifié appelle `POST /api/auth/sse-ticket` → reçoit `{"ok": true, "ticket": "..."}`
 2. Il ouvre le flux avec `?ticket=<ticket>` (et non `?token=`)
-3. Le backend consomme le ticket de façon atomique : il est valable **une seule fois** et expire après **30 secondes**
+3. Le backend consomme le ticket de façon atomique : il est valable une seule fois et expire après 30 secondes
 
 ```javascript
 // 1. Obtenir un ticket

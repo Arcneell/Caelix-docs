@@ -18,15 +18,15 @@ Le frontend Caelix est une Single Page Application (SPA) construite avec Vue 3 e
 
 ## Shell de l'application
 
-La v2.0 introduit une **navigation plate** (style NetBird / Portainer), pensée pour le cluster. Le shell est défini dans `src/App.vue` :
+La v2.0 introduit une navigation plate (style NetBird / Portainer), pensée pour le cluster. Le shell est défini dans `src/App.vue` :
 
-- une **barre latérale unique** rend la liste des sections (boutons à plat, sans groupes repliables) ;
-- un **en-tête** affiche le titre de la page, la bande de statut cluster (`components/cluster/ClusterStatusStrip.vue`), le bascule de langue, le bascule de thème clair/sombre, la cloche de notifications et le menu utilisateur ;
-- une barre d'**onglets** (`components/layout/SectionTabs.vue`) pour les sections à plusieurs facettes.
+- une barre latérale unique rend la liste des sections (boutons à plat, sans groupes repliables) ;
+- un en-tête affiche le titre de la page, la bande de statut cluster (`components/cluster/ClusterStatusStrip.vue`), le bascule de langue, le bascule de thème clair/sombre, la cloche de notifications et le menu utilisateur ;
+- une barre d'onglets (`components/layout/SectionTabs.vue`) pour les sections à plusieurs facettes.
 
 ### Configuration des sections
 
-Les sections et leurs onglets sont déclarés de façon centralisée dans **`src/config/sections.ts`** (`SECTIONS: NavSection[]`). Chaque section porte un `id`, un `labelKey` i18n, une icône Lucide, une route `to`, des `prefixes` de route (état actif + résolution des onglets) et, éventuellement, des `tabs` et un drapeau `clusterOnly`. La fonction `sectionForPath()` fait un *longest-prefix match* pour résoudre la section active (et conserve les routes de vues existantes — seul le *chrome* est nouveau).
+Les sections et leurs onglets sont déclarés de façon centralisée dans `src/config/sections.ts` (`SECTIONS: NavSection[]`). Chaque section porte un `id`, un `labelKey` i18n, une icône Lucide, une route `to`, des `prefixes` de route (état actif et résolution des onglets) et, éventuellement, des `tabs` et un drapeau `clusterOnly`. La fonction `sectionForPath()` fait un *longest-prefix match* pour résoudre la section active. Les routes de vues existantes sont conservées ; seul le *chrome* est nouveau.
 
 | Section | Route | Onglets |
 |---|---|---|
@@ -50,7 +50,7 @@ Les sections marquées `clusterOnly` (Nodes) sont masquées en mono-hôte ; la c
 - **Activity** : logs centralisés (daemon, conteneurs en temps réel, backend UI), événements Docker, incidents filtrables, journal d'audit.
 - **Settings** : gestion des utilisateurs (admin), notifications, préférences, et paramètres du cluster.
 
-Les longues listes sont **virtualisées** et rendues **progressivement** (un nœud lent ne bloque pas l'affichage).
+Les longues listes sont virtualisées et rendues progressivement : un nœud lent ne bloque pas l'affichage.
 
 ## Composants réutilisables
 

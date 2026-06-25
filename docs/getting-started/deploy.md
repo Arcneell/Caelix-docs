@@ -4,7 +4,7 @@ La documentation publique est hébergée sur le dépôt **[Caelix-docs](https://
 
 **https://arcneell.github.io/Caelix-docs/**
 
-Le dépôt **Caelix** (privé) est la source ; un workflow CI synchronise `docs/` et `mkdocs.yml` vers Caelix-docs à chaque push sur `master`.
+Le dépôt **Caelix** (privé) est la source. Un workflow CI synchronise `docs/` et `mkdocs.yml` vers Caelix-docs à chaque push sur `master`.
 
 ---
 
@@ -37,7 +37,7 @@ Résultat dans `site/`.
 
 ---
 
-## CI — synchronisation automatique (Caelix → Caelix-docs)
+## CI : synchronisation automatique (Caelix → Caelix-docs)
 
 Workflow : `.github/workflows/sync-docs.yml`
 
@@ -45,7 +45,7 @@ Déclenché quand `docs/**` ou `mkdocs.yml` change sur `master`.
 
 ### Secret requis : `DOCS_PUSH_TOKEN`
 
-Le `GITHUB_TOKEN` du dépôt Caelix **ne peut pas** pousser vers Caelix-docs (dépôt séparé). Un PAT dédié est nécessaire.
+Le `GITHUB_TOKEN` du dépôt Caelix ne peut pas pousser vers Caelix-docs, qui est un dépôt séparé. Un PAT dédié est nécessaire.
 
 **Créer le token**
 
@@ -67,7 +67,7 @@ Le `GITHUB_TOKEN` du dépôt Caelix **ne peut pas** pousser vers Caelix-docs (d�
 
 ### Erreur « Invalid username or token »
 
-Le secret `DOCS_PUSH_TOKEN` est **expiré, révoqué ou incorrect**. Regénérez un PAT et mettez à jour le secret, puis relancez le workflow.
+Le secret `DOCS_PUSH_TOKEN` est expiré, révoqué ou incorrect. Regénérez un PAT, mettez à jour le secret, puis relancez le workflow.
 
 ---
 
@@ -75,11 +75,11 @@ Le secret `DOCS_PUSH_TOKEN` est **expiré, révoqué ou incorrect**. Regénérez
 
 Le dépôt **Caelix-docs** possède son propre workflow `deploy-docs.yml` :
 
-1. Push sur `main` de Caelix-docs (via sync ci-dessus)
+1. Push sur `main` de Caelix-docs (via la sync ci-dessus)
 2. Build MkDocs `--strict`
 3. Déploiement GitHub Pages
 
-Aucune action manuelle requise après une sync réussie.
+Aucune action manuelle n'est requise après une sync réussie.
 
 ---
 

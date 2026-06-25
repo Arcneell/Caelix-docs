@@ -69,11 +69,11 @@ CAELIX_UI_PUBLISH_BIND=0.0.0.0 ./scripts/deploy-ui.sh
 
 ## Authentication
 
-Authentication is **mandatory**. Caelix uses a multi-user system with JWT and two roles (`admin` / `technicien`).
+Authentication is mandatory. Caelix uses a multi-user system with JWT and two roles (`admin` / `technicien`).
 
-On first launch, an `admin` / `admin` account is automatically created. The interface forces a password change for the default account.
+On first launch, an `admin` account is created with a random password, written to `/opt/caelix/.caelix/initial-admin-password`. Set `CAELIX_ADMIN_PASSWORD` to choose your own. There is no default `admin`/`admin` account.
 
-The **SPA** authenticates via an **httpOnly** session cookie (`caelix_session`, `SameSite=strict`) set at login — the token is never stored in `localStorage`. **CLI/API clients** use the `Authorization: Bearer` header.
+The SPA authenticates via an httpOnly session cookie (`caelix_session`, `SameSite=strict`) set at login; the token is never stored in `localStorage`. CLI/API clients use the `Authorization: Bearer` header.
 
 ### API Login (CLI / scripts)
 
@@ -87,7 +87,7 @@ curl -X POST http://localhost:8080/api/auth/login \
 curl -H "Authorization: Bearer eyJ..." http://localhost:8080/api/containers/
 ```
 
-SSE streams use a **single-use ticket** (`EventSource` cannot set headers): call `POST /api/auth/sse-ticket`, then open the stream with `?ticket=<ticket>`.
+SSE streams use a single-use ticket (`EventSource` cannot set headers): call `POST /api/auth/sse-ticket`, then open the stream with `?ticket=<ticket>`.
 
 See [Configuration > Authentication](../configuration/authentication.en.md) for full details (session cookie, SSE tickets, roles, security, user API).
 
@@ -95,7 +95,7 @@ See [Configuration > Authentication](../configuration/authentication.en.md) for 
 
 ## Navigation (v2.0)
 
-The console was **completely redesigned** in v2.0: **flat** navigation (NetBird / Portainer style), **cluster-native**, with no nested collapsible menu groups. A **single sidebar** lists ~8 sections, each opening a page; multi-facet sections expose **horizontal tabs**.
+The console was redesigned in v2.0: flat navigation (NetBird / Portainer style), cluster-native, with no nested collapsible menu groups. A single sidebar lists ~8 sections, each opening a page; multi-facet sections expose horizontal tabs.
 
 | Section | Tabs | Content |
 |---|---|---|
@@ -110,22 +110,22 @@ The console was **completely redesigned** in v2.0: **flat** navigation (NetBird 
 
 ### Header
 
-The header shows the **page title**, a **cluster status strip** (leader · VIP · nodes alive · quorum), the **language toggle** (FR/EN), the **light/dark theme toggle**, the **notifications bell**, and the **user menu**. There is **no** global node selector anymore.
+The header shows the page title, a cluster status strip (leader · VIP · nodes alive · quorum), the language toggle (FR/EN), the light/dark theme toggle, the notifications bell, and the user menu. There is no global node selector anymore.
 
 ### Cluster-aware behaviour
 
 The console is cluster-aware everywhere:
 
-- resource lists **aggregate across all nodes** with a **"Node"** column and a per-node filter;
-- every action **targets its row's node**;
+- resource lists aggregate across all nodes with a **Node** column and a per-node filter;
+- every action targets its row's node;
 - notifications aggregate alerts from all nodes; an event can target a node;
-- long lists are **virtualized** and rendered **progressively** (a slow node does not block the display).
+- long lists are virtualized and rendered progressively: a slow node does not block the display.
 
 ### Single-host simplification
 
-In single-host mode the console simplifies automatically: **no Nodes section**, **no Node column**, and **no cluster status strip** in the header.
+In single-host mode the console simplifies automatically: no Nodes section, no Node column, and no cluster status strip in the header.
 
-The console is **bilingual FR/EN** and ships **light and dark** themes.
+The console is bilingual FR/EN and ships light and dark themes.
 
 ---
 
@@ -146,7 +146,7 @@ The UI container requires two volumes:
 |---|---|---|
 | `PORT` | `8080` | Backend listen port |
 | `CAELIX_UI_BIND` | `0.0.0.0` | Bind address |
-| `CAELIX_ADMIN_PASSWORD` | `admin` | Initial admin account password |
+| `CAELIX_ADMIN_PASSWORD` | (generated) | Initial admin account password (random if unset) |
 | `CAELIX_JWT_SECRET` | (auto) | JWT signing key (auto-generated if absent) |
 | `CAELIX_JWT_EXPIRE_MINUTES` | `480` | JWT token validity duration (minutes) |
 | `CAELIX_RUNTIME` | (auto) | `docker` or `podman` |

@@ -202,7 +202,7 @@ monitoring_log_error_regex = "FATAL|PANIC|Segmentation"     # Custom regex
 The `container_recent_logs()` function retrieves the last N lines with `docker logs --tail`. If the regex matches, a `log_anomaly` incident is recorded.
 
 !!! info "Non-blocking anomaly cooldown"
-    When the primary HTTP/TCP health check passes but a log anomaly is detected, Caelix records an informational incident (`logs_anomaly_non_bloquante`). A **10-minute cooldown** per service prevents notification flooding for these non-critical anomalies.
+    When the primary HTTP/TCP health check passes but a log anomaly is detected, Caelix records an informational incident (`logs_anomaly_non_bloquante`). A 10-minute cooldown per service prevents notification flooding for these non-critical anomalies.
 
 !!! tip "Default regex"
     If you do not specify a regex, Caelix uses a built-in pattern that detects common critical errors (FATAL, PANIC, Segmentation fault, Out of memory...).

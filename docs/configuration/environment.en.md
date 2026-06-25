@@ -16,10 +16,10 @@ Caelix can be configured via environment variables in addition to the manifest.
 
 ## Container Runtime (local or remote daemon)
 
-By default, Caelix drives the **local** Docker (or Podman) daemon via its socket.
-These variables let it target a **remote** daemon, including over TLS — the first
-building block of multi-node support. **When unset, single-node behaviour is
-strictly unchanged.**
+By default, Caelix drives the local Docker (or Podman) daemon via its socket.
+These variables let it target a remote daemon, including over TLS: this is the first
+building block of multi-node support. When unset, single-node behaviour is
+strictly unchanged.
 
 | Variable | Default | Description |
 |---|---|---|
@@ -59,14 +59,14 @@ The floating VIP gives a stable access address (console + ingress) held by the
 | `CAELIX_VIP_ARP` | `1` | If `1`, sends a gratuitous ARP (`arping`) when taking the VIP, so the LAN immediately reroutes to the new leader. |
 | `CAELIX_ADMIN_PASSWORD` | _(empty)_ | Initial console admin password, to set identically on all nodes (the hash is stored in the cluster store). Also settable via `install.sh --admin-password`. |
 
-> **Security (cluster)** — in cluster mode, `dockerd:2375` (cf. `CAELIX_DOCKER_ADDR`) and
-> Consul `:8500` are bound to the node's **private IP**. In production, enable Consul ACLs
+> **Security (cluster)**: in cluster mode, `dockerd:2375` (cf. `CAELIX_DOCKER_ADDR`) and
+> Consul `:8500` are bound to the node's private IP. In production, enable Consul ACLs
 > + token (`CAELIX_CONSUL_TOKEN`) + TLS: the Consul KV holds the JWT secret, password
 > hashes and TLS keys.
 
-> Example — drive a remote daemon over TLS:
+> Example, drive a remote daemon over TLS:
 > `-e CAELIX_DOCKER_HOST=tcp://node-b:2376 -e CAELIX_DOCKER_TLS_VERIFY=1 -e CAELIX_DOCKER_CERT_PATH=/etc/caelix/certs`.
-> The same target is honoured by the Bash engine **and** by the web console's Docker calls.
+> The same target is honoured by the Bash engine and by the web console's Docker calls.
 
 ## Web Console and Reverse Proxy
 

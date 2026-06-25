@@ -10,7 +10,7 @@ Le backend FastAPI expose plus de 150 endpoints REST, répartis sur 21 routers e
 Base : http://localhost:8080/api
 ```
 
-L'authentification est obligatoire. Les clients CLI/API obtiennent un token JWT via `/api/auth/login`, puis l'incluent dans chaque requête via l'en-tête `Authorization: Bearer`. (La SPA, elle, s'authentifie via le cookie httpOnly `caelix_session` posé à la connexion — voir [Authentification](../configuration/authentication.md).)
+L'authentification est obligatoire. Les clients CLI/API obtiennent un token JWT via `/api/auth/login`, puis l'incluent dans chaque requête via l'en-tête `Authorization: Bearer`. La SPA, elle, s'authentifie via le cookie httpOnly `caelix_session` posé à la connexion (voir [Authentification](../configuration/authentication.md)).
 
 ```bash
 # Connexion
@@ -324,7 +324,7 @@ Voir [Authentification](../configuration/authentication.md) pour les détails (c
 
 ## Server-Sent Events (SSE)
 
-Les flux SSE permettent des mises à jour temps réel sans polling. L'authentification se fait via un **ticket à usage unique** (`POST /api/auth/sse-ticket`, valable une fois, 30 s) passé en paramètre `?ticket=` — jamais le JWT directement :
+Les flux SSE permettent des mises à jour temps réel sans polling. L'authentification se fait via un ticket à usage unique (`POST /api/auth/sse-ticket`, valable une fois, 30 s) passé en paramètre `?ticket=`, jamais le JWT directement :
 
 ```javascript
 const { ticket } = await (await fetch('/api/auth/sse-ticket', { method: 'POST' })).json();

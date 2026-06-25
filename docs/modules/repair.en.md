@@ -84,7 +84,7 @@ post_repair_grace = 5            # Seconds to wait after repair (default: 3)
 
 The phase is determined by the `fail_count` failure counter:
 
-**`auto` mode — escalation based on `fail_count`:**
+In `auto` mode, escalation follows the `fail_count`:
 
 ```mermaid
 graph LR

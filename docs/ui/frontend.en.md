@@ -18,15 +18,15 @@ The Caelix frontend is a Single Page Application (SPA) built with Vue 3 and Type
 
 ## Application Shell
 
-v2.0 introduces **flat navigation** (NetBird / Portainer style), built for the cluster. The shell lives in `src/App.vue`:
+v2.0 introduces flat navigation (NetBird / Portainer style), built for the cluster. The shell lives in `src/App.vue`:
 
-- a **single sidebar** renders the section list (flat buttons, no collapsible groups);
-- a **header** showing the page title, the cluster status strip (`components/cluster/ClusterStatusStrip.vue`), the language toggle, the light/dark theme toggle, the notifications bell, and the user menu;
-- a **tab bar** (`components/layout/SectionTabs.vue`) for multi-facet sections.
+- a single sidebar renders the section list (flat buttons, no collapsible groups);
+- a header shows the page title, the cluster status strip (`components/cluster/ClusterStatusStrip.vue`), the language toggle, the light/dark theme toggle, the notifications bell, and the user menu;
+- a tab bar (`components/layout/SectionTabs.vue`) for multi-facet sections.
 
 ### Section configuration
 
-Sections and their tabs are declared centrally in **`src/config/sections.ts`** (`SECTIONS: NavSection[]`). Each section carries an `id`, an i18n `labelKey`, a Lucide icon, a `to` route, route `prefixes` (active state + tab resolution) and, optionally, `tabs` and a `clusterOnly` flag. The `sectionForPath()` helper does a longest-prefix match to resolve the active section (and keeps the existing view routes — only the chrome is new).
+Sections and their tabs are declared centrally in `src/config/sections.ts` (`SECTIONS: NavSection[]`). Each section carries an `id`, an i18n `labelKey`, a Lucide icon, a `to` route, route `prefixes` (active state and tab resolution) and, optionally, `tabs` and a `clusterOnly` flag. The `sectionForPath()` helper does a longest-prefix match to resolve the active section. Existing view routes are kept; only the chrome is new.
 
 | Section | Route | Tabs |
 |---|---|---|
@@ -50,7 +50,7 @@ Sections marked `clusterOnly` (Nodes) are hidden in single-host mode; the consol
 - **Activity**: centralized logs (daemon, real-time container, UI backend), Docker events, filterable incidents, audit journal.
 - **Settings**: user management (admin), notifications, preferences, and cluster settings.
 
-Long lists are **virtualized** and rendered **progressively** (a slow node does not block the display).
+Long lists are virtualized and rendered progressively: a slow node does not block the display.
 
 ## Reusable Components
 

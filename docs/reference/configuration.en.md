@@ -134,6 +134,26 @@ Index of all configuration keys available in Caelix.
 | `autoscale_health_path` | string | `/` | Backend health path |
 | `autoscale_route` | string | — | Global proxy route |
 
+#### Cluster placement & HPA (cluster mode)
+
+Keys interpreted by the controller (leader) to spread replicas across nodes. Full
+details and an example in [configuration/manifest.md](../configuration/manifest.md#cluster-placement-ingress-22-mode).
+
+| Key | Default | Description |
+|---|---|---|
+| `total_replicas` | `1` | Total replicas spread across the cluster |
+| `node_affinity` | — | Placement constraint (label/node) |
+| `anti_affinity` | — | Avoid co-locating replicas (one per node when possible) |
+| `max_per_node` | — | Cap of replicas of one service per node |
+| `storage` | — | Placement-only key (state/volume), stripped from the sub-manifest |
+| `shared_volume` | — | Shared volume of a stateful app (kept for mounting) |
+| `hpa` | `0` | Enable the cluster autoscaler; the leader adjusts `total_replicas` |
+| `hpa_min` | `1` | Lower bound of `total_replicas` |
+| `hpa_max` | (= min) | Upper bound of `total_replicas` |
+| `hpa_metric` | (CPU) | Watched metric (replica CPU %) |
+| `hpa_target` | `60` | Target CPU % |
+| `hpa_cooldown` | `2` | Consecutive ticks before acting |
+
 ## etc/notify.ini
 
 ### [discord] Section

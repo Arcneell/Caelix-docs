@@ -251,7 +251,7 @@ une réplique.
   `X-Forwarded-Proto` (`https` depuis le listener TLS, `http` sinon), `X-Forwarded-For`
   et `X-Forwarded-Host`, après avoir supprimé toute copie fournie par le client. Une app
   derrière TLS (type WordPress) génère ainsi des URL d'assets cohérentes avec l'accès
-  HTTPS réel (cf. [Proxy › En-têtes X-Forwarded](../modules/proxy.md#en-têtes-x-forwarded)).
+  HTTPS réel (cf. [Proxy › En-têtes X-Forwarded](../modules/proxy.md#en-tetes-x-forwarded)).
 
 !!! info "Le TLS suit la VIP"
     Les certificats Let's Encrypt sont répliqués entre les nœuds : à l'émission comme au

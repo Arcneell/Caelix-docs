@@ -21,7 +21,7 @@ docker run --rm ghcr.io/arcneell/caelix:latest cat /opt/caelix/install.sh | bash
     et la VIP flottante via `--vip`. Ces options sont disponibles dans l'image
     `:latest`. Le mono-hôte ci-dessus reste le mode par défaut et inchangé. Voir
     [Cluster multi-nœud](cluster.md) pour le guide complet, et
-    [Mode cluster](#mode-cluster-haute-disponibilité) plus bas pour les flags.
+    [Mode cluster](#mode-cluster-haute-disponibilite) plus bas pour les flags.
 
 ### Ce que fait le script
 

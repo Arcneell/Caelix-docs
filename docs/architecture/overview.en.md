@@ -17,7 +17,7 @@
 | Mode | Enable | Description |
 |---|---|---|
 | **Single-host** (default) | none | The engine reconciles the local manifest on a single host. The rest of this page describes this mode. |
-| **Multi-node cluster (HA)** | `CAELIX_CLUSTER_BACKEND=etcd` | A leader-gated control plane (every node runs the FastAPI backend, only the leader acts) schedules placement across nodes, adjusts replicas (HPA), and carries a floating VIP and a global ingress. Coordination runs through etcd. The engine described below remains each node's local executor, unchanged. See [Multi-node cluster](cluster.md). |
+| **Multi-node cluster (HA)** | `CAELIX_CLUSTER_BACKEND=etcd` | A leader-gated control plane (every node runs the FastAPI backend, only the leader acts) schedules placement across nodes, adjusts replicas (HPA), and carries a floating VIP and a global ingress. As of 2.2, **every console operation is cluster-aware**: actions/logs/views target the container's hosting node, backups run on the data-owning node and aggregate, compose stacks are controllable from any node, and Let's Encrypt certificates + routes follow the VIP. Coordination runs through etcd. The engine described below remains each node's local executor, unchanged. See [Multi-node cluster](cluster.md). |
 
 ---
 

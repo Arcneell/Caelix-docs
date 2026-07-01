@@ -171,6 +171,27 @@ tail -20 .caelix/incidents/incidents.log
 
 3. Le token d'auth est-il correct (si activé) ?
 
+### Cluster : une action, un log ou une sauvegarde semble sans effet
+
+En cluster, un service tourne sur **un nœud précis** — pas forcément celui qui porte
+la VIP. La console résout automatiquement le nœud hôte pour chaque action/vue ; en
+ligne de commande, un `docker ps`/`docker logs caelix-<app>` sur le nœud VIP ne verra
+**pas** un conteneur hébergé ailleurs.
+
+- **Trouver le nœud d'un service** : `caelix vip-status` (leader/VIP), puis
+  `docker ps --filter name=caelix-<app>` sur chaque nœud, ou l'état observé publié dans
+  le store (`caelix/nodes/<id>/observed`).
+- **Agir sur le bon nœud** : passez par la console (elle cible le nœud de la ligne), ou
+  ciblez le démon distant via l'en-tête `X-Caelix-Node` / `DOCKER_HOST=tcp://<ip-nœud>:2375`.
+- **Sauvegardes** : elles s'exécutent et sont stockées **sur le nœud qui détient les
+  données** ; `status`/`list`/`download` agrègent les nœuds. Une archive absente du nœud
+  VIP est normale — elle est sur le nœud hôte.
+- **Après une bascule VIP** : la console, l'ingress HTTPS (certs + routes répliqués) et
+  toutes les actions cluster-aware continuent sur le nouveau leader. Si l'ingress ne
+  répond pas, vérifiez que le nœud VIP porte bien `:80`/`:443`
+  (`ss -tlnp | grep -E ':80 |:443 '`) et que `routes.conf` est présent
+  (`.caelix/autoscale/routes.conf`).
+
 ## Logs
 
 ### Logs daemon (JSON lines)

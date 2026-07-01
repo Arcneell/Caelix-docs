@@ -171,6 +171,27 @@ tail -20 .caelix/incidents/incidents.log
 
 3. Is the auth token correct (if enabled)?
 
+### Cluster: an action, log or backup seems to do nothing
+
+In a cluster a service runs on **one specific node** — not necessarily the one holding
+the VIP. The console auto-resolves the hosting node for every action/view; on the CLI a
+`docker ps` / `docker logs caelix-<app>` on the VIP node will **not** see a container
+hosted elsewhere.
+
+- **Find a service's node**: `caelix vip-status` (leader/VIP), then
+  `docker ps --filter name=caelix-<app>` on each node, or the observed state published in
+  the store (`caelix/nodes/<id>/observed`).
+- **Act on the right node**: use the console (it targets the row's node), or target the
+  remote daemon via the `X-Caelix-Node` header / `DOCKER_HOST=tcp://<node-ip>:2375`.
+- **Backups**: they run and are stored **on the node that owns the data**;
+  `status`/`list`/`download` aggregate across nodes. An archive missing from the VIP node
+  is expected — it lives on the hosting node.
+- **After a VIP failover**: the console, the HTTPS ingress (replicated certs + routes) and
+  all cluster-aware actions keep working on the new leader. If ingress does not answer,
+  check the VIP node actually holds `:80`/`:443`
+  (`ss -tlnp | grep -E ':80 |:443 '`) and that `routes.conf` is present
+  (`.caelix/autoscale/routes.conf`).
+
 ## Logs
 
 ### Daemon Logs (JSON lines)

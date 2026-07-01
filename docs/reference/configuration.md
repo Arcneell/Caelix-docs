@@ -134,6 +134,26 @@ Index de toutes les clés de configuration disponibles dans Caelix.
 | `autoscale_health_path` | string | `/` | Chemin health backend |
 | `autoscale_route` | string | — | Route global proxy |
 
+#### Placement cluster & HPA (mode cluster)
+
+Clés interprétées par le controller (leader) pour répartir les replicas sur les
+nœuds. Détails et exemple dans [configuration/manifest.md](../configuration/manifest.md#placement-cluster-et-ingress-mode-22).
+
+| Clé | Défaut | Description |
+|---|---|---|
+| `total_replicas` | `1` | Nombre total de replicas répartis sur le cluster |
+| `node_affinity` | — | Contrainte de placement (label/nœud) |
+| `anti_affinity` | — | Évite de co-localiser les replicas (1 par nœud si possible) |
+| `max_per_node` | — | Plafond de replicas d'un même service par nœud |
+| `storage` | — | Clé de placement (état/volume), retirée du sous-manifest |
+| `shared_volume` | — | Volume partagé d'une app *stateful* (conservé pour le montage) |
+| `hpa` | `0` | Activer l'autoscaler cluster ; le leader ajuste `total_replicas` |
+| `hpa_min` | `1` | Borne basse de `total_replicas` |
+| `hpa_max` | (= min) | Borne haute de `total_replicas` |
+| `hpa_metric` | (CPU) | Métrique surveillée (CPU % des replicas) |
+| `hpa_target` | `60` | Cible CPU % visée |
+| `hpa_cooldown` | `2` | Ticks consécutifs avant d'agir |
+
 ## etc/notify.ini
 
 ### Section [discord]

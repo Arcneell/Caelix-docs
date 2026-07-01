@@ -79,12 +79,13 @@ sudo bin/caelix mesh-up  # applique le maillage depuis les directives du store
 sudo bin/caelix mesh-down
 ```
 
-Couche réseau cross-host (multi-nœud, RFC §6.2). `mesh-keygen` crée la paire de
-clés locale (clé privée jamais publiée) et affiche la clé publique, publiée
-ensuite dans la méta du nœud. `mesh-up` applique les directives sans secret
-poussées par le controller (`address` + table de pairs) avec la clé privée locale,
-via `wg`/`ip` (root requis). `mesh-down` démonte l'interface. Voir la
-[RFC multi-nœud](../architecture/multi-node-rfc.md).
+Couche réseau cross-host du cluster (maillage WireGuard). `mesh-keygen` crée la paire
+de clés locale (clé privée jamais publiée) et affiche la clé publique, publiée ensuite
+dans la méta du nœud. `mesh-up` applique les directives sans secret poussées par le
+controller (`address` + table de pairs) avec la clé privée locale, via `wg`/`ip` (root
+requis). `mesh-down` démonte l'interface. Voir
+[architecture/cluster.md](../architecture/cluster.md) ; le détail de conception est dans
+la [RFC multi-nœud](../architecture/multi-node-rfc.md).
 
 ### vip-status
 

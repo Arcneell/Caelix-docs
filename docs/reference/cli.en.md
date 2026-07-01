@@ -79,11 +79,12 @@ sudo bin/caelix mesh-up  # apply the mesh from the directives in the store
 sudo bin/caelix mesh-down
 ```
 
-Cross-host network layer (multi-node, RFC §6.2). `mesh-keygen` creates the local
-keypair (the private key is never published) and prints the public key, then
-published in the node meta. `mesh-up` applies the secret-free directives
-pushed by the controller (`address` + peer table) with the local private key, via
-`wg`/`ip` (root required). `mesh-down` tears the interface down. See the
+Cross-host cluster network layer (WireGuard mesh). `mesh-keygen` creates the local
+keypair (the private key is never published) and prints the public key, then published
+in the node meta. `mesh-up` applies the secret-free directives pushed by the controller
+(`address` + peer table) with the local private key, via `wg`/`ip` (root required).
+`mesh-down` tears the interface down. See
+[architecture/cluster.md](../architecture/cluster.md); the design rationale is in the
 [multi-node RFC](../architecture/multi-node-rfc.md).
 
 ### vip-status

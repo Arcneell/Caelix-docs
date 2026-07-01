@@ -1,4 +1,4 @@
-# Multi-node cluster (HA) — Caelix 2.0
+# Multi-node cluster (HA) — Caelix 2.2
 
 | | |
 |---|---|
@@ -7,7 +7,7 @@
 | Setup | [Getting Started › Cluster](../getting-started/cluster.md) |
 | Design decisions | [Multi-node RFC](multi-node-rfc.md) |
 
-This page describes how the Caelix 2.0 cluster works: the control plane, the shared
+This page describes how the Caelix 2.2 cluster works: the control plane, the shared
 store, placement, the agent cycle, the floating VIP, failover, ingress, the horizontal
 autoscaler (HPA), the shared console state, per-node Docker targeting, and the WireGuard
 mesh.
@@ -27,7 +27,7 @@ Shared state lives in a store (etcd in production). A floating VIP follows the
 leader to provide a stable access point, and east-west traffic flows over a mandatory
 encrypted WireGuard mesh.
 
-Key 2.0 point: every node runs the FastAPI backend with the same control loop, and
+Key 2.2 point: every node runs the FastAPI backend with the same control loop, and
 leadership (an etcd lease + a put-if-absent transaction) designates the single node that acts. No node has a
 fixed role; a promoted survivor takes over everything, from placement to the VIP and
 ingress.
@@ -197,6 +197,13 @@ VIP: a stable cluster access point, independent of the current node's IP. The VI
 published to the store (`cluster/vip`) so a promoted node takes it over without
 reconfiguration.
 
+### Graceful stop (clean drain)
+
+On a graceful agent stop, the VIP fails over cleanly: a systemd `ExecStop` hook
+(`caelix agent-drain`) releases the VIP and removes the node's heartbeat. The controller
+(which holds leadership) then steps down, and a healthy node takes over the VIP — with no
+dual-VIP window.
+
 ---
 
 ## 7. Failover and fencing
@@ -214,6 +221,10 @@ reconfiguration.
 - Lease-based fencing: a node that loses its lease stops acting as leader and releases
   the VIP. The lease is the authority, so a partitioned-but-alive node does not conflict
   with rescheduling.
+- Graceful stop: when the agent is stopped cleanly, a systemd `ExecStop` hook
+  (`caelix agent-drain`) releases the VIP and removes the node's heartbeat. The controller
+  steps down and a healthy node takes over the VIP immediately, with no dual-VIP window
+  (see §6).
 
 ---
 
@@ -233,6 +244,18 @@ registry: each app with an `autoscale_route` key gives a route whose backends ar
   `GET /api/cluster/routes` (route key → backend addresses, de-duplicated and sorted,
   across all nodes).
 - Dead backends are health-checked out by the proxy before routing.
+- The ingress proxy terminates TLS and relays in the clear to backends, forwarding
+  `X-Forwarded-Proto` (`https` from the TLS listener, `http` otherwise), `X-Forwarded-For`
+  and `X-Forwarded-Host`, after stripping any client-supplied copy. An app behind TLS
+  (WordPress-style) thus generates asset URLs consistent with the real HTTPS access (see
+  [Proxy › X-Forwarded Headers](../modules/proxy.en.md#x-forwarded-headers)).
+
+!!! info "TLS follows the VIP"
+    Let's Encrypt certificates are replicated across nodes: on issue and on renewal they
+    are published to the shared etcd certificate store, then materialized into each node's
+    certificate directory. Domain routes are replicated and re-materialized per node as
+    well. The new leader therefore serves the same HTTPS ingress immediately after a
+    failover, with no certificate re-issue or copy.
 
 ---
 
@@ -284,6 +307,19 @@ In cluster mode, any Docker-backed operation can target a specific node:
 Containers, images, volumes, networks, stacks, logs and metrics thus target the right
 daemon. HPA reuses the same `docker_addr` to read replica CPU.
 
+### Hosting-node resolution
+
+Service/container actions, logs and manifest-derived views now resolve and target the
+node that **hosts** the container (previously only the local daemon was targeted → a
+silent no-op if the app ran elsewhere). The reusable helpers in
+`ui/backend/app/core/cluster/aware.py` handle node resolution, cluster-manifest merge, and
+multi-node fan-out.
+
+### Backups
+
+A backup runs on the node that owns the data (the hosting node, resolved as above), not
+necessarily the leader. Backup status aggregates across all nodes.
+
 ---
 
 ## 12. WireGuard mesh
@@ -319,6 +355,7 @@ The system application (`wg` / `ip`) requires root; `wg` is mandatory on a clust
 | Ingress (proxy) | `lib/autoscale_proxy.sh` | Global socat proxy on `VIP:80` |
 | Mesh | `cluster/mesh.py`, `lib/node.sh` | WireGuard directives + application |
 | Shared console state | `core/shared_state.py` | etcd KV `caelix/console/` |
+| Cluster targeting | `core/cluster/aware.py` | Hosting-node resolution, cluster-manifest merge, multi-node fan-out |
 | Agent | `lib/node.sh` | Lease, sync, backends, mesh, VIP, fencing |
 
 ---

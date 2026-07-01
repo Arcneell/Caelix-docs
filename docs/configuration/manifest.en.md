@@ -154,9 +154,9 @@ Available monitoring types:
 | `autoscale_health_path` | `/` | HTTP path for backend probes |
 | `autoscale_route` | — | Global routing: `host:hostname`, `path:/prefix`, `port:N`, `default` |
 
-### Cluster Placement & Ingress (2.0 mode)
+### Cluster Placement & Ingress (2.2 mode)
 
-In cluster mode (2.0 console, `file` or `etcd` store), a service section may carry
+In cluster mode (2.2 console, `file` or `etcd` store), a service section may carry
 extra placement keys. These are interpreted by the controller (leader), which
 decides which nodes host the replicas, then they are stripped from the sub-manifest
 pushed to each agent (the single-host agent does not understand them). See

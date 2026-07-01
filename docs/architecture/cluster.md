@@ -1,4 +1,4 @@
-# Cluster multi-nœud (HA) — Caelix 2.0
+# Cluster multi-nœud (HA) — Caelix 2.2
 
 | | |
 |---|---|
@@ -7,7 +7,7 @@
 | Mise en place | [Démarrage › Cluster](../getting-started/cluster.md) |
 | Décisions de conception | [RFC multi-nœud](multi-node-rfc.md) |
 
-Cette page décrit le fonctionnement du cluster Caelix 2.0 : le plan de contrôle,
+Cette page décrit le fonctionnement du cluster Caelix 2.2 : le plan de contrôle,
 le store partagé, le placement, le cycle d'agent, la VIP flottante, le failover, l'ingress,
 l'autoscaler horizontal (HPA), l'état console partagé, le ciblage Docker par nœud et le
 maillage WireGuard.
@@ -27,7 +27,7 @@ L'état partagé vit dans un store (etcd en production). Une VIP flottante
 suit le leader pour offrir un point d'accès stable, et le trafic est-ouest passe par un
 maillage WireGuard chiffré obligatoire.
 
-Point clé de la 2.0 : chaque nœud exécute le backend FastAPI avec la même boucle de
+Point clé de la 2.2 : chaque nœud exécute le backend FastAPI avec la même boucle de
 contrôle, et le leadership (bail etcd + transaction « put-if-absent ») désigne le seul nœud qui agit.
 Aucun nœud n'a de rôle figé ; un survivant promu reprend tout, du placement à la VIP et
 à l'ingress.
@@ -198,6 +198,13 @@ VIP : c'est un point d'accès stable au cluster, indépendant de l'IP du nœud c
 VIP est publiée dans le store (`cluster/vip`) pour qu'un nœud promu leader la reprenne
 sans reconfiguration.
 
+### Arrêt gracieux (drain propre)
+
+À l'arrêt gracieux de l'agent, la VIP bascule proprement : un hook systemd `ExecStop`
+(`caelix agent-drain`) relâche la VIP et supprime le heartbeat du nœud. Le controller
+(qui détient le leadership) se désiste alors, et un nœud sain reprend la VIP — sans
+fenêtre de double-VIP.
+
 ---
 
 ## 7. Failover et fencing
@@ -215,6 +222,10 @@ sans reconfiguration.
 - Fencing par bail : un nœud qui perd son bail cesse d'agir comme leader et relâche la
   VIP. Le bail fait autorité, donc un nœud partitionné mais vivant n'entre pas en conflit
   avec le replanning.
+- Arrêt gracieux : quand l'agent est arrêté proprement, un hook systemd `ExecStop`
+  (`caelix agent-drain`) relâche la VIP et supprime le heartbeat du nœud. Le controller
+  se désiste et un nœud sain reprend la VIP immédiatement, sans fenêtre de double-VIP
+  (cf. §6).
 
 ---
 
@@ -236,6 +247,19 @@ une réplique.
   `GET /api/cluster/routes` (clé de route → adresses de backends, dédupliquées et
   triées, tous nœuds confondus).
 - Les backends morts sont éliminés par le health-check du proxy avant routage.
+- Le proxy d'ingress termine TLS puis relaie en clair vers les backends en forwardant
+  `X-Forwarded-Proto` (`https` depuis le listener TLS, `http` sinon), `X-Forwarded-For`
+  et `X-Forwarded-Host`, après avoir supprimé toute copie fournie par le client. Une app
+  derrière TLS (type WordPress) génère ainsi des URL d'assets cohérentes avec l'accès
+  HTTPS réel (cf. [Proxy › En-têtes X-Forwarded](../modules/proxy.md#en-têtes-x-forwarded)).
+
+!!! info "Le TLS suit la VIP"
+    Les certificats Let's Encrypt sont répliqués entre les nœuds : à l'émission comme au
+    renouvellement, ils sont publiés dans le magasin de certificats etcd partagé puis
+    matérialisés dans le répertoire de certificats de chaque nœud. Les routes de domaine
+    sont elles aussi répliquées et re-matérialisées par nœud. Le nouveau leader sert donc
+    immédiatement le même ingress HTTPS après un failover, sans ré-émettre ni recopier de
+    certificat.
 
 ---
 
@@ -288,6 +312,20 @@ En cluster, chaque opération adossée à Docker peut viser un nœud précis :
 Conteneurs, images, volumes, réseaux, stacks, logs et métriques visent ainsi le bon démon.
 Le HPA réutilise ce même `docker_addr` pour lire le CPU des répliques.
 
+### Résolution du nœud hébergeur
+
+Les actions de service/conteneur, les logs et les vues dérivées du manifeste résolvent et
+ciblent désormais le nœud qui **héberge** le conteneur (auparavant seul le démon local
+était visé → no-op silencieux si l'app tournait ailleurs). Les helpers réutilisables de
+`ui/backend/app/core/cluster/aware.py` assurent la résolution du nœud, la fusion du
+manifeste cluster et le fan-out multi-nœud.
+
+### Sauvegardes
+
+Une sauvegarde s'exécute sur le nœud qui détient les données (le nœud hébergeur, résolu
+comme ci-dessus), et non forcément le leader. Le statut de sauvegarde est agrégé sur
+l'ensemble des nœuds.
+
 ---
 
 ## 12. Maillage WireGuard
@@ -324,6 +362,7 @@ cluster (l'install l'exige).
 | Ingress (proxy) | `lib/autoscale_proxy.sh` | Proxy global socat sur `VIP:80` |
 | Maillage | `cluster/mesh.py`, `lib/node.sh` | Directives WireGuard + application |
 | État console partagé | `core/shared_state.py` | KV etcd `caelix/console/` |
+| Ciblage cluster | `core/cluster/aware.py` | Résolution du nœud hébergeur, fusion du manifeste cluster, fan-out multi-nœud |
 | Agent | `lib/node.sh` | Bail, sync, backends, mesh, VIP, fencing |
 
 ---

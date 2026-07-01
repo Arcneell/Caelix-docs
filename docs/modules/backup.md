@@ -119,10 +119,10 @@ backup_retention = 14
 
 | Méthode | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/backup/status` | État des sauvegardes pour tous les services |
-| `POST` | `/api/backup/trigger/{name}` | Déclencher une sauvegarde immédiate |
-| `GET` | `/api/backup/list/{name}` | Lister les archives d'un service |
-| `GET` | `/api/backup/download/{name}/{filename}` | Télécharger une archive |
+| `GET` | `/api/backup/status` | État des sauvegardes pour tous les services (agrégé sur tous les nœuds en cluster) |
+| `POST` | `/api/backup/trigger/{name}` | Déclencher une sauvegarde immédiate (exécutée sur le nœud hébergeant les données en cluster) |
+| `GET` | `/api/backup/list/{name}` | Lister les archives d'un service (agrégé sur tous les nœuds) |
+| `GET` | `/api/backup/download/{name}/{filename}` | Télécharger une archive (récupérée depuis le nœud hébergeur) |
 | `POST` | `/api/backup/config/{name}` | Modifier la configuration backup d'un service |
 | `GET` | `/api/backup/defaults` | Template de configuration par défaut |
 
@@ -136,11 +136,36 @@ backup_retention = 14
 
 ## Stockage des archives
 
-Les archives sont stockées dans `.caelix/backups/<app>/` avec le format de nom :
+Les archives sont stockées dans `<host_root>/.caelix/backups/<app>/` avec le format de nom :
 
 ```
 <app>-<YYYYMMDD>-<HHMMSS>.tar.gz
 ```
+
+En mono-hôte, ce répertoire se trouve sur l'hôte local (démon Caelix). En cluster,
+il se trouve sur le **nœud qui héberge les données du service** (voir ci-dessous), et
+non dans le conteneur console.
+
+## Cluster
+
+En mode cluster, une sauvegarde ne s'exécute pas dans le conteneur console : les archives
+d'un service (tars de volumes + dumps de base de données) vivent sous
+`<host_root>/.caelix/backups/<app>/` **sur le nœud qui héberge les données de l'application**.
+
+- **Déclenchement manuel** (`POST /api/backup/trigger/{name}`) : Caelix lance `tar` dans un
+  conteneur jetable **sur ce nœud hébergeur**, en montant les binds du service en lecture
+  seule. L'archive est écrite localement sur ce nœud.
+- **Agrégation** : les endpoints `/api/backup/status`, `/api/backup/list/{name}` et
+  `/api/backup/download/{name}/{file}` interrogent **tous les nœuds** et agrègent les
+  résultats — chaque application ayant ses archives sur son propre nœud hébergeur, la
+  console présente une vue consolidée quel que soit l'emplacement réel.
+- **Configuration** : pour les applications cluster, les clés `backup_*` sont écrites dans
+  le manifest cluster.
+
+!!! note
+    Le comportement mono-hôte est inchangé : le démon local gère l'archivage et la
+    rotation localement. Les helpers cluster réutilisables se trouvent dans
+    `ui/backend/app/core/cluster/aware.py`.
 
 ## Fonctions (lib/backup.sh)
 

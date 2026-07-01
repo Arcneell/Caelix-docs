@@ -119,10 +119,10 @@ backup_retention = 14
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/backup/status` | Backup status for all services |
-| `POST` | `/api/backup/trigger/{name}` | Trigger an immediate backup |
-| `GET` | `/api/backup/list/{name}` | List archives for a service |
-| `GET` | `/api/backup/download/{name}/{filename}` | Download an archive |
+| `GET` | `/api/backup/status` | Backup status for all services (aggregated across all nodes in a cluster) |
+| `POST` | `/api/backup/trigger/{name}` | Trigger an immediate backup (run on the data-hosting node in a cluster) |
+| `GET` | `/api/backup/list/{name}` | List archives for a service (aggregated across all nodes) |
+| `GET` | `/api/backup/download/{name}/{filename}` | Download an archive (fetched from the hosting node) |
 | `POST` | `/api/backup/config/{name}` | Update backup configuration for a service |
 | `GET` | `/api/backup/defaults` | Default configuration template |
 
@@ -136,11 +136,36 @@ backup_retention = 14
 
 ## Archive Storage
 
-Archives are stored in `.caelix/backups/<app>/` with the naming format:
+Archives are stored in `<host_root>/.caelix/backups/<app>/` with the naming format:
 
 ```
 <app>-<YYYYMMDD>-<HHMMSS>.tar.gz
 ```
+
+On single-host, this directory lives on the local host (Caelix daemon). In a cluster it
+lives on the **node that hosts the service's data** (see below), not in the console
+container.
+
+## Cluster
+
+In cluster mode, a backup does not run inside the console container: a service's archives
+(volume tars + database dumps) live under `<host_root>/.caelix/backups/<app>/` **on the
+node that hosts the application's data**.
+
+- **Manual trigger** (`POST /api/backup/trigger/{name}`): Caelix runs `tar` in a throwaway
+  container **on that hosting node**, mounting the service's binds read-only. The archive
+  is written locally on that node.
+- **Aggregation**: the `/api/backup/status`, `/api/backup/list/{name}` and
+  `/api/backup/download/{name}/{file}` endpoints query **every node** and aggregate the
+  results — since each application's archives live on its own hosting node, the console
+  presents a consolidated view regardless of where they physically sit.
+- **Configuration**: for cluster applications, the `backup_*` keys are written to the
+  cluster manifest.
+
+!!! note
+    Single-host behaviour is unchanged: the local daemon handles archival and rotation
+    locally. The reusable cluster helpers live in
+    `ui/backend/app/core/cluster/aware.py`.
 
 ## Functions (lib/backup.sh)
 

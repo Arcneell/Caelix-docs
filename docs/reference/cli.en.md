@@ -37,8 +37,8 @@ This is the primary command for production operation.
 bin/caelix agent
 ```
 
-Same as `run`, plus publishing the node status on each cycle (multi-node,
-phase 1). The agent:
+Runs a full cluster node: same as `run`, plus publishing the node status on each
+cycle. The agent:
 
 - has a stable node identity (`node-info`);
 - reconciles its local manifest just like single-host mode;
@@ -47,8 +47,8 @@ phase 1). The agent:
 If a cluster store is configured (`CAELIX_CLUSTER_BACKEND` = `file` via
 `CAELIX_CLUSTER_STORE`, or `etcd`), the agent publishes its meta to the store and
 adopts the sub-manifest pushed by the controller as its desired-state source;
-otherwise it reconciles its local manifest (single-host). See the
-[multi-node RFC](../architecture/multi-node-rfc.md).
+otherwise it reconciles its local manifest (single-host). See
+[Architecture › Cluster](../architecture/cluster.en.md).
 
 ### node-info
 

@@ -1,6 +1,6 @@
 # Multi-node cluster
 
-Caelix runs single-host by default. As of 2.0, cluster mode is highly available
+Caelix runs single-host by default. As of 2.2, cluster mode is highly available
 and is operated from the console like a single host. This guide covers installing
 a real cluster (a bootstrap node plus joining nodes), verifying it, deploying a
 cluster service, and failover. For the internals, see
@@ -23,7 +23,7 @@ and the agent applies the mesh automatically.
     only enabled via `--mode controller|join` (and `--vip …`). Without those
     options, Caelix behaves exactly as in 1.x.
 
-HA clustering ships in 2.0, now published under `:latest`. The examples below pull
+HA clustering ships in 2.2, now published under `:latest`. The examples below pull
 `ghcr.io/arcneell/caelix:latest`. To authenticate to the registry, see
 [Installation](installation.en.md).
 
@@ -128,10 +128,11 @@ caelix node join --store-addr http://<controller-IP>:2379 --start
    curl -I http://10.0.0.10:80        # ingress (once a service is published)
    ```
 
-Node selector: in cluster mode a selector appears in the console header. Picking a
-node routes all Docker-backed actions (containers, images, volumes, networks,
-stacks, logs, metrics, deployments) to that node's daemon, via the `X-Caelix-Node`
-header. "Controller (local)" returns to the local daemon.
+Node targeting: there is no global node selector in the console. Each action
+targets the node of its row, and resource views aggregate across all nodes — the
+console auto-resolves and routes to the daemon hosting the resource, via the
+`X-Caelix-Node` header under the hood. On a single host, the console simplifies
+(no Nodes section, no Node column).
 
 ---
 
@@ -191,7 +192,7 @@ section:
 | `hpa = 1` | Enables horizontal autoscale |
 | `hpa_min` / `hpa_max` | Replica count bounds |
 | `hpa_target` | Target CPU utilization (%) |
-| `hpa_cooldown` | Delay (s) between two adjustments |
+| `hpa_cooldown` | Consecutive ticks between two adjustments |
 
 ```ini
 [web]
@@ -222,6 +223,9 @@ a single leader, so there is no split-brain. When the leader is lost:
   leader;
 - the new leader takes over the VIP within seconds (adds it to its interface plus
   gratuitous ARP); the outgoing leader releases it;
+- on a graceful agent stop (systemd `ExecStop` drain), the VIP is released cleanly
+  and fails over immediately, without waiting for the lease to expire — in addition
+  to lease-loss failover on a hard crash;
 - the console state is shared via etcd (login, users, config, stacks, certs), so
   the console is identical after failover;
 - the WireGuard mesh stays active on the surviving nodes;

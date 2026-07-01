@@ -1,6 +1,6 @@
 # Cluster multi-nœud
 
-Caelix fonctionne en mono-hôte par défaut. Depuis la 2.0, le mode cluster est
+Caelix fonctionne en mono-hôte par défaut. Depuis la 2.2, le mode cluster est
 haute disponibilité et se pilote depuis la console comme un mono-hôte. Ce guide
 couvre l'installation d'un cluster réel (nœud d'amorçage puis nœuds qui
 rejoignent), sa vérification, le déploiement d'un service cluster et la bascule
@@ -24,7 +24,7 @@ est obligatoire. Un nœud cluster ne peut exister sans lui : l'installeur exige
     ne s'activent que via `--mode controller|join` (et `--vip …`). Sans ces
     options, le comportement de Caelix est identique à la 1.x.
 
-Le cluster HA est livré dans la 2.0, désormais publiée sous `:latest`. Les
+Le cluster HA est livré dans la 2.2, désormais publiée sous `:latest`. Les
 exemples ci-dessous tirent `ghcr.io/arcneell/caelix:latest`. Pour authentifier le
 registry, voir [Installation](installation.md).
 
@@ -129,10 +129,11 @@ caelix node join --store-addr http://<IP-controller>:2379 --start
    curl -I http://10.0.0.10:80        # ingress (une fois un service publié)
    ```
 
-Sélecteur de nœud : en cluster, un sélecteur apparaît dans l'en-tête de la
-console. Choisir un nœud route toutes les actions Docker (conteneurs, images,
-volumes, réseaux, stacks, logs, métriques, déploiements) vers le démon de ce nœud,
-via l'en-tête `X-Caelix-Node`. « Controller (local) » revient au démon local.
+Ciblage des nœuds : il n'y a pas de sélecteur de nœud global dans la console.
+Chaque action cible le nœud de sa ligne, et les vues de ressources agrègent
+l'ensemble des nœuds — la console résout et route automatiquement vers le démon
+qui héberge la ressource, via l'en-tête `X-Caelix-Node` en coulisse. En mono-hôte,
+la console se simplifie (pas de section Nodes, pas de colonne Node).
 
 ---
 
@@ -192,7 +193,7 @@ section d'app :
 | `hpa = 1` | Active l'autoscale horizontal |
 | `hpa_min` / `hpa_max` | Bornes du nombre de réplicas |
 | `hpa_target` | Cible d'utilisation CPU (%) |
-| `hpa_cooldown` | Délai (s) entre deux ajustements |
+| `hpa_cooldown` | Ticks consécutifs entre deux ajustements |
 
 ```ini
 [web]
@@ -221,6 +222,9 @@ garantit un seul leader, donc pas de split-brain. À la perte du leader :
 - avec au moins 3 nœuds, le quorum 2/3 survit et un autre nœud est élu leader ;
 - le nouveau leader reprend la VIP en quelques secondes (pose sur son interface et
   ARP gratuit) ; le leader sortant la relâche ;
+- à l'arrêt gracieux d'un agent (systemd `ExecStop`, drain), la VIP est relâchée
+  proprement et bascule immédiatement, sans attendre l'expiration du bail — en
+  complément de la bascule sur perte de bail lors d'une panne brutale ;
 - l'état console est partagé via etcd (login, utilisateurs, config, stacks,
   certs), donc la console reste identique après bascule ;
 - le maillage WireGuard reste actif sur les nœuds survivants ;

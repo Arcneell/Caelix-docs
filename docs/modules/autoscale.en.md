@@ -7,9 +7,10 @@ Caelix ships two distinct autoscalers, which coexist:
 - **Single-host autoscale** (`autoscale.sh`, key `autoscale = 1`). Covered by most of
   this page. Creates `caelix-<app>-rN` replicas on a single host, behind the per-app
   socat load balancer.
-- **Cluster HPA** (key `hpa = 1`, 2.0 mode). Covered in the
-  [Cluster HPA](#cluster-hpa-mode-20) section below. The leader adjusts a service's
-  `total_replicas` and the scheduler/ingress spread the replicas across nodes.
+- **Cluster HPA** (key `hpa = 1`). Covered in the
+  [Cluster HPA](#cluster-hpa) section below. **This is the default path in a cluster**:
+  the leader adjusts a service's `total_replicas` and the scheduler/ingress spread the
+  replicas across nodes.
 
 ---
 
@@ -330,13 +331,16 @@ memory_limit_mb = 512
 
 ---
 
-## Cluster HPA (2.0 mode) {#cluster-hpa-mode-20}
+## Cluster HPA {#cluster-hpa}
 
 The cluster HPA (`ui/backend/app/core/cluster/hpa.py`) is the multi-node horizontal
-autoscaler. It is distinct from the single-host autoscale above: instead of managing
-`caelix-<app>-rN` replicas on one host, it adjusts a service's `total_replicas` in the
-cluster manifest, and the scheduler and ingress then place and load-balance the replicas
-across nodes, exactly like changing `total_replicas` by hand, but automatically.
+autoscaler, and **the default path in a cluster**. It is distinct from the single-host
+autoscale above: instead of managing `caelix-<app>-rN` replicas on one host, it adjusts a
+service's `total_replicas` in the cluster manifest, and the scheduler and ingress then
+place and load-balance the replicas across nodes, exactly like changing `total_replicas`
+by hand, but automatically.
+
+In a cluster, a service's replica count is its `total_replicas` in the cluster manifest.
 
 ### Activation
 
@@ -387,3 +391,10 @@ On each pass (`hpa_tick`), run by the leader only:
 
 > If no live metric is available yet (replica absent / daemon unreachable), the service
 > is left untouched for that pass.
+
+### Manual scaling in a cluster
+
+In a cluster, a manual scale up/down adjusts the service's `total_replicas` in the cluster
+manifest (clamped to `[hpa_min, hpa_max]`) rather than docker-running a replica container on
+the local node. The scheduler then re-places the replicas and the ingress updates its
+backends, exactly as for an automatic HPA decision.

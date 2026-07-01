@@ -154,9 +154,9 @@ Types de monitoring disponibles :
 | `autoscale_health_path` | `/` | Chemin HTTP pour les probes de backend |
 | `autoscale_route` | — | Routage global : `host:hostname`, `path:/prefix`, `port:N`, `default` |
 
-### Placement cluster et ingress (mode 2.0)
+### Placement cluster et ingress (mode 2.2)
 
-En mode cluster (console 2.0, store `file` ou `etcd`), une section de service peut
+En mode cluster (console 2.2, store `file` ou `etcd`), une section de service peut
 porter des clés de placement supplémentaires. Ces clés sont interprétées par le
 controller (leader), qui décide sur quels nœuds placer les replicas, puis sont
 retirées du sous-manifest poussé à chaque agent (l'agent mono-hôte ne les comprend

@@ -29,7 +29,9 @@ Capacités principales :
 - Cluster HA : plan de contrôle etcd (quorum Raft), VIP flottante avec bascule
   automatique, maillage WireGuard, état console partagé (utilisateurs, secret JWT,
   configuration, templates, stacks Compose, certificats TLS), Docker par nœud
-  (`X-Caelix-Node`) et autoscaling sur le CPU.
+  (`X-Caelix-Node`) et autoscaling sur le CPU. Les opérations sont conscientes du
+  cluster (console sans sélecteur global, actions ciblant leur nœud) et les
+  certificats Let's Encrypt suivent la VIP.
 - Notifications multi-canaux (Discord, Slack, Teams, Telegram, SMTP).
 - Journal d'audit JSONL ou SQLite.
 - Console web Vue 3 et backend FastAPI (environ 189 opérations REST, authentification
@@ -118,7 +120,7 @@ caelix/
 │   └── Dockerfile              #   Build multi-stage
 ├── scripts/                    # Installation et maintenance
 ├── .caelix/                    # Données runtime
-└── VERSION                     # 2.1.3
+└── VERSION                     # 2.2.0
 ```
 
 ---

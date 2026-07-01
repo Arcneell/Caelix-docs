@@ -29,7 +29,9 @@ Key capabilities:
 - HA cluster: etcd control plane (Raft quorum), floating VIP with automatic
   failover, WireGuard mesh, shared console state (users, JWT secret, configuration,
   templates, Compose stacks, TLS certificates), per-node Docker (`X-Caelix-Node`),
-  and CPU-based autoscaling.
+  and CPU-based autoscaling. Operations are cluster-aware (no global console
+  selector, actions target their node) and Let's Encrypt certificates follow the
+  VIP.
 - Multi-channel notifications (Discord, Slack, Teams, Telegram, SMTP).
 - Audit trail in JSONL or SQLite.
 - Vue 3 web console and FastAPI backend (about 189 REST operations, `httpOnly`
@@ -118,7 +120,7 @@ caelix/
 │   └── Dockerfile              #   Multi-stage build
 ├── scripts/                    # Installation and maintenance
 ├── .caelix/                    # Runtime data
-└── VERSION                     # 2.1.3
+└── VERSION                     # 2.2.0
 ```
 
 ---

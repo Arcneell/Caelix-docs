@@ -103,7 +103,7 @@ autoscale_route = default
 
 The `_proxy_route_lookup()` function performs matching in order: host → path → default.
 
-### Cluster Ingress / VIP (2.0 mode)
+### Cluster Ingress / VIP (2.2 mode)
 
 In cluster mode, the global proxy runs on the leader node and serves the ingress on
 `VIP:80` (the floating VIP, cf. [environment variables](../configuration/environment.en.md#cluster-vip-floating-ingress) `CAELIX_CLUSTER_VIP` / `CAELIX_VIP_IFACE`). It
@@ -126,6 +126,35 @@ End-to-end mechanics:
 
 As in single-host mode, this global proxy also drives the per-app autoscale LB and the
 domain/TLS routing. The cluster ingress reuses the same `proxy.sh` engine.
+
+!!! info "Certificate replication — TLS follows the VIP"
+    Let's Encrypt certificates are replicated across nodes: on issue and on renewal they
+    are published to the shared etcd certificate store, then materialized into each node's
+    certificate directory. Domain routes are replicated and re-materialized per node as
+    well. Ingress and HTTPS therefore follow the floating VIP: the new leader serves the
+    same HTTPS ingress immediately after a failover, with no certificate re-issue or copy.
+
+---
+
+## X-Forwarded Headers
+
+The proxy terminates TLS and then relays each request in the clear to the backend. So the
+application knows the original scheme, host and client, the proxy adds — after
+**stripping any client-supplied copy** — the following headers:
+
+| Header | Value added |
+|---|---|
+| `X-Forwarded-Proto` | `https` from the TLS listener, `http` otherwise |
+| `X-Forwarded-For` | Client IP address |
+| `X-Forwarded-Host` | Requested host (original `Host` header) |
+
+!!! tip "Why this is needed"
+    A TLS-terminating proxy hands the backend a plaintext connection. Without
+    `X-Forwarded-Proto: https`, an application behind the proxy believes it is served over
+    HTTP and emits `http://` asset URLs — a WordPress site's CSS/JS then break over HTTPS
+    (mixed content). By forwarding the original scheme, the backend generates URLs
+    consistent with the real HTTPS access. Stripping client-supplied copies first prevents
+    a client from forcing these values itself.
 
 ---
 

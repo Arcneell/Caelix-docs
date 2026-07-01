@@ -103,7 +103,7 @@ autoscale_route = default
 
 La fonction `_proxy_route_lookup()` effectue le matching dans l'ordre : host → path → default.
 
-### Ingress cluster / VIP (mode 2.0)
+### Ingress cluster / VIP (mode 2.2)
 
 En mode cluster, le proxy global tourne sur le nœud leader et sert l'ingress sur
 `VIP:80` (la VIP flottante, cf. [variables d'environnement](../configuration/environment.md#vip-de-cluster-ingress-flottante) `CAELIX_CLUSTER_VIP` / `CAELIX_VIP_IFACE`). Il
@@ -128,6 +128,36 @@ Mécanique de bout en bout :
 
 Comme en mono-hôte, ce proxy global gère aussi le LB par application de l'autoscale et
 le routage par domaine/TLS. L'ingress cluster réutilise le même moteur `proxy.sh`.
+
+!!! info "Réplication des certificats — le TLS suit la VIP"
+    Les certificats Let's Encrypt sont répliqués entre les nœuds : à l'émission comme au
+    renouvellement, ils sont publiés dans le magasin de certificats etcd partagé, puis
+    matérialisés dans le répertoire de certificats de chaque nœud. Les routes de domaine
+    sont elles aussi répliquées et re-matérialisées par nœud. L'ingress et le HTTPS
+    suivent donc la VIP flottante : le nouveau leader sert immédiatement le même ingress
+    HTTPS après un failover, sans ré-émettre ni recopier de certificat.
+
+---
+
+## En-têtes X-Forwarded
+
+Le proxy termine TLS puis relaie chaque requête en clair vers le backend. Pour que
+l'application connaisse le schéma, l'hôte et le client d'origine, le proxy ajoute — après
+avoir **supprimé toute copie fournie par le client** — les en-têtes suivants :
+
+| En-tête | Valeur ajoutée |
+|---|---|
+| `X-Forwarded-Proto` | `https` depuis le listener TLS, `http` sinon |
+| `X-Forwarded-For` | Adresse IP du client |
+| `X-Forwarded-Host` | Hôte demandé (header `Host` d'origine) |
+
+!!! tip "Pourquoi c'est nécessaire"
+    Un proxy qui termine TLS présente au backend une connexion en clair. Sans
+    `X-Forwarded-Proto: https`, une application derrière le proxy croit être servie en
+    HTTP et émet des URL d'assets `http://` — les CSS/JS d'un site WordPress se cassent
+    alors en HTTPS (mixed content). En forwardant le schéma d'origine, le backend génère
+    des URL cohérentes avec l'accès HTTPS réel. Le strip préalable des copies fournies par
+    le client évite qu'un client force lui-même ces valeurs.
 
 ---
 

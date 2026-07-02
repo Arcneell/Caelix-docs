@@ -145,6 +145,7 @@ nav:
     - Cluster: getting-started/cluster.md
     - Distribution & Release: getting-started/distribution.md
     - Mise à jour du paquet: getting-started/package-release.md
+    - Notes de release v2.2.11: getting-started/release-notes/v2.2.11.md
     - Notes de release v2.2.10: getting-started/release-notes/v2.2.10.md
     - Notes de release v2.2.9: getting-started/release-notes/v2.2.9.md
     - Notes de release v2.2.8: getting-started/release-notes/v2.2.8.md
